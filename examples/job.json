@@ -1,0 +1,10 @@
+{
+  "sm2d": "male_shirt.sm2d",
+  "smis": "male_shirt.smis",
+  "output_dir": "out/male_shirt",
+  "pieces": null,
+  "format": "obj",
+  "combined_layout": true,
+  "layout_gap_cm": 5,
+  "mirror_fold_pieces": false
+}

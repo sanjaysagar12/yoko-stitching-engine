@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sm2d-engine"
+version = "0.1.0"
+description = "Seamly2D pattern + measurements -> real-scale (1 OBJ unit = 1 m) per-piece meshes"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "mapbox_earcut>=1.0", "pydantic>=2"]
+
+[project.optional-dependencies]
+dev = ["pytest", "mypy", "ruff"]
+
+[project.scripts]
+sm2d-engine = "sm2d_engine.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["mapbox_earcut"]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
