@@ -34,7 +34,7 @@ error. Provided: `male_shirt`, `aldrich_skirt` (the two skirt pieces, female bod
 | `GET /api/builds/{id}/files/{path}` | avatar and piece OBJ / JSON of that build |
 | `POST /api/align` | `{build, placements, derived_pieces?, stitches?, rings?, arrange_options?, compact?, known_meshes?}` to the `alignment_result` document: every piece placed size-exact and collision-free, `validity` and per piece `size_check` and `solved` (placements sent with `solved` stay where they are; derived pieces are cached under `derived/`, 5 mm meshes under `refined/`). `compact: true` sends rolled meshes as base64 (`wrapped_mesh`), faces only for ids not in `known_meshes` |
 | `POST /api/arrange` | same body: re-solve every piece that is not locked (Auto-arrange); same answer |
-| `POST /api/clone` | `{build, source, axis, id}`: a linked mirrored copy of a piece (size, named points, files, suggested seam) |
+| `POST /api/clone` | `{build, source, axis, id}`: a linked mirrored copy of a piece (size, named points, files, suggested seam); `{build, source, id, op: "copy", derived_pieces?}`: an exact copy (no axis; the UI's **Clone**, for pieces cut twice / identical pieces; never a pair) |
 | `POST /api/pair` | `{build, base, derived_id, mode, derived_pieces}`: the two placements of a pair (`same_anchor` or `mirror_anchor`) |
 | `GET` / `PUT /api/jobs/{name}/placements` | load / save `outputs/<job>/placements.json` (placements and `derived_pieces`) |
 | `GET /api/export/{id}?format=obj\|glb` | avatar plus the job's saved placements (avatar only if none are saved) |

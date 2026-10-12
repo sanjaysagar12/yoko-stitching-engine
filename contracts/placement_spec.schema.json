@@ -100,6 +100,15 @@
                 "maxItems": 2
               }
             }
+          },
+          "anchor": {
+            "enum": [
+              "auto",
+              "point",
+              "root",
+              "tip"
+            ],
+            "description": "limb pieces (roll/around on an arm or leg): where along the limb the piece sits. auto: root (cap/waist at the limb root) when the piece is longer than the point's volume or would reach into another body part, else point; point: the reference on the point; root: the top edge at the limb root; tip: the bottom edge at the wrist/ankle"
           }
         }
       }
@@ -163,9 +172,7 @@
         "additionalProperties": false,
         "required": [
           "id",
-          "source",
-          "op",
-          "axis"
+          "source"
         ],
         "properties": {
           "id": {
@@ -176,11 +183,37 @@
             "type": "string"
           },
           "op": {
-            "const": "mirror"
+            "enum": [
+              "mirror",
+              "copy"
+            ],
+            "description": "mirror (default when absent): mirrored clone, needs axis; copy: exact copy, no axis"
           },
           "axis": {
             "$ref": "#/$defs/axis"
           }
+        },
+        "if": {
+          "properties": {
+            "op": {
+              "const": "copy"
+            }
+          },
+          "required": [
+            "op"
+          ]
+        },
+        "then": {
+          "not": {
+            "required": [
+              "axis"
+            ]
+          }
+        },
+        "else": {
+          "required": [
+            "axis"
+          ]
         }
       }
     },
@@ -227,6 +260,11 @@
         },
         "allow_distortion": {
           "type": "boolean"
+        },
+        "max_standoff_from_point": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "a piece farther than this from its point (beyond what its ring needs) is NOT_AT_POINT / STANDOFF_EXCEEDED"
         }
       }
     }

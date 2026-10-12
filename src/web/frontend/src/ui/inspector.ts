@@ -74,7 +74,7 @@ export function mountInspector(
       }
     };
     if (info.mirror_of) addAxis(info.axis);
-    else for (const d of s.derived.filter((d) => d.source === info.name)) addAxis(d.axis);
+    else if (!info.copy_of) for (const d of s.derived.filter((d) => d.source === info.name)) addAxis(d.axis); // copies have no axis
     for (const a of axes) root.append(svg("line", { ...a, class: "axis" }));
 
     const placement = s.placements.get(info.name);

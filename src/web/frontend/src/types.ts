@@ -26,11 +26,12 @@ export type Axis =
   | { type: "edge"; from_point: string; to_point: string }
   | { type: "x"; value_m: number };
 
+/** A derived piece: a mirrored clone (``op`` "mirror", the default when absent; needs ``axis``) or an exact copy. */
 export interface DerivedDef {
   id: string;
   source: string;
-  op: "mirror";
-  axis: Axis;
+  op?: "mirror" | "copy";
+  axis?: Axis;
 }
 
 export interface StitchEnd {
@@ -58,8 +59,9 @@ export interface PieceInfo {
   named_points?: NamedPoint[];
   default_reference?: [number, number];
   warnings?: string[];
-  /** Derived (mirrored) pieces only. */
+  /** Derived pieces only: ``mirror_of`` for a mirrored clone, ``copy_of`` for an exact copy. */
   mirror_of?: string;
+  copy_of?: string;
   source?: string;
   axis?: Axis;
   suggested_stitch?: Stitch | null;
@@ -151,6 +153,8 @@ export interface Placement {
   shift_m?: [number, number];
   /** Auto-arrange: keep the placement as it is and treat the piece as an obstacle. */
   locked?: boolean;
+  /** Limb pieces: where along the arm or leg (auto: cap at the limb root when the piece is longer than the point's volume). */
+  anchor?: "auto" | "point" | "root" | "tip";
   /** Where the engine put the piece last time (radius, shift): sent back so the piece stays exactly there. */
   solved?: Solved;
 }
@@ -198,6 +202,12 @@ export interface ArrangePiece {
   min_distance_to_pieces_m: Record<string, number>;
   flags: string[];
   limits?: string[];
+  /** limb pieces: how the piece was registered along the limb, and why */
+  anchor?: { mode: "point" | "root" | "tip"; shift_m: number; reason: string };
+  /** why the piece has its radius and its slide */
+  reasons?: Record<string, string>;
+  point_distance_m?: number | null;
+  slide_m?: number;
 }
 
 /** Measured by the engine on the placed piece against the flat pattern (per cent). */
@@ -239,13 +249,15 @@ export interface RingRow {
 }
 
 export interface Violation {
-  kind: "CLEARANCE_BODY" | "GAP_PIECES" | "STANDOFF_EXCEEDED" | "SIZE_CHANGED" | "PAIR_ASYMMETRY" | "PAIR_STACKED";
+  kind: "CLEARANCE_BODY" | "GAP_PIECES" | "STANDOFF_EXCEEDED" | "NOT_AT_POINT" | "SIZE_CHANGED" | "PAIR_ASYMMETRY" | "PAIR_STACKED" | "PAIR_NO_ROOM";
   pieces: string[];
   value_m: number;
   required_m: number;
   at_m: [number, number, number] | null;
   /** What stopped the solver: max_standoff, max_shift, iterations, fixed (a piece that keeps its place). */
   limit?: string;
+  /** What to change to make the placement valid (STANDOFF_EXCEEDED, NOT_AT_POINT). */
+  hint?: string;
 }
 
 /** Measured after every solve on the placed meshes. Never valid if anything collides or changed size. */
@@ -307,11 +319,12 @@ export interface PlacedResult {
 export interface DerivedEntry {
   id: string;
   source: string;
-  axis: Axis;
+  op?: "mirror" | "copy";
+  axis?: Axis;
   obj: string;
   bundle: string;
   bbox_cm: { width: number; height: number };
-  suggested_stitch: Stitch | null;
+  suggested_stitch?: Stitch | null;
 }
 
 export interface StitchReport {

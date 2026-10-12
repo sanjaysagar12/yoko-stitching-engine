@@ -171,23 +171,32 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
 
     @app.post("/api/clone")
     def clone(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
-        """Make a linked mirrored copy of a piece: ``{build, source, axis, id}`` -> the derived piece."""
+        """Make a derived piece: ``{build, source, id, op?, axis?, derived_pieces?}`` -> the derived piece.
+
+        ``op`` ``mirror`` (default, needs ``axis``) is a linked mirrored copy; ``copy`` an exact copy (no ``axis``).
+        ``derived_pieces`` are the existing derived pieces, needed to copy one of them.
+        """
         b = ready_build(body)
-        derived = [{"id": body.get("id"), "source": body.get("source"), "op": "mirror", "axis": body.get("axis")}]
+        op = body.get("op", "mirror")
+        new = {"id": body.get("id"), "source": body.get("source"), "op": op}
+        if op != "copy":
+            new["axis"] = body.get("axis")
+        derived = [d for d in body.get("derived_pieces") or [] if d.get("id") != new["id"]] + [new]
         res = aligner.align(
             b.dir / "avatar",
             b.dir / "pieces",
             json.dumps(spec_of({"derived_pieces": derived})),
             derived_dir=b.dir / "derived",
         )
-        d = res.doc["derived_pieces"][0]
+        d = res.doc["derived_pieces"][-1]
         bundle = json.loads((b.dir / "derived" / d["bundle"]).read_text(encoding="utf-8"))
+        link = {"copy_of": bundle["copy_of"]} if op == "copy" else {"mirror_of": bundle["mirror_of"], "axis": d["axis"]}
         return {
             "name": d["id"],
             "status": "ok",
             "source": d["source"],
-            "mirror_of": bundle["mirror_of"],
-            "axis": d["axis"],
+            "op": d["op"],
+            **link,
             "origin_shift_m": d["origin_shift_m"],
             "width_cm": d["bbox_cm"]["width"],
             "height_cm": d["bbox_cm"]["height"],
@@ -197,7 +206,7 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
                 {"name": q["name"], "on_outline": q["on_outline"], "xy_m": q["xy_m"]} for q in bundle["named_points"]
             ],
             "default_reference": bundle["default_reference"]["xy_m"],
-            "suggested_stitch": d["suggested_stitch"],
+            "suggested_stitch": d.get("suggested_stitch"),
         }
 
     @app.post("/api/pair")

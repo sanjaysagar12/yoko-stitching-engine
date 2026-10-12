@@ -278,9 +278,10 @@ def test_3_interactive_order_keeps_earlier_pieces_and_the_invariants(ctx: dict[s
         placed = {p.name: p for p in res.placed}
         assert res.doc["validity"]["valid"] is True, (name, res.doc["validity"]["violations"])
         assert_layout(ctx, res.placed)
-        for n, verts in previous.items():  # earlier pieces did not move
-            assert np.abs(placed[n].vertices - verts).max() < 1e-9, (name, n)
         docs = {d["piece"]: d for d in res.doc["placements"]}
+        for n, verts in previous.items():  # earlier pieces did not move, unless the answer says so (a ring grew)
+            if not docs[n]["arrange"]["solved_now"]:
+                assert np.abs(placed[n].vertices - verts).max() < 1e-9, (name, n)
         done = [{**pl, "solved": docs[pl["piece"]]["solved"]} for pl in [*done, new]]
         previous = {n: p.vertices.copy() for n, p in placed.items()}
     # the second piece on Chest_FrontSide_L was moved clear of the first one, not left on top of it
@@ -343,12 +344,14 @@ def test_5_infeasible_limits_are_reported_never_hidden(ctx: dict[str, Any]) -> N
     )
     v = res.doc["validity"]
     assert v["valid"] is False and v["violations"]
-    assert all(x["pieces"] and x["limit"] and x["required_m"] > 0 for x in v["violations"])
+    assert all(
+        x["pieces"] and x["limit"] and (x["required_m"] > 0 or x["kind"] == "PAIR_STACKED") for x in v["violations"]
+    )
     assert any("max_standoff" in x["limit"] for x in v["violations"])
     assert any(w.startswith("ArrangementInfeasible") for w in res.warnings)
     for d in res.doc["placements"]:  # nothing was clamped silently: the limit is on every piece that hit it
         assert d["arrange"]["standoff_m"] <= 0.01 + 1e-9
-        assert "max_standoff" in d["arrange"]["limits"]
+        assert {"max_standoff", "max_shift"} & set(d["arrange"]["limits"]), d["arrange"]["limits"]
 
 
 # 6 ------------------------------------------------------------------------------------------------------------

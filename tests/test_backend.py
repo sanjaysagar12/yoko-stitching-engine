@@ -264,7 +264,13 @@ def test_half_piece_errors_have_specific_codes(client: TestClient, shirt: dict[s
             "derived_pieces": DERIVED,
         },
     )
-    assert bad_ref.status_code == 422 and bad_ref.json()["error"]["code"] == "reference_not_on_axis"
+    # an off-axis reference is replaced by the named point on the mirror axis nearest in height (alignment_pairs.md)
+    assert bad_ref.status_code == 200, bad_ref.text
+    adjusted = bad_ref.json()
+    assert any(w.startswith("REFERENCE_ADJUSTED") for w in adjusted["warnings"])
+    assert (
+        {p["reference"] for p in adjusted["placements"]} == {adjusted["placements"][0]["reference"]} != {"bbox_centre"}
+    )
     no_mirror = client.post(
         "/api/pair",
         json={

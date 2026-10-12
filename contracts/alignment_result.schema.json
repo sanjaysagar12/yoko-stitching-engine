@@ -179,7 +179,10 @@
                     "GAP_PIECES",
                     "SIZE_CHANGED",
                     "PAIR_ASYMMETRY",
-                    "PAIR_STACKED"
+                    "PAIR_STACKED",
+                    "PAIR_NO_ROOM",
+                    "STANDOFF_EXCEEDED",
+                    "NOT_AT_POINT"
                   ]
                 }
               },
@@ -258,6 +261,49 @@
               "pair_with": {
                 "type": "string",
                 "description": "the other half of its mirror pair (empty if none)"
+              },
+              "anchor": {
+                "type": "object",
+                "description": "axial registration of a limb piece (auto, point, root, tip) and why",
+                "properties": {
+                  "mode": {
+                    "enum": [
+                      "point",
+                      "root",
+                      "tip"
+                    ]
+                  },
+                  "shift_m": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "shift_m",
+                  "reason"
+                ],
+                "additionalProperties": false
+              },
+              "reasons": {
+                "type": "object",
+                "description": "why the piece has its radius and its slide",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "point_distance_m": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "distance from the arrangement point to the nearest part of the piece"
+              },
+              "slide_m": {
+                "type": "number",
+                "description": "slide of the solver away from the anchor (s, t)"
               }
             },
             "additionalProperties": false
@@ -433,7 +479,6 @@
         "required": [
           "id",
           "source",
-          "axis",
           "origin_shift_m",
           "obj",
           "bundle",
@@ -445,6 +490,12 @@
           },
           "source": {
             "type": "string"
+          },
+          "op": {
+            "enum": [
+              "mirror",
+              "copy"
+            ]
           },
           "axis": {
             "$ref": "#/$defs/axis"
@@ -672,7 +723,9 @@
                   "STANDOFF_EXCEEDED",
                   "SIZE_CHANGED",
                   "PAIR_ASYMMETRY",
-                  "PAIR_STACKED"
+                  "PAIR_STACKED",
+                  "PAIR_NO_ROOM",
+                  "NOT_AT_POINT"
                 ]
               },
               "pieces": {
@@ -699,6 +752,10 @@
               },
               "limit": {
                 "type": "string"
+              },
+              "hint": {
+                "type": "string",
+                "description": "what to change to make the placement valid"
               }
             },
             "additionalProperties": false
@@ -781,7 +838,9 @@
                   "STANDOFF_EXCEEDED",
                   "SIZE_CHANGED",
                   "PAIR_ASYMMETRY",
-                  "PAIR_STACKED"
+                  "PAIR_STACKED",
+                  "PAIR_NO_ROOM",
+                  "NOT_AT_POINT"
                 ]
               },
               "pieces": {
@@ -808,6 +867,10 @@
               },
               "limit": {
                 "type": "string"
+              },
+              "hint": {
+                "type": "string",
+                "description": "what to change to make the placement valid"
               }
             },
             "additionalProperties": false
@@ -815,6 +878,10 @@
         },
         "pairs_ok": {
           "type": "boolean"
+        },
+        "placement_ok": {
+          "type": "boolean",
+          "description": "every piece sits at its point, inside the limits"
         }
       },
       "additionalProperties": false

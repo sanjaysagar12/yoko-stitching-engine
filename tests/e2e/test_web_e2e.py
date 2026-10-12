@@ -143,7 +143,7 @@ def test_wrap_control_calls_the_backend_and_keeps_the_size(page: Any) -> None:
     assert r["wrapped_mesh"]["vertices"] and r["bbox_cm"]["width"] == pytest.approx(37.25, abs=0.01)
     with page.expect_response(lambda r: r.url.endswith("/api/align")) as info:
         page.fill("[data-testid=ctl-rotation]", "10")
-        page.press("[data-testid=ctl-rotation]", "Enter")
+        page.dispatch_event("[data-testid=ctl-rotation]", "change")
     assert info.value.status == 200
 
 
@@ -213,6 +213,44 @@ def test_a_side_pair_for_sleeves(page: Any, server: str) -> None:
     a, b = placements["ShortSleeve"]["reference_position_m"], placements["ShortSleeve_L"]["reference_position_m"]
     assert abs(a[0] + b[0]) < 0.005 and abs(a[1] - b[1]) < 0.005 and abs(a[2] - b[2]) < 0.005
     assert page.input_value("[data-testid=ctl-wrap]") == "roll"  # limb points roll around the arm (size exact)
+
+
+def test_clone_makes_plain_copies_that_are_never_a_pair(page: Any, server: str) -> None:
+    fresh(page, server)
+    page.click("[data-testid=piece-ShortSleeve]")
+    click_point(page, "UpperArm_Outer_R")
+    page.fill("[data-testid=ctl-rotation]", "15")
+    with page.expect_response(lambda r: r.url.endswith("/api/align")):
+        page.dispatch_event("[data-testid=ctl-rotation]", "change")
+    page.click("[data-testid=copy-open]")
+    page.wait_for_selector("[data-testid=copy-dialog]")
+    assert page.input_value("[data-testid=copy-name]") == "ShortSleeve_copy"  # never _L / _R for a copy
+    page.fill("[data-testid=copy-count]", "3")
+    assert page.is_checked("[data-testid=copy-place-counterpart]")
+    with page.expect_request(lambda r: r.url.endswith("/api/align")) as req, page.expect_response(
+        lambda r: r.url.endswith("/api/align")
+    ) as resp:
+        page.click("[data-testid=copy-create]")
+    assert page.evaluate("window.__fit.state().derived") == ["ShortSleeve_copy", "ShortSleeve_copy2", "ShortSleeve_copy3"]
+    sent = req.value.post_data_json
+    assert all(d["op"] == "copy" and "axis" not in d for d in sent["derived_pieces"])
+    doc = resp.value.json()
+    placements = {p["piece"]: p for p in doc["placements"]}
+    a, b = placements["ShortSleeve"], placements["ShortSleeve_copy"]
+    asked = {p["piece"]: p for p in sent["placements"]}
+    assert b["point"] == "UpperArm_Outer_L" and asked["ShortSleeve_copy"]["rotation_deg"] == 15  # same rotation
+    assert a["arrange"]["pair_with"] == b["arrange"]["pair_with"] == ""
+    assert doc["validity"]["valid"] and not any(v["kind"].startswith("PAIR_") for v in doc["validity"]["violations"])
+    assert "copy of ShortSleeve" in page.inner_text("[data-testid=piece-ShortSleeve_copy]")
+    # a copy has no pair rows (and neither has its source, which has no mirror clone)
+    assert page.evaluate("window.__fit.state().selectedPiece") == "ShortSleeve_copy"  # the new copy is selected
+    page.wait_for_selector("[data-testid=copy-of]")
+    assert page.query_selector("[data-testid^=pair-same-]") is None
+    page.click("[data-testid=piece-ShortSleeve]")
+    assert page.query_selector("[data-testid^=pair-same-]") is None
+    page.click("[data-testid=piece-ShortSleeve_copy2]")
+    page.click("[data-testid=derived-delete]")
+    assert page.evaluate("window.__fit.state().derived") == ["ShortSleeve_copy", "ShortSleeve_copy3"]
 
 
 def test_back_points_are_not_pickable_in_the_front_view_until_xray(page: Any, server: str) -> None:

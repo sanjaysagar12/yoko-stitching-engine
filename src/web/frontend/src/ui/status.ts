@@ -9,10 +9,12 @@ import { h } from "./dom";
 const KIND: Record<Violation["kind"], string> = {
   CLEARANCE_BODY: "too close to the body",
   GAP_PIECES: "gap too small",
-  STANDOFF_EXCEEDED: "standoff limit",
+  STANDOFF_EXCEEDED: "too far from its point (standoff)",
+  NOT_AT_POINT: "slid away from its point",
   SIZE_CHANGED: "size changed",
   PAIR_ASYMMETRY: "mirror pair not symmetric",
   PAIR_STACKED: "mirror pair stacked, not side by side",
+  PAIR_NO_ROOM: "mirror pair has no room to sit side by side",
 };
 
 const cm = (m: number | null): string => (m === null ? "-" : `${formatCm(m * 100, 1)} cm`);
@@ -46,7 +48,7 @@ export function mountStatus(host: HTMLElement, store: Store, actions: Actions): 
       h(
         "button",
         { class: "status-violation", "data-testid": `status-violation-${i}`, title: "Show where", onclick: () => actions.focusViolation(i) },
-        `${x.pieces.join(" / ")}: ${KIND[x.kind]}` + (x.kind === "SIZE_CHANGED" ? "" : ` ${cm(x.value_m)} (needs ${cm(x.required_m)})`) + (x.limit && x.limit !== "none" ? ` [${x.limit}]` : ""),
+        `${x.pieces.join(" / ")}: ${KIND[x.kind]}` + (x.kind === "SIZE_CHANGED" ? "" : ` ${cm(x.value_m)} (needs ${cm(x.required_m)})`) + (x.limit && x.limit !== "none" ? ` [${x.limit}]` : "") + (x.hint ? ` - ${x.hint}` : ""),
       ),
     );
     strip.replaceChildren(

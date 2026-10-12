@@ -1,7 +1,7 @@
 // Right panel: the selected piece (clone, pair, placement controls, side, notices, scale check).
 import { formatCm, splitWarning } from "../lib";
 import type { Store } from "../state";
-import type { PairMode, PieceInfo, PlacedResult, WrapMode } from "../types";
+import type { PairMode, PieceInfo, PlacedResult, Placement, WrapMode } from "../types";
 import { RING_NAMES } from "../types";
 import type { Actions } from "./actions";
 import { h } from "./dom";
@@ -77,11 +77,14 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
     const layer = h("select", { "data-testid": "ctl-layer", disabled: off, title: "0 sits on the shell, 1 and 2 float above it (pockets, flaps)" }, h("option", { value: "" }, "automatic"), ...[0, 1, 2].map((n) => h("option", { value: n }, String(n))));
     layer.value = pl?.layer === undefined ? "" : String(pl.layer);
     layer.addEventListener("change", () => actions.updatePlacement(name, { layer: layer.value === "" ? undefined : Number(layer.value) }));
+    const anchor = h("select", { "data-testid": "ctl-anchor", disabled: off, title: "Arm and leg pieces: where along the limb (auto: a sleeve longer than the point's volume sits with its cap at the shoulder)" }, ...["auto", "point", "root", "tip"].map((n) => h("option", { value: n }, n)));
+    anchor.value = pl?.anchor ?? "auto";
+    anchor.addEventListener("change", () => actions.updatePlacement(name, { anchor: anchor.value === "auto" ? undefined : (anchor.value as Placement["anchor"]) }));
     const arr = res?.arrange;
 
-    // -- pairs: a base piece with clones, or a clone with its source -------------------------------------------------
+    // -- pairs: a base piece with mirror clones, or a mirror clone with its source (copies are never pairs) -----------
     const sourceName = info.mirror_of ?? name;
-    const clones = s.derived.filter((d) => d.source === sourceName);
+    const clones = s.derived.filter((d) => d.source === sourceName && d.op !== "copy");
     const pairBox = h("div", { class: "pair-box", "data-testid": "pair-box" });
     if (clones.length > 0) {
       pairBox.append(h("h3", {}, "Pairs"));
@@ -126,11 +129,13 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
     put(
       h("div", { class: "pname-big" }, name),
       info.mirror_of ? h("div", { class: "meta", "data-testid": "mirror-of" }, `⇆ linked mirrored copy of ${info.mirror_of}`) : null,
+      info.copy_of ? h("div", { class: "meta", "data-testid": "copy-of" }, `⧉ exact copy of ${info.copy_of}`) : null,
       h(
         "div",
         { class: "btn-row" },
+        h("button", { class: "btn", "data-testid": "copy-open", title: "Exact copies, same orientation", onclick: () => actions.openCopy(name) }, "Clone"),
         h("button", { class: "btn", "data-testid": "clone-open", onclick: () => actions.openClone(name) }, "Clone & mirror"),
-        info.mirror_of ? h("button", { class: "btn danger", "data-testid": "derived-delete", onclick: () => actions.deleteDerived(name) }, "Delete clone") : null,
+        info.mirror_of || info.copy_of ? h("button", { class: "btn danger", "data-testid": "derived-delete", onclick: () => actions.deleteDerived(name) }, "Delete clone") : null,
       ),
       h("div", { class: "placed-on", "data-testid": "placed-on" }, pl ? `placed on ${pl.point}` : "not placed - click an arrangement point"),
       res ? h("div", { class: `side side-${res.extends}`, "data-testid": "extends" }, `extends ${sideText}`) : null,
@@ -142,6 +147,7 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
       row("Reference", ref),
       row("Arrange: ring", ring),
       row("Arrange: layer", layer),
+      row("Arrange: limb anchor", anchor),
       row("Arrange: shift along axis (cm)", num("ctl-shift", pl?.shift_m ? pl.shift_m[1] * 100 : 0, 1, (v) => actions.updatePlacement(name, { shift_m: v ? [pl?.shift_m?.[0] ?? 0, v / 100] : undefined }))),
       row("Arrange: locked", check("ctl-locked", pl?.locked ?? false, (b) => actions.updatePlacement(name, { locked: b || undefined }))),
       arr
@@ -150,6 +156,9 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
             { class: "meta", "data-testid": "arrange-piece" },
             `${arr.mode ?? "placed"}${arr.ring ? ` on ${arr.ring}` : ""}, layer ${arr.layer}${arr.locked ? " (locked)" : ""}; standoff ${arr.standoff_m === null ? "-" : (arr.standoff_m * 100).toFixed(1) + " cm"} (display space, not ease); shift ${arr.shift_m.map((x) => (x * 100).toFixed(1)).join(" / ")} cm; body ${(arr.min_distance_to_avatar_m * 100).toFixed(1)} cm away`,
           )
+        : null,
+      arr && (arr.anchor || arr.reasons)
+        ? h("div", { class: "meta", "data-testid": "arrange-reasons" }, [arr.anchor?.reason, ...Object.entries(arr.reasons ?? {}).map(([k, v]) => `${k}: ${v}`)].filter(Boolean).join("; "))
         : null,
       h("button", { class: "btn danger", "data-testid": "ctl-remove", disabled: off, onclick: () => actions.removePlacement(name) }, "Remove placement"),
       pairBox,

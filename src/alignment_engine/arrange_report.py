@@ -51,11 +51,20 @@ def build_report(
     assert lay.check is not None
     o = lay.o
     lv = layers(lay)
-    violations = lay.violations() + pair_violations(_pair_views(lay))
+    pair_viol, pair_warns = pair_violations(_pair_views(lay))
+    violations = lay.violations() + pair_viol
+    flagged = {n for v in violations for n in v["pieces"]}
+    fits = {r: lay.fit_radius([j for j in lay.items if j.mode == "roll" and j.ring == r]) for r in lay.ring_names()}
+    checks = {it.index: _placement_check(lay, it, lv, it.name in flagged, fits) for it in lay.items}
+    violations += [v for c in checks.values() for v in c["violations"]]
+    violations = _pair_no_room(lay, violations)
     concentric = _concentric(lay)
-    warns: list[str] = []
+    warns: list[str] = [*pair_warns, *_arm_zone_warnings(lay)]
     for v in violations:
         names = " and ".join(v["pieces"])
+        if "hint" in v:
+            warns.append(f"{v['kind']}: {v['hint']}")
+            continue
         warns.append(
             f"{v['kind']}: {names} {'are' if len(v['pieces']) > 1 else 'is'} {v['value_m'] * 1000:.1f} mm "
             f"{'apart' if len(v['pieces']) > 1 else 'from the body'} (required {v['required_m'] * 1000:.0f} mm; "
@@ -95,8 +104,13 @@ def build_report(
             "min_distance_to_pieces_m": others,
             "required_gap_to_pieces_m": required,
             "flags": sorted(set(bad_pieces.get(it.name, []))),
-            "limits": sorted(it.piece.limits_hit) if it.piece is not None else [],
+            "limits": checks[it.index]["limits"],
+            "reasons": checks[it.index]["reasons"],
+            "point_distance_m": checks[it.index]["point_distance_m"],
+            "slide_m": checks[it.index]["slide_m"],
         }
+        if it.anchor is not None:
+            arr["anchor"] = it.anchor
         extras.append(
             {
                 "arrange": arr,
@@ -152,14 +166,16 @@ def build_report(
     clearance_ok = not any(v["kind"] == "CLEARANCE_BODY" for v in violations)
     gaps_ok = not any(v["kind"] == "GAP_PIECES" for v in violations)
     pairs_ok = not any(v["kind"].startswith("PAIR_") for v in violations)
+    placement_ok = not any(v["kind"] in ("STANDOFF_EXCEEDED", "NOT_AT_POINT") for v in violations)
     min_body = min((d for d, _ in lay.check.body.values()), default=None)
     min_pair = min((d for d, _, _ in lay.check.pairs.values()), default=None)
     validity = {
-        "valid": clearance_ok and gaps_ok and pairs_ok and not size_bad,
+        "valid": clearance_ok and gaps_ok and pairs_ok and placement_ok and not size_bad,
         "size_ok": not size_bad,
         "clearance_ok": clearance_ok,
         "gaps_ok": gaps_ok,
         "pairs_ok": pairs_ok,
+        "placement_ok": placement_ok,
         "max_size_change_pct": _r(max((max(p.size_check[k] for k in _PCT) for p in placed), default=0.0), 4),
         "min_distance_to_avatar_m": _r(min_body),
         "min_distance_between_pieces_m": _r(min_pair),
@@ -202,12 +218,56 @@ def _arc(lay: Layout, it: Item) -> tuple[float, float] | None:
     return arc(it.piece.world, c, a)
 
 
-def _pair_views(lay: Layout) -> list[tuple[PairView, PairView]]:
+def _pair_views(lay: Layout) -> list[tuple[PairView, PairView, bool]]:
+    """Both halves of every pair, and whether they share one ring (then they must not stack)."""
     out = []
-    for a, b, _ in lay.pairs:
+    for a, b, same in lay.pairs:
         if a.piece is not None and b.piece is not None:
-            out.append((PairView(a.name, a.piece.theta, _arc(lay, a)), PairView(b.name, b.piece.theta, _arc(lay, b))))
+            one_ring = same or (a.mode == "roll" and a.ring == b.ring)
+            out.append(
+                (
+                    PairView(a.name, a.piece.theta, _arc(lay, a), a.locked),
+                    PairView(b.name, b.piece.theta, _arc(lay, b), b.locked),
+                    one_ring,
+                )
+            )
     return out
+
+
+def _pair_no_room(lay: Layout, violations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """A pair whose halves cannot slide far enough apart within ``max_shift`` is one ``PAIR_NO_ROOM`` violation (with
+    what to change) instead of the gap, stacking and slide violations it causes."""
+    for a, b, _ in lay.pairs:
+        room = a.piece.pair_room if a.piece is not None else None
+        if room is None:
+            continue
+        need, avail = room
+        names = {a.name, b.name}
+        violations = [
+            v
+            for v in violations
+            if not (
+                (v["kind"] in ("GAP_PIECES", "PAIR_STACKED") and set(v["pieces"]) == names)
+                or (v["kind"] == "NOT_AT_POINT" and v["pieces"][0] in names)
+            )
+        ]
+        violations.append(
+            {
+                "kind": "PAIR_NO_ROOM",
+                "pieces": [a.name, b.name],
+                "value_m": round(need, 6),
+                "required_m": round(avail, 6),
+                "at_m": None,
+                "limit": "max_shift",
+                "hint": (
+                    f"{a.name} and {b.name} overlap at the centre line: each half needs an outward slide of "
+                    f"{need * 100:.1f} cm from {a.point.name} / {b.point.name} to be {lay.o.gap_piece * 100:.0f} cm "
+                    f"apart, max_shift allows {avail * 100:.1f} cm. Choose points farther apart, a reference nearer "
+                    "the centre-line edge, or a narrower piece (or raise max_shift)"
+                ),
+            }
+        )
+    return violations
 
 
 def _concentric(lay: Layout) -> list[str]:
@@ -374,4 +434,150 @@ def _seam_candidates(
                     }
                 )
     out.sort(key=lambda c: (c["distance_m"], c["a"]["piece"], c["b"]["piece"], c["a"]["edge"], c["b"]["edge"]))
+    return out
+
+
+MAX_SLIDE = 0.15  # a solver slide farther than this from the anchor leaves the piece off its point (NOT_AT_POINT)
+
+
+def _placement_check(
+    lay: Layout, it: Item, lv: dict[int, int], flagged: bool, fits: dict[str, float]
+) -> dict[str, Any]:
+    """Does the piece sit at its point, inside the limits? Limits, the explanation of its radius and slide, and the
+    ``STANDOFF_EXCEEDED`` / ``NOT_AT_POINT`` violations (with a hint) when it does not. Locked pieces are the user's."""
+    out: dict[str, Any] = {"limits": [], "reasons": {}, "point_distance_m": None, "slide_m": 0.0, "violations": []}
+    p = it.piece
+    if p is None or p.surface is None:
+        return out
+    o, surf, th = lay.o, p.surface, p.theta
+    limits = set(p.limits_hit)
+    if surf.kind == "cylinder" and th[0] >= p.r_max - 1e-6:  # at the limit, or wider than it allows
+        limits.add("max_standoff")
+    if not flagged:  # the solver stopped short of its margin, but the measured layout holds: no limit mattered
+        limits.discard("iterations")
+    pt = it.point
+    surface_point = pt.position - pt.offset_m * pt.normal / np.linalg.norm(pt.normal)
+    out["point_distance_m"] = _r(float(np.linalg.norm(p.world - surface_point, axis=1).min()))
+    slide = float(np.linalg.norm(th[1:] - p.theta0[1:]))
+    out["slide_m"] = _r(slide)
+    standoff = surf.standoff(th)
+    gl = o.gap_layer if o.gap_layer is not None else o.gap_piece
+    if surf.kind == "cylinder":
+        fit = fits.get(it.ring, 0.0) if it.mode == "roll" else 0.0
+        base = {"piece width": p.r_min, "ring fit": fit, "body clearance": it.needed_radius}
+        why, r_need = max(base.items(), key=lambda kv: kv[1])
+        r_need += lv.get(it.index, 0) * gl
+        explained = r_need - surf.r_skin
+        if lv.get(it.index, 0):
+            why += f", layer {lv[it.index]} ({it.layer_reason or 'solver'})"
+        if th[0] > r_need + 0.002:
+            why = f"solver: {(th[0] - r_need) * 100:.1f} cm out to clear the body or a piece (needs {why})"
+        out["reasons"]["radius"] = f"{th[0] * 100:.1f} cm: {why}"
+    else:
+        explained = float(p.theta0[0])
+        out["reasons"]["radius"] = f"offset {th[0] * 100:.1f} cm from the point"
+    if slide > 0.001:
+        out["reasons"]["shift"] = f"solver slid it {slide * 100:.1f} cm from its anchor to clear the body or a piece"
+    elif it.anchor is not None and abs(it.anchor["shift_m"]) > 1e-6:
+        out["reasons"]["shift"] = it.anchor["reason"]
+    if it.locked:
+        out["limits"] = sorted(limits)
+        return out
+    # what the ring needs, plus room for the solver to keep the clearance and one gap to a neighbour
+    allowed = max(o.max_standoff_from_point, explained + o.clearance_body + o.gap_piece)
+    if "max_standoff" in limits or standoff > allowed + 1e-4:
+        req = o.max_standoff if "max_standoff" in limits else allowed
+        out["violations"].append(
+            _violation("STANDOFF_EXCEEDED", it, standoff, req, _hint(lay, it, standoff, req), limits)
+        )
+    if "max_shift" in limits or slide > min(MAX_SLIDE, o.max_shift) + 1e-4:
+        req = min(MAX_SLIDE, o.max_shift)
+        hint = (
+            f"{it.name} had to slide {slide * 100:.0f} cm from {pt.name} (at most {req * 100:.0f} cm) to clear the "
+            "body or other pieces: pick a free point or another reference, or move the piece that is in the way"
+        )
+        out["violations"].append(_violation("NOT_AT_POINT", it, slide, req, hint, limits))
+    out["limits"] = sorted(limits)
+    return out
+
+
+def _violation(kind: str, it: Item, value: float, required: float, hint: str, limits: set[str]) -> dict[str, Any]:
+    limit = ",".join(sorted(limits)) or "none"
+    return {
+        "kind": kind,
+        "pieces": [it.name],
+        "value_m": round(float(value), 6),
+        "required_m": round(float(required), 6),
+        "at_m": None,
+        "limit": limit,
+        "hint": hint,
+    }
+
+
+def _hint(lay: Layout, it: Item, standoff: float, allowed: float) -> str:
+    """What to change when a piece cannot sit close enough to its point."""
+    if standoff >= lay.o.max_standoff - 1e-6:
+        head = f"{it.name} reached max_standoff ({lay.o.max_standoff * 100:.0f} cm) at {it.point.name}"
+    else:
+        head = (
+            f"{it.name} sits {standoff * 100:.0f} cm from the body at {it.point.name} (at most {allowed * 100:.0f} cm)"
+        )
+    if it.ring.startswith(("arm_", "leg_")) or it.point.bv.startswith(("UpperArm", "Forearm", "Thigh", "Shin")):
+        return (
+            f'{head}: it does not fit around the limb there; try "anchor": "root" (or "tip"), another point of '
+            "the limb, or a smaller piece"
+        )
+    down = _arm_overlap(lay, it)
+    if down > 0.0:
+        side = it.point.name.rsplit("_", 1)[-1][:1]
+        alt = f"{it.point.bv}_FrontSide_{side}"
+        alt_txt = f" or use {alt}" if alt in lay.avatar.points else ""
+        return (
+            f"{head}: the T-pose arm lies under it; move it down {down * 100:.0f} cm (shift_m [0, "
+            f"{-down:.2f}]){alt_txt}"
+        )
+    return f"{head}: choose another point or reference, or a smaller piece"
+
+
+def _arm_overlap(lay: Layout, it: Item) -> float:
+    """How far a torso piece reaches above the bottom of a T-pose arm beside it (0 if no arm is under it)."""
+    p = it.piece
+    if p is None or it.ring != "torso":
+        return 0.0
+    v = lay.avatar.vertices
+    xs = p.world[:, 0]
+    best = 0.0
+    for side in ("arm_L", "arm_R"):
+        reg = lay.shells().regions.get(side)
+        if reg is None:
+            continue
+        arm = v[reg.vertex_ids]
+        under = arm[(arm[:, 0] >= xs.min()) & (arm[:, 0] <= xs.max())]
+        if len(under):
+            best = max(best, float(p.world[:, 1].max() - (under[:, 1].min() - lay.o.clearance_body)))
+    return best
+
+
+def _arm_zone_warnings(lay: Layout) -> list[str]:
+    """``ARM_ZONE``: a torso piece reaches into the space a sleeve needs around the arm (the arm axis beyond the
+    shoulder joint, within the arm radius plus clearance and gap); sleeves placed there slide outward along the arm."""
+    out: list[str] = []
+    vols = lay.avatar.volumes
+    for it in lay.items:
+        if it.ring != "torso" or it.piece is None:
+            continue
+        for s in ("L", "R"):
+            ua, fa = vols.get(f"UpperArm_{s}"), vols.get(f"Forearm_{s}")
+            if ua is None or fa is None:
+                continue
+            d = fa.end - ua.start
+            k = (it.piece.world - ua.start) @ d / (d @ d)
+            dist = np.linalg.norm(it.piece.world - (ua.start + np.clip(k, 0.0, 1.0)[:, None] * d), axis=1)
+            zone = ua.radius_m + lay.o.clearance_body + lay.o.gap_piece
+            inside = (k > 0.0) & (dist < zone)
+            if inside.any():
+                out.append(
+                    f"ARM_ZONE: {it.name} reaches {float((zone - dist[inside]).max()) * 100:.1f} cm into the space "
+                    f"around the {'left' if s == 'L' else 'right'} arm; a sleeve there slides outward along the arm"
+                )
     return out

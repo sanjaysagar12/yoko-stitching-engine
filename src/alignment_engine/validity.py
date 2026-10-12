@@ -301,15 +301,28 @@ class PairView:
     name: str
     theta: F64
     arc: tuple[float, float] | None
+    locked: bool = False
 
 
-def pair_violations(pairs: list[tuple[PairView, PairView]]) -> list[dict[str, Any]]:
-    """Mirror pairs must be one rigid pair: equal radius and axial shift, mirrored slide (``PAIR_ASYMMETRY``), and side
-    by side, never stacked: their arcs about the ring axis may not overlap (``PAIR_STACKED``)."""
+def pair_violations(pairs: list[tuple[PairView, PairView, bool]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """(violations, warnings). Mirror pairs must be one rigid pair: equal radius and axial shift, mirrored slide
+    (``PAIR_ASYMMETRY``). A centre-line pair (third element True: both halves on one point of one ring) must also lie
+    side by side, never stacked: their arcs about the ring axis may not overlap (``PAIR_STACKED``). A side pair (left /
+    right points, two rings) is naturally far apart: only its symmetry is checked.
+
+    A pair with exactly one locked half cannot follow its locked half when the requirements changed: its asymmetry is a
+    warning naming the lock, not a violation."""
     out: list[dict[str, Any]] = []
-    for a, b in pairs:
+    warns: list[str] = []
+    for a, b, same_ring in pairs:
         dev = float(max(abs(a.theta[0] - b.theta[0]), abs(a.theta[2] - b.theta[2]), abs(a.theta[1] + b.theta[1])))
-        if dev > PAIR_TOLERANCE:
+        if dev > PAIR_TOLERANCE and a.locked != b.locked:
+            lk = a.name if a.locked else b.name
+            warns.append(
+                f"PAIR_ASYMMETRY: {a.name} and {b.name} differ by {dev * 1000:.1f} mm; {lk} is locked (unlock it to "
+                "place the pair symmetrically)"
+            )
+        elif dev > PAIR_TOLERANCE:
             out.append(
                 {
                     "kind": "PAIR_ASYMMETRY",
@@ -320,7 +333,7 @@ def pair_violations(pairs: list[tuple[PairView, PairView]]) -> list[dict[str, An
                     "limit": "pair",
                 }
             )
-        if a.arc is not None and b.arc is not None:
+        if same_ring and a.arc is not None and b.arc is not None:
             shared = arc_overlap(a.arc, b.arc) * float(min(a.theta[0], b.theta[0]))
             if shared > PAIR_TOLERANCE:
                 out.append(
@@ -333,7 +346,7 @@ def pair_violations(pairs: list[tuple[PairView, PairView]]) -> list[dict[str, An
                         "limit": "pair",
                     }
                 )
-    return out
+    return out, warns
 
 
 def concentric_warnings(

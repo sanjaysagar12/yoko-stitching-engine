@@ -19,7 +19,7 @@ from scipy.spatial import cKDTree
 
 from . import contracts
 from .derived import Derived, build_derived, derived_doc, write_derived
-from .errors import UnknownMeasurementError, UnknownPieceError, UnknownPointError
+from .errors import AlignmentError, UnknownMeasurementError, UnknownPieceError, UnknownPointError
 from .loaders import Avatar, PieceInfo, PointRecord, read_avatar, read_pieces
 from .pairs import place_pair
 from .placement import apply_matrix, mirror_matrix, mirror_mesh, refine_mesh, rigid_matrix, target_frame
@@ -176,7 +176,9 @@ class AlignmentEngine:
                 raise UnknownPointError(pl["point"], list(avatar.points))
         options = ArrangeOptions.from_doc(spec.get("arrange_options"))
         cache = self._refine.setdefault(str(cache_dir or ""), RefineCache(cache_dir))
-        sources = {k: v.spec["source"] for k, v in derived.items()}
+        # mirror clones only: a copy is an ordinary piece and never half of a pair (arrange.py builds every pair,
+        # group and pair check from this map)
+        sources = {k: v.spec["source"] for k, v in derived.items() if v.op == "mirror"}
         tree = cKDTree(avatar.vertices)
 
         def place_distorting(pl: dict[str, Any], info: PieceInfo, source: str) -> PlacedPiece:
@@ -338,6 +340,8 @@ class AlignmentEngine:
         if derived_id not in derived:
             raise UnknownPieceError(derived_id, list(derived))
         d = derived[derived_id]
+        if d.op != "mirror" or d.mirrored.line_source is None:
+            raise AlignmentError(f"{derived_id!r} is a copy, not a mirror clone; place it like any other piece")
         dist: float | None = None
         fresh = {k: v for k, v in base_placement.items() if k != "solved"}  # both copies are solved anew, together
         if mode == "same_anchor":

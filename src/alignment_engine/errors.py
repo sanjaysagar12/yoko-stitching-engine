@@ -49,11 +49,14 @@ class WrapWidthExceededWarning(UserWarning):
 
 
 class DerivedOfDerivedError(AlignmentError):
-    """A derived piece whose source is itself a derived piece (not allowed: derive from the base piece)."""
+    """A mirror clone whose source is itself a derived piece (not allowed: mirror the base piece; copies may)."""
 
     def __init__(self, derived_id: str, source: str) -> None:
         self.derived_id = derived_id
-        super().__init__(f"derived piece {derived_id!r}: source {source!r} is itself derived; use the base piece")
+        super().__init__(
+            f"derived piece {derived_id!r}: source {source!r} is itself derived; mirror the base piece instead "
+            "(only a copy may be made of a derived piece)"
+        )
 
 
 class DuplicatePieceError(AlignmentError):

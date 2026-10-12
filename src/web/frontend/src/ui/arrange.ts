@@ -127,7 +127,7 @@ export function mountArrange(host: HTMLElement, store: Store, actions: Actions):
               "button",
               { class: "btn violation", "data-testid": `violation-${i}`, onclick: () => actions.focusViolation(i) },
               h("strong", {}, v.kind),
-              ` ${v.pieces.join(" / ")}: ${formatMm(v.value_m)} mm (needs ${formatMm(v.required_m)} mm)`,
+              v.hint ? ` ${v.hint}` : ` ${v.pieces.join(" / ")}: ${formatMm(v.value_m)} mm (needs ${formatMm(v.required_m)} mm)`,
             ),
           )),
     );

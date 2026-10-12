@@ -1,5 +1,6 @@
 // Application wiring: jobs -> build -> avatar, points, pieces -> select piece and point -> /api/align -> animate.
 // Half pieces: clone & mirror makes a linked derived piece; pairs are placed through /api/pair, never computed here.
+// Copies (clone, no mirror) are ordinary pieces: placed through /api/align like any other, never as a pair.
 import "./style.css";
 import { Box3, Vector2, Vector3 } from "three";
 import {
@@ -8,6 +9,7 @@ import {
   ApiFailure,
   buildStatus,
   clonePiece,
+  copyPiece,
   exportUrl,
   fetchBundle,
   fileUrl,
@@ -18,7 +20,7 @@ import {
   startBuild,
 } from "./api";
 import { AvatarView } from "./avatarView";
-import { formatMm, mirrorName, nearestPiece, VIOLATION_FRAME_M } from "./lib";
+import { formatMm, mirrorName, nearestPiece, VIOLATION_FRAME_M, withDependents } from "./lib";
 import { Occlusion } from "./occlusion";
 import { PiecesView } from "./piecesView";
 import { PointsView } from "./pointsView";
@@ -26,9 +28,9 @@ import { SceneKit } from "./scene";
 import { StitchView } from "./stitchView";
 import { defaultPlacement, Store } from "./state";
 import type { AlignResult, ApiError, ArrangeOptions, BuildResult, PairMode, PieceBundle, PieceInfo, Placement, Stitch } from "./types";
-import type { Actions, CloneRequest } from "./ui/actions";
+import type { Actions, CloneRequest, CopyRequest } from "./ui/actions";
 import { mountArrange } from "./ui/arrange";
-import { mountCloneDialog } from "./ui/cloneDialog";
+import { mountCloneDialog, mountCopyDialog } from "./ui/cloneDialog";
 import { mountControls } from "./ui/controls";
 import { mountErrors } from "./ui/errors";
 import { mountInspector } from "./ui/inspector";
@@ -159,14 +161,23 @@ const actions: Actions = {
   cloneAndPair(req) {
     return cloneAndPair(req);
   },
+  openCopy(piece) {
+    openCopyDialog(piece);
+  },
+  copyPieces(req) {
+    return copyPieces(req);
+  },
   deleteDerived(id) {
     const s = store.get();
-    store.set({ derived: s.derived.filter((d) => d.id !== id), selectedPiece: s.selectedPiece === id ? null : s.selectedPiece });
-    s.placements.delete(id);
-    s.placed.delete(id);
-    s.derivedInfos.delete(id);
-    s.referenceDraft.delete(id);
-    pieces.remove(id);
+    const gone = withDependents(s.derived, id); // copies made from this clone go with it
+    store.set({ derived: s.derived.filter((d) => !gone.has(d.id)), selectedPiece: s.selectedPiece && gone.has(s.selectedPiece) ? null : s.selectedPiece });
+    for (const g of gone) {
+      s.placements.delete(g);
+      s.placed.delete(g);
+      s.derivedInfos.delete(g);
+      s.referenceDraft.delete(g);
+      pieces.remove(g);
+    }
     store.touch("placements", "placed", "derivedInfos", "derived");
     scheduleAlign(0);
   },
@@ -291,8 +302,7 @@ async function ensureDerived(res: AlignResult): Promise<void> {
       name: d.id,
       status: "ok",
       source: d.source,
-      mirror_of: d.source,
-      axis: d.axis,
+      ...(d.op === "copy" ? { copy_of: d.source } : { mirror_of: d.source, axis: d.axis }),
       width_cm: d.bbox_cm.width,
       height_cm: d.bbox_cm.height,
       obj: `derived/${d.obj}`,
@@ -435,6 +445,38 @@ async function cloneAndPair(req: CloneRequest): Promise<void> {
     store.set({ pendingPoint: null });
     await placePair(req.source, req.id, req.mode, point);
   } else store.set({ pendingPair: { source: req.source, derivedId: req.id, mode: req.mode } });
+}
+
+/** Exact copies (ordinary pieces). Optionally the first goes on the counterpart of the source's side point with the
+ * same placement and rotation (a copy, not a mirror); otherwise it is selected and waits for a point click. */
+async function copyPieces(req: CopyRequest): Promise<void> {
+  const s = store.get();
+  if (!s.buildId || req.ids.length === 0) return;
+  try {
+    for (const id of req.ids) {
+      const info = await copyPiece(s.buildId, req.source, id, s.derived);
+      s.derived.push({ id, source: req.source, op: "copy" });
+      s.derivedInfos.set(id, info);
+      await pieces.addPiece(s.buildId, info);
+    }
+    store.set({ error: null });
+    store.touch("derived", "derivedInfos");
+  } catch (e) {
+    return fail(e);
+  }
+  const first = req.ids[0] as string;
+  const src = s.placements.get(req.source);
+  const known = new Set(s.build?.avatar.points.map((p) => p.name) ?? []);
+  const twin = src ? mirrorName(src.point, known) : null;
+  if (req.placeAtCounterpart && src && twin) {
+    const next: Placement = { ...src, piece: first, point: twin };
+    delete next.solved;
+    delete next.locked;
+    s.placements.set(first, next);
+    store.set({ selectedPiece: first });
+    store.touch("placements");
+    scheduleAlign(0);
+  } else actions.selectPiece(first); // placed on the next point click (or on the point chosen before)
 }
 
 // -- save and load ----------------------------------------------------------------------------------------------------------
@@ -600,6 +642,7 @@ mountControls(must("right"), store, actions);
 mountErrors(must("view"), store);
 mountStatus(must("view"), store, actions);
 const openCloneDialog = mountCloneDialog(store, actions, inspector);
+const openCopyDialog = mountCopyDialog(store, actions);
 
 window.__fit = {
   pointClient(name) {

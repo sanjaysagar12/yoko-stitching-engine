@@ -70,6 +70,43 @@ export function cloneName(source: string, extendsSide?: "left" | "right" | "cent
   return `${source}_${extendsSide === "left" ? "R" : "L"}`;
 }
 
+/** ``count`` unused names ``base``, ``base2``, ``base3``, ... (the names of new copies: ``Pocket_copy``, ``Pocket_copy2``). */
+export function copyNames(base: string, count: number, taken: ReadonlySet<string>): string[] {
+  const out: string[] = [];
+  for (let i = 1; out.length < count; i++) {
+    const n = i === 1 ? base : `${base}${i}`;
+    if (!taken.has(n)) out.push(n);
+  }
+  return out;
+}
+
+/** ``id`` and every derived piece made from it, directly or through other derived pieces (deleted together). */
+export function withDependents(defs: ReadonlyArray<{ id: string; source: string }>, id: string): Set<string> {
+  const out = new Set([id]);
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const d of defs) {
+      if (out.has(d.source) && !out.has(d.id)) {
+        out.add(d.id);
+        grew = true;
+      }
+    }
+  }
+  return out;
+}
+
+/** The base piece a derived piece was made from (following copies of derived pieces). */
+export function baseOf(defs: ReadonlyArray<{ id: string; source: string }>, id: string): string {
+  const seen = new Set<string>();
+  let d = defs.find((x) => x.id === id);
+  while (d && !seen.has(d.id)) {
+    seen.add(d.id);
+    id = d.source;
+    d = defs.find((x) => x.id === id);
+  }
+  return id;
+}
+
 /** Metres as millimetres with one decimal ("30.1"); "-" when unknown or not finite. */
 export const formatMm = (m: number | null | undefined): string => (m === null || m === undefined || !Number.isFinite(m) ? "-" : (m * 1000).toFixed(1));
 

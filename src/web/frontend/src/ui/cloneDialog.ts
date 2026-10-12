@@ -1,5 +1,6 @@
 // Clone & mirror dialog: choose the mirror axis, the name of the copy, and whether to place the pair right away.
-import { cloneName } from "../lib";
+// Clone dialog: exact copies (same orientation, no axis), a name, how many, and whether to place one at the counterpart.
+import { cloneName, copyNames } from "../lib";
 import type { Store } from "../state";
 import type { Axis, PairMode } from "../types";
 import type { Actions } from "./actions";
@@ -127,4 +128,39 @@ export function mountCloneDialog(store: Store, actions: Actions, inspector: Insp
     dialog.show(); // non-modal, so the outline in the side panel stays clickable
   };
   return open;
+}
+
+export function mountCopyDialog(store: Store, actions: Actions): (piece: string) => void {
+  const dialog = h("dialog", { class: "clone-dialog", "data-testid": "copy-dialog" });
+  document.body.append(dialog);
+
+  return (piece: string): void => {
+    const s = store.get();
+    const taken = new Set([...(s.build?.pieces ?? []).map((p) => p.name), ...s.derived.map((d) => d.id)]);
+    const nameIn = h("input", { type: "text", value: copyNames(`${piece}_copy`, 1, taken)[0] ?? "", "data-testid": "copy-name" });
+    const countIn = h("input", { type: "number", min: 1, max: 10, step: 1, value: 1, "data-testid": "copy-count" });
+    const placeIn = h("input", { type: "checkbox", "data-testid": "copy-place-counterpart" });
+    placeIn.checked = true;
+    const msg = h("div", { class: "warn", "data-testid": "copy-msg" });
+    const close = (): void => dialog.close();
+    const create = (): void => {
+      const name = nameIn.value.trim();
+      const count = Number(countIn.value);
+      if (!/^[A-Za-z0-9_.-]+$/.test(name)) return void (msg.textContent = "The name may use letters, digits, _ . - only.");
+      if (taken.has(name)) return void (msg.textContent = `${name} is already used.`);
+      if (!Number.isInteger(count) || count < 1 || count > 10) return void (msg.textContent = "Make 1 to 10 copies.");
+      close();
+      void actions.copyPieces({ source: piece, ids: copyNames(name, count, taken), placeAtCounterpart: placeIn.checked });
+    };
+    dialog.replaceChildren(
+      h("h3", {}, `Clone ${piece}`),
+      h("p", { class: "meta" }, "Exact copies, same orientation: pieces cut twice or identical pieces (pockets, belt loops). For left/right halves use Clone & mirror."),
+      h("label", { class: "row2" }, "Name ", nameIn),
+      h("label", { class: "row2" }, "Copies ", countIn),
+      h("label", { class: "radio" }, placeIn, "Place at the counterpart point now (same rotation)"),
+      msg,
+      h("div", { class: "dialog-buttons" }, h("button", { class: "btn", "data-testid": "copy-cancel", onclick: close }, "Cancel"), h("button", { class: "btn primary", "data-testid": "copy-create", onclick: create }, "Create")),
+    );
+    dialog.show();
+  };
 }

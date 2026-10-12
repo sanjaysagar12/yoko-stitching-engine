@@ -1,5 +1,6 @@
-// Left panel: pieces (name, size in cm). Derived (mirrored) pieces are nested under their source with a link label.
-import { formatCm } from "../lib";
+// Left panel: pieces (name, size in cm). Derived pieces (mirrored clones, copies) are nested under their base piece with
+// a link label.
+import { baseOf, formatCm } from "../lib";
 import type { Store } from "../state";
 import type { PieceInfo } from "../types";
 import type { Actions } from "./actions";
@@ -32,6 +33,7 @@ export function mountPieceList(host: HTMLElement, store: Store, actions: Actions
       h("span", { class: "pname" }, nested ? `↳ ${p.name}` : p.name),
       h("span", { class: "psize" }, `${formatCm(p.width_cm)} x ${formatCm(p.height_cm)} cm`),
       p.mirror_of ? h("span", { class: "plink", title: `linked mirrored copy of ${p.mirror_of}` }, `⇆ mirror of ${p.mirror_of}`) : null,
+      p.copy_of ? h("span", { class: "plink", "data-testid": `copy-badge-${p.name}`, title: `exact copy of ${p.copy_of}` }, `⧉ copy of ${p.copy_of}`) : null,
       placed ? h("span", { class: "pplaced" }, `on ${placed.point}${side}`) : null,
     );
     const hiddenNow = s.hiddenPieces.has(p.name);
@@ -55,7 +57,7 @@ export function mountPieceList(host: HTMLElement, store: Store, actions: Actions
     if (s.pendingPair) children.push(h("div", { class: "hint", "data-testid": "pending-pair" }, `Click an arrangement point to place ${s.pendingPair.source} and ${s.pendingPair.derivedId} as a pair`));
     for (const p of s.build?.pieces ?? []) {
       children.push(row(p, false));
-      for (const d of s.derived.filter((x) => x.source === p.name)) {
+      for (const d of s.derived.filter((x) => baseOf(s.derived, x.id) === p.name)) {
         const info = s.derivedInfos.get(d.id);
         if (info) children.push(row(info, true));
       }

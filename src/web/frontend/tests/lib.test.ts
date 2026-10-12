@@ -1,8 +1,10 @@
 import { Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import {
+  baseOf,
   bodyPart,
   cloneName,
+  copyNames,
   formatCm,
   formatSigned,
   layoutOffsets,
@@ -10,6 +12,7 @@ import {
   mirrorName,
   partColor,
   splitWarning,
+  withDependents,
 } from "../src/lib";
 import { defaultPlacement, defaultWrap } from "../src/state";
 
@@ -77,6 +80,23 @@ describe("point and piece names", () => {
     expect(cloneName("FrontPanel", "left")).toBe("FrontPanel_R");
     expect(cloneName("FrontPanel", "right")).toBe("FrontPanel_L");
     expect(cloneName("FrontPanel")).toBe("FrontPanel_L");
+  });
+  it("names copies X_copy, X_copy2, ... skipping used names, never _L / _R", () => {
+    expect(copyNames("Pocket_copy", 3, new Set())).toEqual(["Pocket_copy", "Pocket_copy2", "Pocket_copy3"]);
+    expect(copyNames("Pocket_copy", 1, new Set(["Pocket_copy"]))).toEqual(["Pocket_copy2"]);
+    expect(copyNames("Pocket_copy", 2, new Set(["Pocket_copy2"]))).toEqual(["Pocket_copy", "Pocket_copy3"]);
+  });
+  it("deletes a derived piece with the copies made from it, and finds the base piece of a copy", () => {
+    const defs = [
+      { id: "S_L", source: "S", op: "mirror" as const },
+      { id: "S_L_copy", source: "S_L", op: "copy" as const },
+      { id: "S_L_copy_copy", source: "S_L_copy", op: "copy" as const },
+      { id: "P_copy", source: "P", op: "copy" as const },
+    ];
+    expect([...withDependents(defs, "S_L")].sort()).toEqual(["S_L", "S_L_copy", "S_L_copy_copy"]);
+    expect([...withDependents(defs, "P")].sort()).toEqual(["P", "P_copy"]);
+    expect(baseOf(defs, "S_L_copy_copy")).toBe("S");
+    expect(baseOf(defs, "P")).toBe("P");
   });
 });
 

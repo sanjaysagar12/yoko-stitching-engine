@@ -83,6 +83,10 @@ export const arrange = (
 export const clonePiece = (build: string, source: string, axis: Axis, id: string): Promise<PieceInfo> =>
   request<PieceInfo>("/api/clone", json("POST", { build, source, axis, id }));
 
+/** Make an exact copy of a piece (same orientation; ``derived`` lets it copy a derived piece). */
+export const copyPiece = (build: string, source: string, id: string, derived: DerivedDef[]): Promise<PieceInfo> =>
+  request<PieceInfo>("/api/clone", json("POST", { build, source, id, op: "copy", derived_pieces: derived }));
+
 /** Placements for a piece and its clone (same anchor on the centre line, or mirrored anchor on the other side). */
 export const pairPlacements = (
   build: string,

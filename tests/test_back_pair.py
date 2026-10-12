@@ -44,7 +44,8 @@ def front(point: str = "Chest_Front") -> list[dict[str, Any]]:
 SCENARIOS = {
     "A_tests_layout": front() + [pl("BackPanel", "Chest_Back", "A24"), pl("BackPanel_L", "Chest_Back", "A24")],
     "B_back_bbox_centre": front() + [pl("BackPanel", "Chest_Back"), pl("BackPanel_L", "Chest_Back")],
-    "C_front_on_neck": front("Neck_Front") + [pl("BackPanel", "Chest_Back", "A24"), pl("BackPanel_L", "Chest_Back", "A24")],
+    "C_front_on_neck": front("Neck_Front")
+    + [pl("BackPanel", "Chest_Back", "A24"), pl("BackPanel_L", "Chest_Back", "A24")],
     "D_back_on_sides": front()
     + [pl("BackPanel", "Chest_BackSide_R", "A24"), pl("BackPanel_L", "Chest_BackSide_L", "A24")],
     "F_back_first": [pl("BackPanel", "Chest_Back", "A24"), pl("BackPanel_L", "Chest_Back", "A24"), *front()],
@@ -64,8 +65,14 @@ def ctx(shirt_pieces: Path, refine_cache: Path, tmp_path_factory: pytest.TempPat
     d = tmp_path_factory.mktemp("back_pair")
     av = build_avatar(d / "avatar")
     a = read_avatar(av)
-    return {"avatar": av, "pieces": shirt_pieces, "derived": d / "derived", "cache": refine_cache, "av": a,
-            "surface": AvatarSurface(a.vertices, a.faces)}
+    return {
+        "avatar": av,
+        "pieces": shirt_pieces,
+        "derived": d / "derived",
+        "cache": refine_cache,
+        "av": a,
+        "surface": AvatarSurface(a.vertices, a.faces),
+    }
 
 
 def call(ctx: dict[str, Any], method: str, pls: list[dict[str, Any]], eng: AlignmentEngine | None = None) -> Any:
@@ -161,7 +168,11 @@ def test_validity_catches_a_stacked_pair(ctx: dict[str, Any]) -> None:
     """The old failure: the clone one layer out over its source. Locked, so nothing re-solves it."""
     pls = [
         {**pl("FrontPanel", "Chest_Front", "A32"), "locked": True, "solved": {"radius_m": 0.21, "shift_m": [0.0, 0.0]}},
-        {**pl("FrontPanel_L", "Chest_Front", "A32"), "locked": True, "solved": {"radius_m": 0.24, "shift_m": [0.05, 0.0]}},
+        {
+            **pl("FrontPanel_L", "Chest_Front", "A32"),
+            "locked": True,
+            "solved": {"radius_m": 0.24, "shift_m": [0.05, 0.0]},
+        },
     ]
     res = call(ctx, "align", pls)
     v = res.doc["validity"]

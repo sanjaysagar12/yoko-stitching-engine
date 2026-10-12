@@ -115,12 +115,14 @@ class AvatarSurface:
 
         Only points within ``within`` of the surface are measured exactly (the others get ``inf`` and a zero direction):
         the direction is from the closest surface point to the point (its negative inside the body), or the outward
-        triangle normal when the point is on the surface.
+        triangle normal when the point is on the surface. ``last_tri`` keeps the closest triangle of each point (-1 if
+        none was measured; deep points get the triangle of their nearest vertex).
         """
         d, idx = self.tree.query(points, k=8, distance_upper_bound=within + 0.01, workers=-1)
         near = np.flatnonzero(np.isfinite(d[:, 0]))
         sd = np.full(len(points), np.inf)
         direction = np.zeros((len(points), 3))
+        self.last_tri = np.full(len(points), -1, dtype=np.int64)
         if len(near):
             cand = self.owner[np.where(np.isfinite(d[near]), idx[near], idx[near, :1])]
             pp = np.repeat(points[near], cand.shape[1], axis=0)
@@ -136,11 +138,13 @@ class AvatarSurface:
             ok = dist > 1e-6
             direction[near] = np.where(ok[:, None], vec / np.maximum(dist, 1e-12)[:, None], nrm)
             sd[near] = sign * dist
+            self.last_tri[near] = best
         far = np.flatnonzero(~np.isfinite(d[:, 0]))
         if len(far):  # deep inside the body is not "far": at least ``within`` deep, pushed out along the vertex normal
             deep, vn = self.inside(points[far])
             sd[far[deep]] = -within
             direction[far[deep]] = vn[deep]
+            self.last_tri[far[deep]] = self.vertex_tri[self._vtree.query(points[far[deep]])[1]]
         return sd, direction, sd < within
 
     def inside(self, points: F64) -> tuple[NDArray[np.bool_], F64]:
@@ -155,6 +159,8 @@ class AvatarSurface:
                 np.add.at(n, self.faces[:, k], fn)
             self._vnormals = n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-18)
             self._vtree = cKDTree(self.vertices)
+            self.vertex_tri = np.zeros(len(self.vertices), dtype=np.int64)  # one triangle of every vertex
+            self.vertex_tri[self.faces.ravel()] = np.repeat(np.arange(len(self.faces)), 3)
         _, j = self._vtree.query(points, workers=-1)
         vn = self._vnormals[j]
         return np.einsum("ij,ij->i", points - self.vertices[j], vn) < 0, vn

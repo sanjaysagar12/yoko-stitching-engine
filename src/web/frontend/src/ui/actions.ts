@@ -10,6 +10,14 @@ export interface CloneRequest {
   mode: PairMode;
 }
 
+export interface CopyRequest {
+  source: string;
+  /** Names of the new copies (one per copy). */
+  ids: string[];
+  /** If the source is on a side point: put the first copy on the counterpart point, same rotation. */
+  placeAtCounterpart: boolean;
+}
+
 export type ViewSide = "front" | "back" | "left" | "right" | "top";
 
 export interface Actions {
@@ -22,6 +30,8 @@ export interface Actions {
   setReference(piece: string, name: string): void;
   openClone(piece: string): void;
   cloneAndPair(req: CloneRequest): Promise<void>;
+  openCopy(piece: string): void;
+  copyPieces(req: CopyRequest): Promise<void>;
   deleteDerived(id: string): void;
   placePair(source: string, derivedId: string, mode: PairMode): void;
   /** Emphasise the two points of a mirrored-anchor pair (null to clear). */

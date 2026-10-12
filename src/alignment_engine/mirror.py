@@ -24,12 +24,13 @@ I64 = NDArray[np.int64]
 
 @dataclass(frozen=True)
 class MirroredPiece:
-    """Result of ``mirror_clone``: the new piece bundle, its mesh (z = 0) and the mirror line in source coordinates."""
+    """Result of ``mirror_clone`` / ``copy_clone``: the new piece bundle, its mesh (z = 0) and the mirror line in
+    source coordinates (None for a copy)."""
 
     bundle: dict[str, Any]
     vertices: F64
     faces: I64
-    line_source: tuple[F64, F64]  # (point on the line, unit direction) in the SOURCE piece's coordinates
+    line_source: tuple[F64, F64] | None  # (point on the line, unit direction) in the SOURCE piece's coordinates
 
 
 def _named(bundle: dict[str, Any], name: str) -> F64:
@@ -150,3 +151,27 @@ def mirror_clone(bundle: dict[str, Any], vertices: F64, faces: I64, axis: dict[s
     v3 = np.column_stack([refl, np.zeros(n)])
     f = np.ascontiguousarray(inv[np.asarray(faces)][:, [0, 2, 1]])
     return MirroredPiece(out, v3, f, (p0, d))
+
+
+def copy_clone(bundle: dict[str, Any], vertices: F64, faces: I64, new_id: str) -> MirroredPiece:
+    """An exact copy of a piece (same orientation; CLO3D "Duplicate"): a separate piece, never a mirror half.
+
+    Mesh, outline, named points, edges, fold edge, grainline, bbox, default reference and ``pattern_origin_m`` are the
+    source's; the copy records ``copy_of``, has no ``mirror_of`` / ``axis`` and ``origin_shift_m = [0, 0]``.
+    """
+    out = copy.deepcopy(bundle)
+    for k in ("mirror_of", "axis", "copy_of"):
+        out.pop(k, None)
+    out.update(
+        {
+            "schema_version": 3,
+            "name": new_id,
+            "obj": f"{new_id}_m.obj",
+            "copy_of": bundle["name"],
+            "origin_shift_m": [0.0, 0.0],
+        }
+    )
+    out.setdefault("pattern_origin_m", None)
+    v = np.array(vertices, dtype=np.float64)
+    f = np.array(faces, dtype=np.int64)
+    return MirroredPiece(out, v, f, None)

@@ -192,21 +192,60 @@ class PointBuilder:
             if n @ d < 0:
                 n = -n
             surf = origin + dist * d
-            near = np.flatnonzero(np.linalg.norm(v - surf, axis=1) < s.offset_m + 0.15)
-            tri_near = tri_all[np.flatnonzero(np.isin(faces, near).any(axis=1))]
-            delta = s.offset_m
-            for _ in range(8):  # make the point sit exactly offset_m from the surface, also in concave places
-                dmin = _dist_point_triangles(surf + delta * n, tri_near)
-                if abs(dmin - s.offset_m) < 1e-5:
-                    break
-                delta += s.offset_m - dmin
+            pos = self._offset(surf, n, s.offset_m, v, faces, tri_all, tris[k])
+            flat = s.wrap_direction == "flat"
+            if not _sane(pos, n, bv, s.offset_m, flat):  # re-cast: the owned vertex nearest to the ray
+                ids = bv.vertex_ids
+                rel = v[ids] - origin
+                along = rel @ d
+                off_ray = np.linalg.norm(rel - np.outer(along, d), axis=1)
+                j = int(ids[np.argmin(np.where(along > 0, off_ray, np.inf))])
+                surf, n = v[j], normals[j] if normals[j] @ d >= 0 else -normals[j]
+                vf = int(np.flatnonzero((faces == j).any(axis=1))[0])
+                pos = self._offset(surf, n, s.offset_m, v, faces, tri_all, vf)
+                if not _sane(pos, n, bv, s.offset_m, flat):
+                    raise PointConfigError(
+                        f"point {s.name}: resolved {np.round(pos, 3).tolist()} is not on {s.bv} (axis distance "
+                        f"{_axis_distance(pos, bv):.3f} m, radius {bv.radius_m:.3f} m); check the mesh near the ray"
+                    )
             up = a if not bv.limb else -a
             up = up - (up @ n) * n
             if np.linalg.norm(up) < 1e-6:
                 up = np.array([0.0, 1.0, 0.0]) - n[1] * n
             up /= np.linalg.norm(up)
-            out.append(ArrangementPoint(s, surf + delta * n, n, up, np.cross(up, n)))
+            out.append(ArrangementPoint(s, pos, n, up, np.cross(up, n)))
         return out
+
+    @staticmethod
+    def _offset(surf: F64, n: F64, offset: float, v: F64, faces: I64, tri_all: F64, hit_face: int) -> F64:
+        """The point ``offset`` from the surface along ``n``, exact also in concave places. The hit triangle always
+        takes part (a long triangle has no vertex near the hit point)."""
+        near = np.flatnonzero(np.linalg.norm(v - surf, axis=1) < offset + 0.15)
+        sel = np.union1d(np.flatnonzero(np.isin(faces, near).any(axis=1)), [hit_face])
+        tri_near = tri_all[sel]
+        delta = offset
+        for _ in range(8):
+            dmin = _dist_point_triangles(surf + delta * n, tri_near)
+            if abs(dmin - offset) < 1e-5:
+                break
+            delta = float(np.clip(delta + offset - dmin, 0.0, 2.0 * offset + 0.05))
+        return np.asarray(surf + delta * n, dtype=np.float64)
+
+
+def _axis_distance(p: F64, bv: BoundingVolume) -> float:
+    d = bv.end - bv.start
+    k = float(np.clip((p - bv.start) @ d / (d @ d), 0.0, 1.0))
+    return float(np.linalg.norm(p - (bv.start + k * d)))
+
+
+def _sane(p: F64, n: F64, bv: BoundingVolume, offset: float, flat: bool) -> bool:
+    """A resolved point lies on its volume: 0.5..3 radii (+ offset) from the axis, normal pointing away from it. Flat
+    parts (hands, feet: the radius is set by the spread fingers or the toes) only need to be ``offset`` from it."""
+    d = bv.end - bv.start
+    foot = bv.start + float(np.clip((p - bv.start) @ d / (d @ d), 0.0, 1.0)) * d
+    r = float(np.linalg.norm(p - foot))
+    lo = offset if flat else 0.5 * bv.radius_m
+    return bool(lo <= r <= 3.0 * bv.radius_m + offset and n @ (p - foot) > 0)
 
 
 def find_point(points: list[ArrangementPoint], name: str) -> ArrangementPoint:

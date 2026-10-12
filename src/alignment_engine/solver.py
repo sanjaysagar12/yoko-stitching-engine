@@ -5,7 +5,10 @@ across and shift along. Any value is an isometry of the flat piece, so the solve
 
 Constraints, all exact and recomputed from the current positions in every iteration:
 
-* body: every sample of a piece is at least ``clearance`` from the avatar (exact point-triangle distance);
+* body: every sample of a piece is at least ``clearance`` from the avatar (exact point-triangle distance). Against its
+  own body part (the region of its ring) a piece may move out; against another part (the torso under a sleeve cap, the
+  arm beside a torso panel) it may only slide (``Piece.other_tris``): a larger radius cannot clear a part that is not
+  under the cylinder's axis, it only lifts the piece off its point;
 * pieces: **every pair** of pieces (any ring, any layer, fixed pieces too) is at least ``gap`` apart, measured from the
   samples of one piece to the exact triangles of the other, both ways. There is no layer exemption.
 
@@ -18,12 +21,16 @@ displacements are turned into parameter changes by a weighted Kaczmarz projectio
 facing pair is separated radially.
 
 Groups move together: the two copies of a centre-line or side pair share their parameters with ``s`` mirrored, so a
-symmetric body gives a symmetric result.
+symmetric body gives a symmetric result. The copies are mirror images about the plane x = 0, so they are ``gap`` apart
+exactly when every vertex of one copy is at least ``gap / 2`` from that plane on its own side (``Piece.pair_side``).
+That bound replaces the collision rows between the two copies: it is enforced after every step by sliding the pair
+outward (``s`` only, never the radius), so a pair never crosses its mirror plane (``pair_slide``).
 """
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -70,6 +77,9 @@ class Piece:
     tree2d: cKDTree | None = None
     prox: MeshProx | None = None
     limits_hit: set[str] = field(default_factory=set)
+    other_tris: NDArray[np.bool_] | None = None  # avatar triangles of other body parts (slide away, never grow)
+    pair_side: float = 0.0  # lead of a pair: the side of x = 0 (world, +1 / -1) the piece must stay on; 0: no pair
+    pair_room: tuple[float, float] | None = None  # (needed, available) outward slide of a pair that has no room
 
     def update(self) -> None:
         """Map the mesh at the current parameters."""
@@ -129,6 +139,7 @@ class Solver:
             if not len(p.world):
                 p.update()
         self._sync_groups()
+        self.half_gap = pair_half_gap(req)
 
     # -- groups ----------------------------------------------------------------------------------------------------
     def _lead(self, g: int) -> Piece:
@@ -140,6 +151,21 @@ class Solver:
                 lead = self._lead(p.group)
                 p.theta = lead.theta * p.sign
                 p.update()
+
+    def _project_pairs(self, max_shift: float) -> None:
+        """Part every moving pair whose halves are closer than the gap (see ``pair_slide``)."""
+        for p in self.pieces:
+            if p.moving and p.pair_side and p.surface is not None and p.group >= 0 and np.all(p.sign > 0):
+                p.theta[1] = pair_slide(p, p.theta, max_shift, self.half_gap)
+                p.update()
+                for q in self.pieces:
+                    if q.group == p.group and q is not p:
+                        q.limits_hit, q.pair_room = set(p.limits_hit), p.pair_room
+        self._sync_groups()
+
+    def block(self, i: int) -> int:
+        """Parameter block of piece ``i`` (see ``_key``)."""
+        return self._key(i)
 
     def _key(self, i: int) -> int:
         """Parameter block of piece ``i``: ``group + 1`` for a group, ``-1 - i`` for a single piece (0 means none)."""
@@ -289,14 +315,17 @@ class Solver:
             bad = np.flatnonzero(near & (sd < clear - MIN_DEFICIT))
             if len(bad):
                 bad = bad[np.argsort(sd[bad], kind="stable")[:ROWS_PER_BODY]]
+                tri = self.body.last_tri[bad]
                 g = self._grad(p, idx[bad], dirs[bad])
+                if p.other_tris is not None:
+                    g[(tri >= 0) & p.other_tris[np.maximum(tri, 0)], 0] = 0.0
                 for k, row in enumerate(bad):
                     out.append((self._key(i), g[k], 0, np.zeros(3), float(clear - sd[row])))
         boxes = [p.bbox() for p in self.pieces]
         for i, a in enumerate(self.pieces):
             for j in range(i + 1, len(self.pieces)):
                 b = self.pieces[j]
-                if not (a.moving or b.moving) or (a.group >= 0 and a.group == b.group and not a.moving):
+                if not (a.moving or b.moving) or a.group == b.group >= 0:  # a pair's halves: ``pair_slide``
                     continue
                 gap = max(req.gap, req.gap_layer or 0.0) + req.margin
                 lo = np.maximum(boxes[i][0], boxes[j][0])
@@ -331,27 +360,16 @@ class Solver:
         off = np.einsum("ij,ij->i", vec, nq)
         dd = dist[cand]
         facing = (dd < 1e-3) | (np.abs(off) > 0.8 * dd)
-        same_group = p.group >= 0 and p.group == q.group
-        if same_group:  # the copies of a pair share their radius: they can only be separated sideways
-            facing[:] = False
         need = np.where(facing, req.gap_for(True), req.gap) + req.margin
         viol = dd < need - MIN_DEFICIT
         if not viol.any():
             return []
-        sigma = self.decide_side(i, j, off[facing]) if not same_group else 1
-        if not same_group:  # a sample on the wrong side is pushed through, never further under the other piece
-            facing |= sigma * off < 0
-            need = np.where(facing, req.gap_for(True), req.gap) + req.margin
+        sigma = self.decide_side(i, j, off[facing])
+        facing |= sigma * off < 0  # a sample on the wrong side is pushed through, never further under the other piece
+        need = np.where(facing, req.gap_for(True), req.gap) + req.margin
         # required increase along the chosen direction, per sample
         delta = np.where(facing, need - sigma * off, need - dd)
         direction = np.where(facing[:, None], sigma * nq, vec / np.maximum(dd, 1e-12)[:, None])
-        if same_group and (dd < 1e-4).any():  # touching copies: away from the shared centre line, along the surface
-            assert p.surface is not None
-            tiny = np.flatnonzero(dd < 1e-4)
-            vk = idx[cand[tiny]]
-            tau = p.surface.jacobian(p.local[vk], p.theta)[:, :, 1]
-            side = np.sign(p.local[vk, 0] + p.theta[1])
-            direction[tiny] = tau * np.where(side == 0, 1.0, side)[:, None]
         sel = np.flatnonzero(viol & (delta > MIN_DEFICIT))
         if not len(sel):
             return []
@@ -427,10 +445,13 @@ class Solver:
             if th[0] > r_hi:
                 lead.limits_hit.add("max_standoff")
             th[0] = float(np.clip(th[0], r_lo, max(r_hi, r_lo)))
+            if lead.pair_side and lead.surface is not None:  # a pair never closes up or crosses its mirror plane
+                th[1] = pair_slide(lead, th, max_shift, self.half_gap)
             moved = max(moved, float(np.abs(th - lead.theta).max()))
             for p in members:
                 p.theta = th * p.sign
                 p.limits_hit = set(lead.limits_hit)
+                p.pair_room = lead.pair_room
                 p.update()
         return moved
 
@@ -438,6 +459,7 @@ class Solver:
         """Iterate until no constraint is violated (with the margin), ``max_iter``, or no progress for
         ``PATIENCE`` iterations (the next, wider stage takes over)."""
         st = SolveStats()
+        self._project_pairs(max_shift)  # start (and restart after layering or a larger radius) with the pairs apart
         best, since = np.inf, 0
         for it in range(1, max_iter + 1):
             rows = self.rows(fine)
@@ -458,6 +480,58 @@ class Solver:
                 break
         st.converged = not self.rows(fine)
         return st
+
+
+def pair_half_gap(req: Requirements) -> float:
+    """How far every vertex of a pair half stays from the mirror plane (world x is a chord, the slide an arc: half the
+    margin is plenty)."""
+    return 0.5 * (req.gap + req.margin)
+
+
+def _pair_clear(p: Piece, th: F64, half_gap: float) -> float:
+    """Smallest distance of the lead's vertices from x = 0 on its own side, minus the half gap (>= 0: the pair is
+    ``gap`` apart). World x depends on local x only (the axis has no x component), so one row of samples does."""
+    assert p.surface is not None
+    xs = p.local[p.iter_idx, 0] if len(p.iter_idx) else p.local[:, 0]
+    x = p.surface.map(np.column_stack([xs, np.zeros_like(xs)]), th)[:, 0]
+    return float((p.pair_side * x).min()) - half_gap
+
+
+def pair_slide(p: Piece, th: F64, max_shift: float, half_gap: float) -> float:
+    """The slide ``s`` of a pair lead at ``th``: unchanged if its halves are apart, else the smallest outward slide
+    (away from the mirror plane, from world geometry: the direction that moves its innermost vertex away) that parts
+    them, within ``max_shift`` of the anchor. Without room it stops at the limit, still on its own side, and records
+    ``pair_room`` (needed, available outward slide from the anchor) and the limit ``pair_no_room``."""
+    p.pair_room = None
+    p.limits_hit.discard("pair_no_room")
+    s0 = float(th[1])
+
+    def clear(s: float) -> float:
+        return _pair_clear(p, np.array([th[0], s, th[2]]), half_gap)
+
+    if clear(s0) >= -MIN_DEFICIT:
+        return s0
+    out = float(np.sign(clear(s0 + 1e-4) - clear(s0 - 1e-4)))
+    if out == 0.0:
+        assert p.surface is not None
+        out = float(np.sign(p.pair_side * p.surface.e_x[0])) or 1.0
+    room = float(np.sqrt(max(max_shift**2 - (th[2] - p.theta0[2]) ** 2, 0.0)))
+    lim = max(float(p.theta0[1]) + out * room, s0, key=lambda v: out * v)  # never back toward the plane
+    if clear(lim) < -MIN_DEFICIT:
+        far = s0 + out * 1.0  # how far it would have to go (reported); a metre is past any torso
+        need = _bisect(clear, lim, far) if clear(far) >= 0.0 else far
+        p.pair_room = (abs(need - float(p.theta0[1])), room)
+        p.limits_hit.add("pair_no_room")
+        return lim
+    return _bisect(clear, s0, lim)
+
+
+def _bisect(f: Callable[[float], float], lo: float, hi: float) -> float:
+    """Where ``f`` turns non-negative between ``lo`` (f < 0) and ``hi`` (f >= 0), to 0.01 mm."""
+    while abs(hi - lo) > 1e-5:
+        mid = 0.5 * (lo + hi)
+        lo, hi = (lo, mid) if f(mid) >= 0.0 else (mid, hi)
+    return hi
 
 
 def iteration_samples(local: F64, boundary: I64, spacing: float = 0.01) -> I64:
