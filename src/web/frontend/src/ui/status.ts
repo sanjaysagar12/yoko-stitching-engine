@@ -11,6 +11,8 @@ const KIND: Record<Violation["kind"], string> = {
   GAP_PIECES: "gap too small",
   STANDOFF_EXCEEDED: "standoff limit",
   SIZE_CHANGED: "size changed",
+  PAIR_ASYMMETRY: "mirror pair not symmetric",
+  PAIR_STACKED: "mirror pair stacked, not side by side",
 };
 
 const cm = (m: number | null): string => (m === null ? "-" : `${formatCm(m * 100, 1)} cm`);

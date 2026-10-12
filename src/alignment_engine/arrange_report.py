@@ -15,6 +15,7 @@ from scipy.spatial import cKDTree
 from .arrange import Item, Layout
 from .errors import RingNotFoundError, UnknownNamedPointError
 from .stitch import edge_between
+from .validity import PairView, arc, concentric_warnings, pair_violations
 from .widths import row_width
 
 F64 = NDArray[np.float64]
@@ -50,7 +51,8 @@ def build_report(
     assert lay.check is not None
     o = lay.o
     lv = layers(lay)
-    violations = lay.violations()
+    violations = lay.violations() + pair_violations(_pair_views(lay))
+    concentric = _concentric(lay)
     warns: list[str] = []
     for v in violations:
         names = " and ".join(v["pieces"])
@@ -83,7 +85,9 @@ def build_report(
             "mode": it.mode,
             "layer": lv[it.index],
             "locked": it.locked,
-            "solved_now": bool(it.solve),
+            "layer_reason": (it.layer_reason or "solver") if lv[it.index] else "",
+            "pair_with": it.partner,
+            "solved_now": bool(it.solve or it.regrown),
             "radius_m": _r(theta[0]) if theta is not None and surf is not None and surf.kind == "cylinder" else None,
             "standoff_m": _r(surf.standoff(theta)) if theta is not None and surf is not None else None,
             "shift_m": [_r(theta[1]), _r(theta[2])] if theta is not None else [0.0, 0.0],
@@ -147,13 +151,15 @@ def build_report(
         )
     clearance_ok = not any(v["kind"] == "CLEARANCE_BODY" for v in violations)
     gaps_ok = not any(v["kind"] == "GAP_PIECES" for v in violations)
+    pairs_ok = not any(v["kind"].startswith("PAIR_") for v in violations)
     min_body = min((d for d, _ in lay.check.body.values()), default=None)
     min_pair = min((d for d, _, _ in lay.check.pairs.values()), default=None)
     validity = {
-        "valid": clearance_ok and gaps_ok and not size_bad,
+        "valid": clearance_ok and gaps_ok and pairs_ok and not size_bad,
         "size_ok": not size_bad,
         "clearance_ok": clearance_ok,
         "gaps_ok": gaps_ok,
+        "pairs_ok": pairs_ok,
         "max_size_change_pct": _r(max((max(p.size_check[k] for k in _PCT) for p in placed), default=0.0), 4),
         "min_distance_to_avatar_m": _r(min_body),
         "min_distance_between_pieces_m": _r(min_pair),
@@ -164,6 +170,7 @@ def build_report(
         },
         "violations": violations,
     }
+    warns += concentric
     if not validity["valid"]:
         warns.insert(0, f"ArrangementInfeasible: {len(violations)} violation(s); the layout is shown but not valid")
     arrangement = {
@@ -180,6 +187,44 @@ def build_report(
 
 
 _PCT = ("max_edge_change_pct", "perimeter_change_pct", "area_change_pct", "named_point_change_pct")
+
+
+def _arc(lay: Layout, it: Item) -> tuple[float, float] | None:
+    """Arc of a rolled piece about its ring axis (None for flat pieces)."""
+    from .roll import ring_axis
+
+    if it.piece is None or it.piece.surface is None or it.piece.surface.kind != "cylinder":
+        return None
+    if it.mode == "roll":
+        c, a = ring_axis(lay.avatar, it.ring)
+    else:
+        c, a = it.piece.surface.origin, it.piece.surface.e_y
+    return arc(it.piece.world, c, a)
+
+
+def _pair_views(lay: Layout) -> list[tuple[PairView, PairView]]:
+    out = []
+    for a, b, _ in lay.pairs:
+        if a.piece is not None and b.piece is not None:
+            out.append((PairView(a.name, a.piece.theta, _arc(lay, a)), PairView(b.name, b.piece.theta, _arc(lay, b))))
+    return out
+
+
+def _concentric(lay: Layout) -> list[str]:
+    """NOT_CONCENTRIC warnings per ring (pieces with a user layer or a lock have their reason and are left out)."""
+    gl = lay.o.gap_layer if lay.o.gap_layer is not None else lay.o.gap_piece
+    out: list[str] = []
+    for ring in sorted({it.ring for it in lay.items if it.mode == "roll"}):
+        rows = []
+        for it in lay.items:
+            if it.mode != "roll" or it.ring != ring or it.piece is None or it.locked or it.user_layer is not None:
+                continue
+            a = _arc(lay, it)
+            if a is not None:
+                y = it.piece.world[:, 1]
+                rows.append((it.name, float(it.piece.theta[0]), a, (float(y.min()), float(y.max()))))
+        out += concentric_warnings(ring, rows, gl)
+    return out
 
 
 def _ring(lay: Layout, ring: str) -> dict[str, Any]:

@@ -126,7 +126,7 @@ def build_piece_bundle(
         edges.append({"from": a, "to": b, "length_m": _r(units.cm_to_m(length))})
 
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "name": name,
         "units": "m",
         "obj": obj_name,
@@ -139,6 +139,8 @@ def build_piece_bundle(
         "mirror_of": None,
         "axis": None,
         "origin_shift_m": None,
+        # the piece origin in the drafting frame (y up): pieces drafted on shared base lines keep their heights
+        "pattern_origin_m": [_r(units.cm_to_m(x0)), _r(units.cm_to_m(-y1))],
         "default_reference": {
             "type": "bbox_centre",
             "xy_m": [_r(units.cm_to_m(w / 2)), _r(units.cm_to_m(h / 2))],

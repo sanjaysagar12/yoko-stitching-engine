@@ -186,6 +186,10 @@ export interface ArrangePiece {
   ring: string;
   mode?: string;
   layer: number;
+  /** why the piece is above layer 0: "user", "over <piece>", "solver" */
+  layer_reason?: string;
+  /** the other half of its mirror pair */
+  pair_with?: string;
   locked: boolean;
   radius_m?: number | null;
   standoff_m: number | null;
@@ -235,7 +239,7 @@ export interface RingRow {
 }
 
 export interface Violation {
-  kind: "CLEARANCE_BODY" | "GAP_PIECES" | "STANDOFF_EXCEEDED" | "SIZE_CHANGED";
+  kind: "CLEARANCE_BODY" | "GAP_PIECES" | "STANDOFF_EXCEEDED" | "SIZE_CHANGED" | "PAIR_ASYMMETRY" | "PAIR_STACKED";
   pieces: string[];
   value_m: number;
   required_m: number;
@@ -250,6 +254,7 @@ export interface Validity {
   size_ok: boolean;
   clearance_ok: boolean;
   gaps_ok: boolean;
+  pairs_ok?: boolean;
   max_size_change_pct: number;
   min_distance_to_avatar_m: number | null;
   min_distance_between_pieces_m: number | null;

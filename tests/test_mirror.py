@@ -119,7 +119,7 @@ def test_clone_records_its_link_and_axis(scene: dict[str, Path]) -> None:
     m = mirror_clone(bundle, v, f, CF, "FrontPanel_L")
     b = m.bundle
     assert b["name"] == "FrontPanel_L" and b["mirror_of"] == "FrontPanel" and b["obj"] == "FrontPanel_L_m.obj"
-    assert b["axis"] == CF and b["schema_version"] == 2
+    assert b["axis"] == CF and b["schema_version"] == 3
     w = bundle["bbox_m"]["max"][0]
     assert b["origin_shift_m"] == pytest.approx(
         [w, 0.0], abs=1e-12
@@ -260,13 +260,26 @@ def test_5_side_pair_for_sleeves(scene: dict[str, Path]) -> None:
 def test_6_pair_errors(scene: dict[str, Path]) -> None:
     eng = AlignmentEngine()
     derived = [{"id": "FrontPanel_L", "source": "FrontPanel", "op": "mirror", "axis": CF}]
-    with pytest.raises(ReferenceNotOnAxisError, match="A33|bbox"):
+    # bbox centre is off the CF axis: the named point on the axis nearest in height becomes the pair's reference
+    warns: list[str] = []
+    adj = eng.pair(
+        scene["avatar"],
+        scene["pieces"],
+        derived,
+        {"piece": "FrontPanel", "point": "Chest_Front"},
+        "FrontPanel_L",
+        "same_anchor",
+        warns,
+    )
+    assert [p["reference"] for p in adj] == ["A32", "A32"] and warns[0].startswith("REFERENCE_ADJUSTED")
+    # no named point on a bbox-centre axis: still an error
+    with pytest.raises(ReferenceNotOnAxisError, match="A24"):
         eng.pair(
             scene["avatar"],
             scene["pieces"],
-            derived,
-            {"piece": "FrontPanel", "point": "Chest_Front"},
-            "FrontPanel_L",
+            [{"id": "BackPanel_L", "source": "BackPanel", "op": "mirror", "axis": {"type": "bbox_center"}}],
+            {"piece": "BackPanel", "point": "Chest_Back", "reference": "A24"},
+            "BackPanel_L",
             "same_anchor",
         )
     ok = eng.pair(

@@ -90,7 +90,7 @@ export const pairPlacements = (
   derivedId: string,
   mode: PairMode,
   derived: DerivedDef[],
-): Promise<{ placements: Placement[] }> =>
+): Promise<{ placements: Placement[]; warnings?: string[] }> =>
   request("/api/pair", json("POST", { build, base, derived_id: derivedId, mode, derived_pieces: derived }));
 
 export const loadPlacements = (job: string): Promise<{ placements: Placement[]; derived_pieces?: DerivedDef[] }> =>

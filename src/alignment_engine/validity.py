@@ -5,6 +5,8 @@
 * ``layout_check``: exact distances of every piece to the avatar and of every pair of pieces (samples of one mesh:
   vertices plus the midpoint of every edge, so at most 2.5 mm apart on 5 mm meshes, against the exact triangles of the
   other, both ways).
+* ``pair_violations`` / ``concentric_warnings``: mirror pairs are symmetric and side by side; side-by-side pieces of
+  one ring share its radius (up to a layer gap).
 """
 
 from __future__ import annotations
@@ -263,6 +265,93 @@ def _body_min(body: AvatarSurface, s: F64, bound: float, slack: float, clearance
     sd, _, near = body.closest(s[cand], float(dn[cand].max()) + slack)
     k = int(np.argmin(np.where(near, sd, np.inf)))
     return (float(sd[k]), s[cand][k])
+
+
+PAIR_TOLERANCE = 0.001  # the halves of a mirror pair agree in radius, axial shift and mirrored slide to 1 mm
+CONCENTRIC_SLACK = 0.005  # side-by-side pieces of one ring may differ in radius by gap_layer plus this
+
+
+def arc(world: F64, axis_point: F64, axis_dir: F64) -> tuple[float, float]:
+    """(start, width) in radians of the smallest arc about the axis that holds every point (wrap-around aware)."""
+    a = axis_dir / np.linalg.norm(axis_dir)
+    front = np.array([0.0, 0.0, 1.0]) - a[2] * a
+    if np.linalg.norm(front) < 1e-6:
+        front = np.array([0.0, 1.0, 0.0]) - a[1] * a
+    front /= np.linalg.norm(front)
+    q = world - axis_point
+    ang = np.sort(np.arctan2(q @ np.cross(a, front), q @ front))
+    gaps = np.diff(np.append(ang, ang[0] + 2.0 * np.pi))
+    k = int(np.argmax(gaps))
+    return float(ang[(k + 1) % len(ang)]), float(2.0 * np.pi - gaps[k])
+
+
+def arc_overlap(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Angle (radians) shared by two arcs ``(start, width)``."""
+    best = 0.0
+    for k in (-1, 0, 1):
+        s = b[0] + 2.0 * np.pi * k
+        best = max(best, min(a[0] + a[1], s + b[1]) - max(a[0], s))
+    return best
+
+
+@dataclass
+class PairView:
+    """One half of a mirror pair: its parameters ``(r, s, t)`` and, when rolled, its arc and radius."""
+
+    name: str
+    theta: F64
+    arc: tuple[float, float] | None
+
+
+def pair_violations(pairs: list[tuple[PairView, PairView]]) -> list[dict[str, Any]]:
+    """Mirror pairs must be one rigid pair: equal radius and axial shift, mirrored slide (``PAIR_ASYMMETRY``), and side
+    by side, never stacked: their arcs about the ring axis may not overlap (``PAIR_STACKED``)."""
+    out: list[dict[str, Any]] = []
+    for a, b in pairs:
+        dev = float(max(abs(a.theta[0] - b.theta[0]), abs(a.theta[2] - b.theta[2]), abs(a.theta[1] + b.theta[1])))
+        if dev > PAIR_TOLERANCE:
+            out.append(
+                {
+                    "kind": "PAIR_ASYMMETRY",
+                    "pieces": [a.name, b.name],
+                    "value_m": round(dev, 6),
+                    "required_m": PAIR_TOLERANCE,
+                    "at_m": None,
+                    "limit": "pair",
+                }
+            )
+        if a.arc is not None and b.arc is not None:
+            shared = arc_overlap(a.arc, b.arc) * float(min(a.theta[0], b.theta[0]))
+            if shared > PAIR_TOLERANCE:
+                out.append(
+                    {
+                        "kind": "PAIR_STACKED",
+                        "pieces": [a.name, b.name],
+                        "value_m": round(shared, 6),
+                        "required_m": 0.0,
+                        "at_m": None,
+                        "limit": "pair",
+                    }
+                )
+    return out
+
+
+def concentric_warnings(
+    ring: str, pieces: list[tuple[str, float, tuple[float, float], tuple[float, float]]], gap_layer: float
+) -> list[str]:
+    """``NOT_CONCENTRIC`` for pieces of one ring that lie side by side (arcs apart, heights overlapping) but differ in
+    radius by more than ``gap_layer`` + ``CONCENTRIC_SLACK``. ``pieces``: (name, radius, arc, (y min, y max))."""
+    out: list[str] = []
+    for i, (na, ra, aa, ya) in enumerate(pieces):
+        for nb, rb, ab, yb in pieces[i + 1 :]:
+            if min(ya[1], yb[1]) <= max(ya[0], yb[0]) or arc_overlap(aa, ab) > 0.0:
+                continue
+            if abs(ra - rb) > gap_layer + CONCENTRIC_SLACK:
+                out.append(
+                    f"NOT_CONCENTRIC: {na} (r {ra * 100:.1f} cm) and {nb} (r {rb * 100:.1f} cm) lie side by side on "
+                    f"the {ring} ring but {abs(ra - rb) * 100:.1f} cm apart radially"
+                )
+    return out
 
 
 def _coaxial_bound(a: Placed, b: Placed) -> float | None:

@@ -260,6 +260,11 @@ async function placePair(source: string, derivedId: string, mode: PairMode, poin
     const res = await pairPlacements(s.buildId, base, derivedId, mode, s.derived);
     for (const p of res.placements) s.placements.set(p.piece, p);
     store.set({ error: null, pendingPair: null });
+    if (res.warnings?.length) {
+      // e.g. REFERENCE_ADJUSTED: the pair was anchored on a point of the mirror axis
+      store.set({ busy: { text: res.warnings.join(" "), progress: 1 } });
+      window.setTimeout(() => store.set({ busy: null }), 4000);
+    }
     store.touch("placements");
     await runAlign();
   } catch (e) {

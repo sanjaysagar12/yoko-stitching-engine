@@ -204,6 +204,7 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
     def pair(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
         """Placements for a piece and its clone: ``{build, base, derived_id, mode, derived_pieces}``."""
         b = ready_build(body)
+        warnings: list[str] = []
         placements = aligner.pair(
             b.dir / "avatar",
             b.dir / "pieces",
@@ -211,8 +212,9 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
             dict(body.get("base", {})),
             str(body.get("derived_id", "")),
             str(body.get("mode", "same_anchor")),
+            warnings,
         )
-        return {"placements": placements}
+        return {"placements": placements, "warnings": warnings}
 
     @app.get("/api/jobs/{name}/placements")
     def get_placements(name: str) -> dict[str, Any]:

@@ -177,7 +177,9 @@
                   "enum": [
                     "CLEARANCE_BODY",
                     "GAP_PIECES",
-                    "SIZE_CHANGED"
+                    "SIZE_CHANGED",
+                    "PAIR_ASYMMETRY",
+                    "PAIR_STACKED"
                   ]
                 }
               },
@@ -248,6 +250,14 @@
                 "additionalProperties": {
                   "type": "number"
                 }
+              },
+              "layer_reason": {
+                "type": "string",
+                "description": "why the piece is above layer 0: user, over <piece>, solver"
+              },
+              "pair_with": {
+                "type": "string",
+                "description": "the other half of its mirror pair (empty if none)"
               }
             },
             "additionalProperties": false
@@ -660,7 +670,9 @@
                   "CLEARANCE_BODY",
                   "GAP_PIECES",
                   "STANDOFF_EXCEEDED",
-                  "SIZE_CHANGED"
+                  "SIZE_CHANGED",
+                  "PAIR_ASYMMETRY",
+                  "PAIR_STACKED"
                 ]
               },
               "pieces": {
@@ -767,7 +779,9 @@
                   "CLEARANCE_BODY",
                   "GAP_PIECES",
                   "STANDOFF_EXCEEDED",
-                  "SIZE_CHANGED"
+                  "SIZE_CHANGED",
+                  "PAIR_ASYMMETRY",
+                  "PAIR_STACKED"
                 ]
               },
               "pieces": {
@@ -798,6 +812,9 @@
             },
             "additionalProperties": false
           }
+        },
+        "pairs_ok": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false

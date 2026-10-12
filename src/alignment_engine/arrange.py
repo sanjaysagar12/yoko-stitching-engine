@@ -6,10 +6,16 @@ pieces are closer than ``gap_piece``. Nothing is ever scaled or bent out of its 
 
 * ``roll`` pieces of one ring (torso, neck, an arm, a leg) start on one cylinder about the ring axis whose radius is
   the smallest that fits the ring's pieces side by side with gaps and keeps every vertex of each piece ``clearance``
-  from the body region under it; pieces lying over others start one gap further out. That radius is display space,
-  never ease (ease is reported separately as garment loop minus skin loop).
-* ``align`` is incremental: pieces that carry ``solved`` parameters (from an earlier answer) stay exactly where they
-  are and are obstacles; every other piece is solved in spec order against what is already placed.
+  from the body region under it; pieces lying over others (in the same angular sector) start one gap further out.
+  That radius is display space, never ease (ease is reported separately as garment loop minus skin loop). A torso
+  panel on a neck point (taller than the neck) rolls on the torso ring; collars stay on the neck ring.
+* A piece and its mirrored clone are one rigid pair (``s`` mirrored, radius and ``t`` shared), also when one of them
+  was placed earlier: the new copy is derived from the placed one and the pair moves together (see
+  ``docs/alignment_pairs.md``). Torso panels of one pattern keep their drafting heights (``pattern_origin_m``).
+* ``align`` is incremental: pieces that carry ``solved`` parameters (from an earlier answer) stay where they are and
+  are obstacles; every other piece is solved in spec order against what is already placed. Exceptions: the placed half
+  of a pair whose other half is new, and a ring that must grow to fit a new piece side by side (its placed pieces move
+  out together, ``s`` and ``t`` kept); both come back with new ``solved`` blocks.
 * ``arrange`` re-solves every piece that is not locked, jointly (a ``solved`` block is only a warm start).
 * After solving, ``validity`` measures everything again on the placed meshes: sizes, clearances, all pair gaps. What
   cannot be met inside ``max_standoff`` and ``max_shift`` is returned with ``valid: false`` and the exact violations.
@@ -59,6 +65,8 @@ STAGE1_SHIFT = 0.05  # first stage: small slides only; later stages widen to max
 STAGE1_ITER, STAGE2_ITER, FINE_ITER = 30, 80, 15
 CENTRE_SLIDE_WEIGHT = 1.0e4  # a slide is used only when nothing else can meet a constraint
 RADIUS_STEP, RADIUS_ROUNDS, RADIUS_ITER = 0.02, 6, 20
+GROW_TOL = 0.003  # a ring grows (its placed pieces move out) only when it lacks more than this
+DATUM_HEIGHT_RATIO = 0.5  # torso pieces at least this similar in height share the drafting datum (not pockets)
 
 
 @dataclass(frozen=True)
@@ -117,6 +125,9 @@ class Item:
     layer: int = 0
     axial0: float = 0.0  # axial position of the anchor along the ring axis
     needed_radius: float = 0.0
+    regrown: bool = False  # a placed piece moved out with its ring (incremental): it gets a new ``solved`` block
+    layer_reason: str = ""
+    partner: str = ""  # the other half of its mirror pair
     edges: I64 = field(default_factory=lambda: np.zeros((0, 2), dtype=np.int64))
     outline: F64 = field(default_factory=lambda: np.zeros((0, 2)))  # pattern outline in local coordinates
     geom_key: tuple[Any, ...] = ()
@@ -153,6 +164,7 @@ class Layout:
         self.warnings: list[str] = []
         self.notes: list[str] = []
         self.groups: dict[int, list[Item]] = {}
+        self.pairs: list[tuple[Item, Item, bool]] = []  # (source, clone, same anchor) of every recognised pair
         self.ring_radius: dict[str, float] = {}
         self.check: LayoutCheck | None = None
         self.iterations = 0
@@ -187,6 +199,8 @@ class Layout:
             if it.mode == "roll":
                 try:
                     it.ring = str(pl.get("ring") or ring_of_bv(point.bv))
+                    if it.ring == "neck" and not pl.get("ring"):
+                        it.ring = self._neck_or_torso(it)
                     if it.ring not in RING_BVS:
                         raise RingNotFoundError(f"unknown ring {it.ring!r}; rings: {sorted(RING_BVS)}")
                 except RingNotFoundError:
@@ -200,8 +214,33 @@ class Layout:
             self._surface(it)
             has_solved = isinstance(pl.get("solved"), dict)
             it.solve = not it.locked and (not incremental or not has_solved or not o.incremental)
+        self.pairs = self._find_pairs()
+        for src, clone, _ in self.pairs:
+            src.partner, clone.partner = clone.name, src.name
+            if not (src.locked or clone.locked) and src.solve != clone.solve:
+                src.solve = clone.solve = True  # the new half is derived from the placed one; they move as one
+        self._datum()
         self._groups()
+        self._lone_halves()
         self._start_radii(incremental)
+
+    def _neck_or_torso(self, it: Item) -> str:
+        """A piece on a neck point that is taller than the neck (a front or back panel cut up to the neckline) rolls
+        on the torso ring with the rest of the garment; a collar stays on the neck ring."""
+        vol = self.avatar.volumes.get("Neck")
+        if vol is None:
+            return "neck"
+        outline = np.asarray(it.info.bundle["outline_m"], dtype=np.float64)
+        ref = it.info.reference(str(it.pl.get("reference", "bbox_centre")))
+        height = float(np.ptp(local_coords(outline, ref, float(it.pl.get("rotation_deg", 0.0)), False)[:, 1]))
+        neck = float(np.linalg.norm(vol.end - vol.start))
+        if height <= neck:
+            return "neck"
+        it.warnings.append(
+            f"RING_TORSO: {it.name} ({height * 100:.0f} cm tall) is taller than the neck ({neck * 100:.0f} cm); it "
+            'rolls on the torso ring with the other panels (set "ring" to override)'
+        )
+        return "torso"
 
     def _surface(self, it: Item) -> None:
         o, pl, point = self.o, it.pl, it.point
@@ -293,16 +332,16 @@ class Layout:
             self.geom_cache[key] = g
         return g
 
-    def _groups(self) -> None:
-        """Centre-line and side pairs (a piece and its mirrored clone solved together) move as one, ``s`` mirrored."""
-        gid = 0
+    def _find_pairs(self) -> list[tuple[Item, Item, bool]]:
+        """A piece and its mirrored clone placed as a pair: on the same centre point (``same``) or on left/right
+        counterpart points; same mode and reference, rotation equal (same point) or negated (counterparts)."""
+        out: list[tuple[Item, Item, bool]] = []
+        used: set[int] = set()
         for it in self.items:
-            if not it.solve or it.name not in self.sources.values():
+            if it.piece is None or it.index in used or it.name not in self.sources.values():
                 continue
             for clone in self.items:
-                if clone.source != it.name or not clone.solve or clone.piece is None or it.piece is None:
-                    continue
-                if clone.piece.group >= 0 or it.piece.group >= 0 or clone.mode != it.mode:
+                if clone.source != it.name or clone.piece is None or clone.index in used or clone.mode != it.mode:
                     continue
                 if clone.pl.get("reference", "bbox_centre") != it.pl.get("reference", "bbox_centre"):
                     continue
@@ -315,22 +354,138 @@ class Layout:
                     side and abs(clone.rotation + it.rotation) < 1e-9
                 ):
                     continue
-                it.piece.group = clone.piece.group = gid
-                if same:  # the gap across the centre line stays the gap: the pair moves out rather than apart
-                    it.piece.slide_weight = clone.piece.slide_weight = CENTRE_SLIDE_WEIGHT
-                clone.piece.sign = np.array([1.0, -1.0, 1.0])
-                if same:  # the two copies start half a gap away from the centre line each
-                    direction = 1.0 if float(np.mean(it.piece.local[:, 0])) >= 0 else -1.0
-                    it.piece.theta0[1] += direction * (0.5 * self.o.gap_piece + self.o.requirements().margin)
-                    if not isinstance(it.pl.get("solved"), dict):  # a solved place already has it
-                        it.piece.theta[1] = it.piece.theta0[1]
-                clone.piece.theta = it.piece.theta * clone.piece.sign  # the clone follows its source exactly
-                clone.piece.theta0 = it.piece.theta0 * clone.piece.sign
-                clone.piece.update()
-                it.piece.update()
-                self.groups[gid] = [it, clone]
-                gid += 1
+                used |= {it.index, clone.index}
+                out.append((it, clone, same))
                 break
+        return out
+
+    def _groups(self) -> None:
+        """A pair moves as one, ``s`` mirrored (the clone follows its source exactly). When one half was placed
+        earlier, the pair starts from that half's place: the new half is its mirror image."""
+        for gid, (it, clone, same) in enumerate(p for p in self.pairs if p[0].solve and p[1].solve):
+            assert it.piece is not None and clone.piece is not None
+            it.piece.group = clone.piece.group = gid
+            clone.piece.sign = np.array([1.0, -1.0, 1.0])
+            src_solved, clone_solved = (isinstance(x.pl.get("solved"), dict) for x in (it, clone))
+            if clone_solved and not src_solved:  # the clone was placed first: the source is its mirror image
+                it.piece.theta = clone.piece.theta * clone.piece.sign
+            if same:  # the gap across the centre line stays the gap: the pair moves out rather than apart
+                it.piece.slide_weight = clone.piece.slide_weight = CENTRE_SLIDE_WEIGHT
+                shift, direction = self._centre_shift(it)
+                it.piece.theta0[1] += shift  # the two copies start half a gap away from the centre line each
+                if not (src_solved or clone_solved) or direction * it.piece.theta[1] < direction * it.piece.theta0[1]:
+                    it.piece.theta[1] = it.piece.theta0[1]  # new, or placed alone inside the half gap: opened
+            clone.piece.theta = it.piece.theta * clone.piece.sign
+            clone.piece.theta0 = it.piece.theta0 * clone.piece.sign
+            clone.piece.update()
+            it.piece.update()
+            self.groups[gid] = [it, clone]
+
+    def _lone_halves(self) -> None:
+        """A new half of a pair placed alone on a centre point leaves half a gap at the centre line already, so that
+        its other half joins it later without moving it."""
+        for it in self.items:
+            p = it.piece
+            if p is None or not it.solve or p.group >= 0 or isinstance(it.pl.get("solved"), dict):
+                continue
+            if abs(float(it.point.position[0])) >= 0.002 or not (it.source or it.name in self.sources.values()):
+                continue
+            p.theta0[1] += self._centre_shift(it)[0]
+            p.theta[1] = p.theta0[1]
+            p.update()
+
+    def _centre_shift(self, it: Item) -> tuple[float, float]:
+        """(shift ``s``, direction): the shift that puts the centre-line edge of a pair half half a gap from the
+        centre line, and the side the half lies on (+1: +x of the line, local coordinates).
+
+        The side comes from the mirror axis of the pair (the half lies on one side of it), else from where most of
+        the piece lies about its reference. A reference that is not on that edge is reported (REFERENCE_ADJUSTED):
+        the pair is then placed by its edge, not by the reference."""
+        assert it.piece is not None
+        direction = self._join_side(it)
+        if direction is None:
+            direction = 1.0 if float(np.mean(it.piece.local[:, 0])) >= 0 else -1.0
+        xs = it.outline[:, 0]
+        inner = float(xs.min() if direction > 0 else xs.max())
+        if abs(inner) > 0.002:
+            ref = str(it.pl.get("reference", "bbox_centre"))
+            it.warnings.append(
+                f"REFERENCE_ADJUSTED: the reference {ref} of {it.name} is {abs(inner) * 100:.1f} cm from its "
+                "centre-line edge; the pair is placed by that edge (pick a reference on the mirror axis to anchor it)"
+            )
+        return direction * (0.5 * self.o.gap_piece + self.o.requirements().margin) - inner, direction
+
+    def _join_side(self, it: Item) -> float | None:
+        """+1 / -1: the side (local x) of the pair's mirror axis this half lies on; None if the axis is unknown or
+        runs through the piece (a ``bbox_center`` axis)."""
+        from .mirror import axis_line
+
+        if it.source:
+            clone, sign = it.info.bundle, 1.0
+        else:
+            ids = sorted(k for k, v in self.sources.items() if v == it.name and k in self.pieces)
+            if not ids:
+                return None
+            clone, sign = self.pieces[ids[0]].bundle, -1.0
+        if not clone.get("axis") or abs(it.rotation) > 1e-9:
+            return None
+        try:
+            p0, d = axis_line(clone, clone["axis"])
+        except Exception:  # noqa: BLE001 - an axis that cannot be resolved tells nothing
+            return None
+        n = np.array([d[1], -d[0]])
+        n = -n if n[0] < 0 else n
+        side = float((np.mean(np.asarray(clone["outline_m"], dtype=np.float64), axis=0) - p0) @ n)
+        return None if abs(side) < 0.01 else sign * float(np.sign(side))
+
+    def _datum(self) -> None:
+        """Torso panels of one pattern keep the heights they have in the drafting frame (``pattern_origin_m``).
+
+        The tallest placed panel (else the tallest) is the datum; every new panel of similar height that spans the
+        datum's drafting line starts with the axial shift that puts its drafting lines on the datum's, so front and back
+        meet on the same chest line whatever their references. Pockets, yokes and other small pieces keep their
+        reference (``DATUM_HEIGHT_RATIO``)."""
+        cands = [
+            it
+            for it in self.items
+            if it.mode == "roll"
+            and it.ring == "torso"
+            and it.piece is not None
+            and it.info.bundle.get("pattern_origin_m") is not None
+            and abs(it.rotation) < 1e-9
+        ]
+        if len(cands) < 2:
+            return
+
+        def height(x: Item) -> float:
+            return float(np.ptp(x.outline[:, 1]))
+
+        placed = [x for x in cands if isinstance(x.pl.get("solved"), dict) or not x.solve]
+        lead = max(placed or cands, key=lambda x: (height(x), -x.index))
+        assert lead.piece is not None
+        y_datum = float(lead.info.bundle["pattern_origin_m"][1] + lead.ref[1])  # drafting height of its reference
+        a_datum = lead.axial0 + float(lead.piece.theta[2])  # where that height lies along the axis
+        for it in cands:
+            p = it.piece
+            assert p is not None
+            if it is lead or not it.solve:
+                continue
+            if min(height(it), height(lead)) < DATUM_HEIGHT_RATIO * max(height(it), height(lead)):
+                continue
+            y_local = y_datum - float(it.info.bundle["pattern_origin_m"][1] + it.ref[1])  # the datum line, local y
+            if not float(it.outline[:, 1].min()) <= y_local <= float(it.outline[:, 1].max()):
+                continue
+            dt = a_datum - it.axial0 - y_local  # on top of the user's own shift
+            if abs(dt) < 1e-9:
+                continue
+            p.theta0[2] += dt  # the anchor; a placed half re-solved with its new other half keeps its place
+            if not isinstance(it.pl.get("solved"), dict):
+                p.theta[2] = p.theta0[2]
+                p.update()
+            self.notes.append(
+                f"DATUM: {it.name} moved {dt * 100:+.1f} cm along the body to keep its drafting heights with "
+                f"{lead.name} (pattern_origin_m)"
+            )
 
     # -- start radii (D2) ------------------------------------------------------------------------------------------
     def clear_radius(self, it: Item) -> float:
@@ -381,19 +536,22 @@ class Layout:
         done: list[Item] = []
         for it in sorted(its, key=lambda i: (-polys[i.index].area, i.index)):
             if it.user_layer is not None:
-                it.layer = it.user_layer
+                it.layer, it.layer_reason = it.user_layer, "user" if it.user_layer else ""
             else:
                 best = 0
                 pi = polys[it.index]
                 for jt in done:
                     cover = max(pi.intersection(translate(polys[jt.index], k * length, 0.0)).area for k in (-1, 0, 1))
-                    if cover / max(pi.area, 1e-12) >= COVER:
-                        best = max(best, jt.layer + 1)
+                    if cover / max(pi.area, 1e-12) >= COVER and jt.layer + 1 > best:
+                        best, it.layer_reason = jt.layer + 1, f"over {jt.name}"
                 it.layer = best
             done.append(it)
 
     def fit_radius(self, its: list[Item]) -> float:
-        """Row sums: the pieces of layer 0 side by side with a gap each need ``sum(w) + n gap <= 2 pi R``."""
+        """Row sums: the pieces of layer 0 side by side with a gap each need ``sum(w) + n gap <= 2 pi R``.
+
+        Half of a mirror pair whose other half is not placed yet counts twice on a symmetric ring: the ring is sized
+        for the whole garment, so the other half joins later without anything climbing a layer."""
         base = [it for it in its if it.layer == 0]
         if not base:
             return 0.0
@@ -402,17 +560,23 @@ class Layout:
             p = it.piece
             assert p is not None
             b = it.outline
+            lone = it.ring in SYMMETRIC_RINGS and not it.partner and bool(it.source or it.name in self.sources.values())
             ys = np.arange(float(b[:, 1].min()), float(b[:, 1].max()) + ROW_STEP, ROW_STEP)
             for y in ys:
                 w = row_width(b, float(y))
                 if w > 1e-4:
-                    rows.setdefault(int(round((it.axial0 + y + p.theta[2]) / ROW_STEP)), []).append(w)
+                    rows.setdefault(int(round((it.axial0 + y + p.theta[2]) / ROW_STEP)), []).extend([w] * (1 + lone))
         need = max((sum(ws) + len(ws) * self.o.gap_piece for ws in rows.values()), default=0.0)
         return need / (2.0 * np.pi)
 
     def _start_radii(self, incremental: bool) -> None:
         """Start radius of the rolled pieces to be solved (``solved`` ones keep theirs). ``around`` pieces start at the
-        smallest radius from their point's own that clears the body under them; ``roll`` pieces share their ring's."""
+        smallest radius from their point's own that clears the body under them; ``roll`` pieces share their ring's.
+
+        The ring radius fits every layer-0 piece of the ring side by side, placed ones included (``fit_radius``), and
+        clears the body under the new ones. A placed layer-0 ring that is too small for that moves out as a whole
+        (incremental): the garment stays concentric instead of the new pieces climbing a layer. The body alone never
+        moves placed pieces: a new piece that needs more clearance sits further out by just that much."""
         o = self.o
         gl = o.gap_layer if o.gap_layer is not None else o.gap_piece
         for it in self.items:
@@ -420,30 +584,46 @@ class Layout:
                 self._set_radius(it, max(it.piece.theta0[0], self.clear_radius(it)))
         rings = sorted({it.ring for it in self.items if it.mode == "roll"})
         for ring in rings:
-            ring_items = [it for it in self.items if it.mode == "roll" and it.ring == ring]
+            ring_items = [it for it in self.items if it.mode == "roll" and it.ring == ring and it.piece is not None]
             todo = [it for it in ring_items if it.solve and not isinstance(it.pl.get("solved"), dict)]
             if not todo:
                 continue
-            if incremental:
-                fixed_r = [it.piece.theta[0] for it in ring_items if not it.solve and it.piece is not None]
-                for it in todo:
-                    assert it.piece is not None
-                    it.layer = it.user_layer or 0
-                    need = max(
-                        self.clear_radius(it), self.fit_radius([it]), it.piece.theta0[0], min(fixed_r, default=0.0)
-                    )
-                    self._set_radius(it, need + it.layer * gl)
-                continue
-            for it in todo:  # layers are judged where the pieces will sit: all side by side
-                it.layer = 0
-            scale = max([self.fit_radius(todo)] + [it.piece.theta0[0] for it in todo if it.piece is not None])
-            self._layers(todo, scale)
+            placed = [it for it in ring_items if not it.solve]  # fixed: solved earlier (incremental) or locked
+            for it in ring_items:  # layers are judged where the pieces will sit: all side by side
+                it.layer, it.layer_reason = 0, ""
+            scale = max(
+                [self.fit_radius(ring_items)]
+                + [it.piece.theta0[0] for it in todo if it.piece is not None]
+                + [min((it.piece.theta[0] for it in placed if it.piece is not None), default=0.0)]
+            )
+            self._layers(ring_items, scale)
+            fit = self.fit_radius(ring_items)
+            movable = [it for it in placed if not it.locked and it.piece is not None]
+            base = [it.piece.theta[0] for it in movable if it.layer == 0 and it.piece is not None]
+            if incremental and base and fit > min(base) + GROW_TOL:
+                self._grow(ring, movable, fit - min(base))
+                base = [r + fit - min(base) for r in base]
             radius = max(
-                [self.fit_radius(todo)] + [max(self.clear_radius(it), it.piece.theta0[0]) for it in todo if it.piece]
+                [fit, min(base, default=0.0)]
+                + [max(self.clear_radius(it), it.piece.theta0[0]) for it in todo if it.layer == 0 and it.piece]
             )
             self.ring_radius[ring] = radius
             for it in todo:
-                self._set_radius(it, radius + it.layer * gl)
+                r = radius + it.layer * gl
+                self._set_radius(it, r if it.layer == 0 else max(r, self.clear_radius(it)))
+
+    def _grow(self, ring: str, its: list[Item], dr: float) -> None:
+        """Move placed pieces of a ring out by ``dr`` together (``s`` and ``t`` kept, layers kept)."""
+        for it in its:
+            p = it.piece
+            assert p is not None
+            p.theta[0] = p.theta0[0] = min(float(p.theta[0]) + dr, max(p.r_max, p.r_min))
+            p.update()
+            it.regrown = True
+        self.notes.append(
+            f"RING_GROWN: the {ring} ring grew by {dr * 100:.1f} cm to fit the new pieces side by side; moved out: "
+            + ", ".join(it.name for it in its)
+        )
         for g in self.groups.values():  # a group shares the radius of its lead
             lead, clone = g
             assert lead.piece is not None and clone.piece is not None

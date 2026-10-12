@@ -21,7 +21,8 @@
     "schema_version": {
       "enum": [
         1,
-        2
+        2,
+        3
       ]
     },
     "name": {
@@ -195,6 +196,22 @@
         },
         {
           "$ref": "#/$defs/axis"
+        }
+      ]
+    },
+    "pattern_origin_m": {
+      "description": "Position of the piece origin (bbox bottom-left) in the pattern's own drafting frame (y up, metres): pieces drafted on shared base lines keep their relative heights (vertical datum). Null when unknown.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
         }
       ]
     },

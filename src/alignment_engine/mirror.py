@@ -84,7 +84,8 @@ def mirror_clone(bundle: dict[str, Any], vertices: F64, faces: I64, axis: dict[s
     mesh, ``outline_m``, ``named_points``, ``edges``, ``bbox_m``, ``default_reference`` and the grainline. Edge lengths,
     area and perimeter are preserved exactly. The clone keeps the named point names, records ``mirror_of`` and its
     own ``axis``
-    (so mirroring it again with that axis restores the source) and ``origin_shift_m``.
+    (so mirroring it again with that axis restores the source), ``origin_shift_m`` and, for a vertical axis, the
+    ``pattern_origin_m`` of the source minus that shift (heights in the drafting frame are kept).
     """
     outline = np.asarray(bundle["outline_m"], dtype=np.float64)
     n = len(outline)
@@ -125,8 +126,12 @@ def mirror_clone(bundle: dict[str, Any], vertices: F64, faces: I64, axis: dict[s
         grain["anchor_xy_m"] = [float(a[0]), float(a[1])]
         grain["rotation_deg"] = float(np.mod(2.0 * alpha - grain["rotation_deg"], 360.0))
     hi = refl.max(axis=0)
+    src_origin = bundle.get("pattern_origin_m")
+    origin = None  # a vertical mirror keeps heights: the clone sits on the same drafting base lines, x mirrored
+    if src_origin is not None and abs(float(d[0])) < 1e-9:
+        origin = [float(src_origin[0] - shift[0]), float(src_origin[1] - shift[1])]
     out = {
-        "schema_version": 2,
+        "schema_version": 3,
         "name": new_id,
         "units": "m",
         "obj": f"{new_id}_m.obj",
@@ -140,6 +145,7 @@ def mirror_clone(bundle: dict[str, Any], vertices: F64, faces: I64, axis: dict[s
         "mirror_of": bundle["name"],
         "axis": own_axis,
         "origin_shift_m": [float(shift[0]), float(shift[1])],
+        "pattern_origin_m": origin,
     }
     v3 = np.column_stack([refl, np.zeros(n)])
     f = np.ascontiguousarray(inv[np.asarray(faces)][:, [0, 2, 1]])

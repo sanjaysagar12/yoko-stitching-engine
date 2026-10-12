@@ -326,23 +326,40 @@ class AlignmentEngine:
         base_placement: dict[str, Any],
         derived_id: str,
         mode: str,
+        warnings: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         """Placements ``[base, clone]`` for a piece and its derived clone (see ``pairs.place_pair``).
 
-        For ``same_anchor`` the reference of ``base_placement`` must lie on the mirror axis (1 mm).
+        For ``same_anchor`` the reference must lie on the mirror axis (1 mm). If it does not, the named point on the
+        axis nearest in height to it becomes the reference of both (``warnings`` gets ``REFERENCE_ADJUSTED``); with no
+        named point on the axis, ``ReferenceNotOnAxisError``.
         """
         avatar, pieces, derived = self._load(avatar_dir, piece_dir, derived_defs, Path("."))
         if derived_id not in derived:
             raise UnknownPieceError(derived_id, list(derived))
         d = derived[derived_id]
         dist: float | None = None
+        fresh = {k: v for k, v in base_placement.items() if k != "solved"}  # both copies are solved anew, together
         if mode == "same_anchor":
             base = pieces[d.spec["source"]]
-            ref = base.reference(str(base_placement.get("reference", "bbox_centre")))[:2]
             p0, u = d.mirrored.line_source
-            v = ref - p0
-            dist = float(abs(v[0] * u[1] - v[1] * u[0]))
-        fresh = {k: v for k, v in base_placement.items() if k != "solved"}  # both copies are solved anew, together
+
+            def off_axis(xy: Any) -> float:
+                v = np.asarray(xy, dtype=np.float64)[:2] - p0
+                return float(abs(v[0] * u[1] - v[1] * u[0]))
+
+            name = str(fresh.get("reference", "bbox_centre"))
+            ref = base.reference(name)
+            dist = off_axis(ref)
+            on_axis = [q for q in base.bundle["named_points"] if off_axis(q["xy_m"]) <= 1e-3]
+            if dist > 1e-3 and on_axis:
+                pick = min(on_axis, key=lambda q: (abs(q["xy_m"][1] - ref[1]), q["name"]))
+                fresh["reference"], dist = pick["name"], 0.0
+                if warnings is not None:
+                    warnings.append(
+                        f"REFERENCE_ADJUSTED: {name} of {base.name} is not on the mirror axis; the pair uses "
+                        f"{pick['name']} (on the axis) as its reference"
+                    )
         return place_pair(fresh, derived_id, mode, point_names=avatar.points, ref_axis_distance_m=dist)
 
     # -- one placement -----------------------------------------------------------------------------------------
