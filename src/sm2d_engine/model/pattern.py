@@ -49,6 +49,7 @@ class PieceDef:
     nodes: tuple[NodeRef, ...]
     attrs: dict[str, str] = field(default_factory=dict)
     data: dict[str, str] = field(default_factory=dict)
+    grainline: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

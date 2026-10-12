@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bounding_volumes.schema.json",
+  "title": "Bounding volumes (oriented capsules, metres)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "units", "convention", "volumes"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "units": {"const": "m"},
+    "convention": {"type": "string"},
+    "volumes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind", "joint", "child_joint", "axis_start", "axis_end", "centre", "radius_m", "length_m", "num_vertices"],
+        "properties": {
+          "name": {"type": "string"},
+          "kind": {"enum": ["capsule", "cylinder"]},
+          "joint": {"type": "string"},
+          "child_joint": {"type": "string"},
+          "axis_start": {"$ref": "#/$defs/vec3"},
+          "axis_end": {"$ref": "#/$defs/vec3"},
+          "centre": {"$ref": "#/$defs/vec3"},
+          "radius_m": {"type": "number", "exclusiveMinimum": 0},
+          "length_m": {"type": "number", "exclusiveMinimum": 0},
+          "num_vertices": {"type": "integer", "minimum": 1}
+        }
+      }
+    }
+  },
+  "$defs": {"vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}
+}

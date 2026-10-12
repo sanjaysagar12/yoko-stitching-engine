@@ -4,3 +4,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+models/
+outputs/
+node_modules/
+src/web/frontend/dist/

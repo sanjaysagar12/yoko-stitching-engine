@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "name": "female_165",
+  "gender": "female",
+  "units": "cm",
+  "measurements": {
+    "height": 165,
+    "neck_circ": 33,
+    "shoulder_width": 35,
+    "chest_circ": 88,
+    "waist_circ": 70,
+    "hip_circ": 98,
+    "upper_arm_circ": 28,
+    "wrist_circ": 15,
+    "thigh_circ": 56,
+    "arm_length": 50,
+    "inseam": 76,
+    "neck_back_to_waist": 34
+  },
+  "options": {
+    "num_betas": 30,
+    "exact_circumferences": true
+  }
+}

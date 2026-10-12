@@ -213,6 +213,8 @@ def test_8_determinism(tmp_path: Path) -> None:
     a = run_to(tmp_path / "a", sm2d, smis)
     b = run_to(tmp_path / "b", sm2d, smis)
     names = sorted(p.name for p in a.iterdir())
-    assert names == sorted(p.name for p in b.iterdir()) and len(names) == 19
+    assert (
+        names == sorted(p.name for p in b.iterdir()) and len(names) == 17 * 2 + 2
+    )  # OBJ + piece.json per piece, combined, report
     for n in names:
         assert (a / n).read_bytes() == (b / n).read_bytes(), n

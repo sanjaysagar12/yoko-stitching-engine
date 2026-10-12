@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "avatar_bundle.schema.json",
+  "title": "Avatar bundle manifest (written by avatar_engine)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "units", "convention", "name", "model_type", "model_file", "gender", "betas",
+               "num_betas_requested", "num_betas_used", "target_cm", "achieved_cm", "mesh", "files", "bbox_m", "engine_version"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "units": {"const": "m"},
+    "convention": {"type": "string"},
+    "name": {"type": "string"},
+    "model_type": {"enum": ["smpl", "smplx"]},
+    "model_file": {"type": "string"},
+    "gender": {"enum": ["male", "female", "neutral"]},
+    "betas": {"type": "array", "items": {"type": "number"}},
+    "num_betas_requested": {"type": "integer", "minimum": 1},
+    "num_betas_used": {"type": "integer", "minimum": 1},
+    "target_cm": {"$ref": "#/$defs/numbers"},
+    "achieved_cm": {"$ref": "#/$defs/numbers"},
+    "mesh": {"type": "string"},
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bounding_volumes", "arrangement_points", "measurements_report"],
+      "properties": {
+        "bounding_volumes": {"type": "string"},
+        "arrangement_points": {"type": "string"},
+        "measurements_report": {"type": "string"}
+      }
+    },
+    "bbox_m": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {"min": {"$ref": "#/$defs/vec3"}, "max": {"$ref": "#/$defs/vec3"}}
+    },
+    "engine_version": {"type": "string"}
+  },
+  "$defs": {
+    "vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "numbers": {"type": "object", "additionalProperties": {"type": "number"}}
+  }
+}

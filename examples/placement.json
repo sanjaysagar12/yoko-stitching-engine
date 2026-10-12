@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "placements": [
+    {"piece": "FrontPanel", "point": "Chest_Front", "wrap": "around"},
+    {"piece": "BackPanel", "point": "Chest_Back", "wrap": "around", "offset_m": 0.04}
+  ],
+  "rings": [
+    {"name": "chest", "pieces": ["FrontPanel", "BackPanel"], "avatar_measurement": "chest_circ"}
+  ]
+}

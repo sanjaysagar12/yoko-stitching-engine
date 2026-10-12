@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "name": "male_173",
+  "gender": "male",
+  "units": "cm",
+  "measurements": {
+    "height": 173,
+    "neck_circ": 38,
+    "shoulder_width": 38.5,
+    "chest_circ": 100,
+    "waist_circ": 88,
+    "hip_circ": 100,
+    "upper_arm_circ": 32,
+    "wrist_circ": 17,
+    "thigh_circ": 58,
+    "arm_length": 52,
+    "inseam": 78,
+    "neck_back_to_waist": 36
+  },
+  "options": {
+    "num_betas": 30,
+    "exact_circumferences": true
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "aldrich_skirt",
+  "sm2d": "Aldrich-Womens-6th-Ed-Basic-Blocks.sm2d",
+  "smis": "aldrich_skirt_size12_h164.smis",
+  "body": "female_165.json",
+  "pieces": [
+    "A - Skirt Back",
+    "A - Skirt Front"
+  ]
+}

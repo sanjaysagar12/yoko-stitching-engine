@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "units": "m",
+  "convention": "c",
+  "volumes": [
+    {
+      "name": "Chest",
+      "kind": "capsule",
+      "joint": "spine2",
+      "child_joint": "neck",
+      "axis_start": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "axis_end": [
+        0,
+        1.3,
+        0
+      ],
+      "centre": [
+        0,
+        1.15,
+        0
+      ],
+      "radius_m": 0.17,
+      "length_m": 0.3,
+      "num_vertices": 500
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "name": "s",
+  "gender": "male",
+  "units": "cm",
+  "measurements": {
+    "height": 173,
+    "chest_circ": 100
+  },
+  "options": {
+    "num_betas": 30,
+    "exact_circumferences": true,
+    "model_type": "auto"
+  }
+}

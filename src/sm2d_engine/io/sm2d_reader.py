@@ -65,12 +65,14 @@ def parse_sm2d(xml: str) -> PatternModel:
             for n in (nodes_el if nodes_el is not None else [])
         )
         data = pe.find("data")
+        grain = pe.find("grainline")
         model.pieces.append(
             PieceDef(
                 name=pe.get("name") or "",
                 nodes=nodes,
                 attrs=dict(pe.attrib),
                 data=dict(data.attrib) if data is not None else {},
+                grainline=dict(grain.attrib) if grain is not None else {},
             )
         )
     return model

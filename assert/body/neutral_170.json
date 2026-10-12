@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "name": "neutral_170",
+  "gender": "neutral",
+  "units": "cm",
+  "measurements": {
+    "height": 170,
+    "chest_circ": 94,
+    "waist_circ": 80,
+    "hip_circ": 99,
+    "thigh_circ": 57
+  },
+  "options": {
+    "num_betas": 30,
+    "exact_circumferences": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "body_measurements.schema.json",
+  "title": "Body measurements (input of avatar_engine)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "name", "gender", "units", "measurements"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
+    "gender": {"enum": ["male", "female", "neutral"]},
+    "units": {"enum": ["cm", "mm", "m"]},
+    "measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "height": {"$ref": "#/$defs/len"},
+        "neck_circ": {"$ref": "#/$defs/len"},
+        "shoulder_width": {"$ref": "#/$defs/len"},
+        "chest_circ": {"$ref": "#/$defs/len"},
+        "waist_circ": {"$ref": "#/$defs/len"},
+        "hip_circ": {"$ref": "#/$defs/len"},
+        "upper_arm_circ": {"$ref": "#/$defs/len"},
+        "wrist_circ": {"$ref": "#/$defs/len"},
+        "thigh_circ": {"$ref": "#/$defs/len"},
+        "arm_length": {"$ref": "#/$defs/len"},
+        "inseam": {"$ref": "#/$defs/len"},
+        "neck_back_to_waist": {"$ref": "#/$defs/len"}
+      }
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "num_betas": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "exact_circumferences": {"type": "boolean"},
+        "model_type": {"enum": ["auto", "smpl", "smplx"]}
+      }
+    }
+  },
+  "$defs": {"len": {"type": "number", "exclusiveMinimum": 0}}
+}

@@ -4,19 +4,25 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sm2d-engine"
-version = "0.1.0"
-description = "Seamly2D pattern + measurements -> real-scale (1 OBJ unit = 1 m) per-piece meshes"
+version = "0.2.0"
+description = "Seamly2D patterns to real-scale piece meshes, SMPL avatars with arrangement points, and piece alignment (metres)"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.24", "mapbox_earcut>=1.0", "pydantic>=2"]
+dependencies = ["numpy>=1.24", "mapbox_earcut>=1.0", "pydantic>=2", "jsonschema>=4", "scipy>=1.10", "pyyaml>=6", "shapely>=2"]
 
 [project.optional-dependencies]
-dev = ["pytest", "mypy", "ruff"]
+web = ["fastapi>=0.110", "uvicorn>=0.29", "trimesh>=4"]
+dev = ["pytest", "mypy", "ruff", "httpx", "playwright", "types-PyYAML"]
 
 [project.scripts]
 sm2d-engine = "sm2d_engine.cli:main"
+avatar-engine = "avatar_engine.cli:main"
+alignment-engine = "alignment_engine.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+avatar_engine = ["default_points.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -27,7 +33,7 @@ files = ["src"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["mapbox_earcut"]
+module = ["mapbox_earcut", "jsonschema", "scipy", "scipy.*", "yaml", "shapely", "shapely.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

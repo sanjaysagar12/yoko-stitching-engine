@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "units": "m",
+  "convention": "c",
+  "points": [
+    {
+      "name": "Chest_Front",
+      "bv": "Chest",
+      "angle_deg": 0,
+      "t": 0.5,
+      "offset_m": 0.03,
+      "wrap_direction": "around",
+      "position_m": [
+        0,
+        1.2,
+        0.2
+      ],
+      "normal": [
+        0,
+        0,
+        1
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "tangent": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

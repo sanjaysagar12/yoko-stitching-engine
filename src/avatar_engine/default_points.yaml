@@ -1,0 +1,28 @@
+# Default arrangement points (CLO3D style). Everything is relative to the bounding volumes, so the points follow
+# any body shape; there are no absolute coordinates here.
+#
+#   bv        base name of the bounding volume (symmetric entries use <bv>_L / <bv>_R)
+#   t         0..1 along the volume axis (CLO's "Y"); the volume axis runs joint -> child joint
+#   angles    position around the axis in degrees. Central volumes (axis points up): 0 = front (+z), 90 = left (+x),
+#             180 = back, 270 = right. Limb volumes (axis points away from the torso): 0 = front, 180 = back,
+#             Outer = 270 and Inner = 90 for the left side; the right side is generated mirrored (360 - angle).
+#   offset_m  distance between the avatar surface and the point
+#   paired    true: central volume with a left/right pair, names <bv>_<label>_L / _R, the right angle is 360 - a
+#   wrap      wrap direction: around | flat
+version: 1
+offset_m: {central: 0.03, limb: 0.02}
+points:
+  - {bv: Head,  t: 0.60, wrap: around, angles: {Front: 0, Back: 180, Left: 90, Right: 270}}
+  - {bv: Neck,  t: 0.50, wrap: around, angles: {Front: 0, Back: 180, Left: 90, Right: 270}}
+  - {bv: Chest, t: 0.30, wrap: around, angles: {Front: 0, Back: 180, Left: 90, Right: 270}}
+  - {bv: Waist, t: 0.50, wrap: around, angles: {Front: 0, Back: 180, Left: 90, Right: 270}}
+  - {bv: Hip,   t: 0.40, wrap: around, angles: {Front: 0, Back: 180, Left: 90, Right: 270}}
+  - {bv: Chest, t: 0.30, wrap: around, paired: true, angles: {FrontSide: 40, BackSide: 140}}
+  - {bv: Waist, t: 0.50, wrap: around, paired: true, angles: {FrontSide: 40, BackSide: 140}}
+  - {bv: Hip,   t: 0.40, wrap: around, paired: true, angles: {FrontSide: 40, BackSide: 140}}
+  - {bv: UpperArm, symmetric: true, t: 0.50, wrap: around, angles: {Front: 0, Back: 180, Outer: 270, Inner: 90}}
+  - {bv: Forearm,  symmetric: true, t: 0.50, wrap: around, angles: {Front: 0, Back: 180, Outer: 270, Inner: 90}}
+  - {bv: Hand,     symmetric: true, t: 0.50, wrap: flat,   angles: {Front: 0, Back: 180, Outer: 270, Inner: 90}}
+  - {bv: Thigh,    symmetric: true, t: 0.50, wrap: around, angles: {Front: 0, Back: 180, Outer: 270, Inner: 90}}
+  - {bv: Shin,     symmetric: true, t: 0.50, wrap: around, angles: {Front: 0, Back: 180, Outer: 270, Inner: 90}}
+  - {bv: Foot,     symmetric: true, t: 0.50, wrap: flat,   angles: {Front: 0, Back: 180, Outer: 270, Inner: 90}}

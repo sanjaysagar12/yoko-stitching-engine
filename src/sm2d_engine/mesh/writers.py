@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Protocol
 
+from ..contracts import write_json
 from ..errors import UnsupportedFormatError
 from .mesh import Mesh
 
@@ -15,6 +16,10 @@ class MeshWriter(Protocol):
 
     def write_piece(self, out_dir: Path, slug: str, mesh: Mesh, header: list[str]) -> Path:
         """Write one piece (metres); return the file path."""
+        ...
+
+    def write_piece_bundle(self, out_dir: Path, slug: str, bundle: dict[str, Any]) -> Path:
+        """Write ``<slug>.piece.json`` (metres, validated against the piece_bundle schema); return the path."""
         ...
 
     def write_combined(self, out_dir: Path, stem: str, meshes: list[tuple[str, Mesh]], header: list[str]) -> Path:
@@ -48,6 +53,10 @@ class ObjWriter:
         path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         return path
 
+    def write_piece_bundle(self, out_dir: Path, slug: str, bundle: dict[str, Any]) -> Path:
+        """``<slug>.piece.json``."""
+        return write_json(out_dir / f"{slug}.piece.json", bundle, "piece_bundle")
+
     def write_combined(self, out_dir: Path, stem: str, meshes: list[tuple[str, Mesh]], header: list[str]) -> Path:
         """``<stem>_all_pieces_layout_m.obj`` with a ``g <name>`` group per piece."""
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -76,6 +85,10 @@ class PlyWriter:
         return UnsupportedFormatError("PLY output is not implemented")
 
     def write_piece(self, out_dir: Path, slug: str, mesh: Mesh, header: list[str]) -> Path:
+        """Not implemented."""
+        raise self._no()
+
+    def write_piece_bundle(self, out_dir: Path, slug: str, bundle: dict[str, Any]) -> Path:
         """Not implemented."""
         raise self._no()
 

@@ -1,0 +1,66 @@
+{
+  "schema_version": 3,
+  "placements": [
+    {
+      "piece": "Cuff",
+      "point": "Chest_Front",
+      "offset_m": null,
+      "rotation_deg": 0,
+      "mirror": false,
+      "wrap": "body_slice",
+      "flip_facing": false,
+      "reference": "bbox_centre",
+      "ring": "torso",
+      "layer": 0,
+      "locked": false,
+      "shift_m": [
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "stitches": [
+    {
+      "a": {
+        "piece": "Cuff",
+        "from_point": "A",
+        "to_point": "B"
+      },
+      "b": {
+        "piece": "Cuff",
+        "from_point": "C",
+        "to_point": "D"
+      }
+    }
+  ],
+  "rings": [
+    {
+      "name": "chest",
+      "pieces": [
+        "Cuff"
+      ],
+      "avatar_measurement": "chest_circ"
+    }
+  ],
+  "derived_pieces": [
+    {
+      "id": "Cuff_L",
+      "source": "Cuff",
+      "op": "mirror",
+      "axis": {
+        "type": "edge",
+        "from_point": "A",
+        "to_point": "B"
+      }
+    }
+  ],
+  "arrange_options": {
+    "clearance_body": 0.03,
+    "gap_piece": 0.03,
+    "gap_layer": 0.015,
+    "max_standoff": 0.15,
+    "max_shift": 0.06,
+    "refine_max_edge": 0.01,
+    "standoff_mode": "uniform"
+  }
+}

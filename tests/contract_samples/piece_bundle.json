@@ -1,0 +1,70 @@
+{
+  "schema_version": 2,
+  "name": "Cuff",
+  "units": "m",
+  "obj": "Cuff_m.obj",
+  "bbox_m": {
+    "min": [
+      0,
+      0
+    ],
+    "max": [
+      0.29,
+      0.06
+    ]
+  },
+  "outline_m": [
+    [
+      0,
+      0
+    ],
+    [
+      0.29,
+      0
+    ],
+    [
+      0.29,
+      0.06
+    ],
+    [
+      0,
+      0.06
+    ]
+  ],
+  "named_points": [
+    {
+      "name": "A",
+      "label": "A",
+      "xy_m": [
+        0,
+        0
+      ],
+      "on_outline": true,
+      "outline_s_m": 0.0
+    }
+  ],
+  "edges": [
+    {
+      "from": "A",
+      "to": "A",
+      "length_m": 0.7
+    }
+  ],
+  "fold_edge": null,
+  "grainline": null,
+  "default_reference": {
+    "type": "bbox_centre",
+    "xy_m": [
+      0.145,
+      0.03
+    ]
+  },
+  "mirror_of": "Cuff",
+  "axis": {
+    "type": "bbox_center"
+  },
+  "origin_shift_m": [
+    0.0,
+    0.0
+  ]
+}

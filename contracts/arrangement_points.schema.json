@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "arrangement_points.schema.json",
+  "title": "Arrangement points (CLO3D style, metres)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "units", "convention", "points"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "units": {"const": "m"},
+    "convention": {"type": "string"},
+    "points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "bv", "angle_deg", "t", "offset_m", "wrap_direction", "position_m", "normal", "up", "tangent"],
+        "properties": {
+          "name": {"type": "string"},
+          "bv": {"type": "string"},
+          "angle_deg": {"type": "number", "minimum": 0, "exclusiveMaximum": 360},
+          "t": {"type": "number", "minimum": 0, "maximum": 1},
+          "offset_m": {"type": "number", "minimum": 0},
+          "wrap_direction": {"enum": ["around", "flat"]},
+          "position_m": {"$ref": "#/$defs/vec3"},
+          "normal": {"$ref": "#/$defs/vec3"},
+          "up": {"$ref": "#/$defs/vec3"},
+          "tangent": {"$ref": "#/$defs/vec3"}
+        }
+      }
+    }
+  },
+  "$defs": {"vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}
+}

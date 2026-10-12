@@ -26,6 +26,7 @@ from .mesh.writers import MeshWriter, writer_for
 from .model.geometry_types import Polygon
 from .model.pattern import PieceDef
 from .pieces.assembler import assemble
+from .pieces.bundle import build_piece_bundle
 from .reporting import EngineResult, PieceReport
 from .tools import default_registry
 from .tools.registry import Registry
@@ -64,6 +65,7 @@ class _Built:
     mesh: Mesh
     header: list[str]
     slug: str = ""
+    bundle: dict[str, Any] | None = None
 
 
 def _slug(name: str) -> str:
@@ -128,7 +130,7 @@ class Engine:
                 reports.append(PieceReport(name, "failed", f"piece {name!r} not found in pattern"))
                 continue
             try:
-                b = self._build(piece, scope, request)
+                b = self._build(piece, scope, request, write)
             except UnsupportedToolError as e:
                 reports.append(PieceReport(name, "failed", str(e.with_piece(name))))
                 log.warning("piece %s failed: %s", name, e)
@@ -150,6 +152,9 @@ class Engine:
                 path = writer.write_piece(out_dir, slug, b.mesh, b.header)
                 b.report.file = path.name
                 paths.append(str(path))
+                if b.bundle is not None:
+                    b.bundle["obj"] = path.name
+                    paths.append(str(writer.write_piece_bundle(out_dir, slug, b.bundle)))
             reports.append(b.report)
             built.append(b)
 
@@ -191,7 +196,7 @@ class Engine:
             paths.append(str(writer.write_report(out_dir, result.to_dict())))
         return result
 
-    def _build(self, piece: PieceDef, scope: VariableScope, request: EngineRequest) -> _Built:
+    def _build(self, piece: PieceDef, scope: VariableScope, request: EngineRequest, bundle: bool) -> _Built:
         opt = request.options
         outline = assemble(piece, scope, flatten_tol_cm=opt.flatten_tol_mm / 10.0)
         poly, w, h = to_origin(outline.points_cm)
@@ -243,7 +248,8 @@ class Engine:
             f"source measurements: {request.smis_name}",
             f"quantity: {qty or 'null'}  onFold: {fold or 'null'}  (half pieces are NOT mirrored)",
         ]
-        return _Built(report, poly, mesh, header)
+        doc = build_piece_bundle(piece.name, "", poly, outline.points_cm, piece.grainline, scope) if bundle else None
+        return _Built(report, poly, mesh, header, bundle=doc)
 
 
 __all__: list[Any] = ["Engine", "EngineOptions", "EngineRequest"]

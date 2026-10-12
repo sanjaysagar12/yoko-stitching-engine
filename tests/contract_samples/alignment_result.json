@@ -1,0 +1,180 @@
+{
+  "schema_version": 3,
+  "units": "m",
+  "placements": [
+    {
+      "piece": "Cuff",
+      "point": "Chest_Front",
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "wrapped_vertices": null,
+      "reference_position_m": [
+        0,
+        1,
+        0
+      ],
+      "bbox_cm": {
+        "width": 29,
+        "height": 6
+      },
+      "warnings": [],
+      "fit": {},
+      "mirrored": false,
+      "wrapped_faces": null,
+      "extends": "left",
+      "arrange": {
+        "ring": "torso",
+        "layer": 0,
+        "locked": false,
+        "standoff_m": 0.03,
+        "shift_m": [
+          0.0,
+          0.0
+        ],
+        "min_distance_to_avatar_m": 0.031,
+        "min_distance_to_pieces_m": {
+          "Cuff_L": 0.031
+        },
+        "flags": [],
+        "area_ratio": 0.998,
+        "edge_change_p50_pct": 0.4,
+        "edge_change_p90_pct": 2.0,
+        "max_edge_change_pct": 9.0,
+        "max_edge_change_body_pct": 4.0,
+        "max_edge_change_shoulder_pct": 9.0,
+        "self_intersections": 0,
+        "vertices_outside_shell": 0
+      },
+      "world_outline_m": [
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          0.1,
+          1,
+          0
+        ],
+        [
+          0.1,
+          1.1,
+          0
+        ]
+      ],
+      "world_named_points": [
+        {
+          "name": "A",
+          "label": "A",
+          "on_outline": true,
+          "world_m": [
+            0,
+            1,
+            0
+          ]
+        }
+      ],
+      "world_edges": [
+        {
+          "id": "A-B",
+          "from": "A",
+          "to": "B",
+          "length_m": 0.1,
+          "polyline_m": [
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.1,
+              1,
+              0
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "stitch_reports": [],
+  "ring_reports": [],
+  "warnings": [],
+  "derived_pieces": [
+    {
+      "id": "Cuff_L",
+      "source": "Cuff",
+      "axis": {
+        "type": "x",
+        "value_m": 0.145
+      },
+      "origin_shift_m": [
+        0.0,
+        0.0
+      ],
+      "obj": "Cuff_L_m.obj",
+      "bundle": "Cuff_L.piece.json",
+      "bbox_cm": {
+        "width": 29,
+        "height": 6
+      },
+      "suggested_stitch": null
+    }
+  ],
+  "arrangement": {
+    "options": {
+      "clearance_body": 0.03,
+      "gap_piece": 0.03
+    },
+    "rings": [
+      {
+        "ring": "torso",
+        "pieces": [
+          "Cuff"
+        ],
+        "body_loop_m": 0.9,
+        "garment_loop_m": 1.3,
+        "true_ease_m": 0.4,
+        "standoff_used_m": 0.11,
+        "standoff_required_m": 0.11,
+        "exceeded": false,
+        "binding_row_m": 1.2,
+        "violating_rows": []
+      }
+    ],
+    "seam_candidates": [],
+    "violations": [
+      {
+        "kind": "GAP_PIECES",
+        "pieces": [
+          "Cuff",
+          "Cuff_L"
+        ],
+        "value_m": 0.02,
+        "required_m": 0.03,
+        "at_m": [
+          0,
+          1,
+          0
+        ]
+      }
+    ],
+    "notes": [],
+    "timing_s": 1.5
+  }
+}

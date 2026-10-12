@@ -49,3 +49,21 @@ def point_by_name(scope: VariableScope, name: str) -> tuple[float, float]:
 @pytest.fixture(scope="session")
 def shirt_reports() -> dict[str, Any]:
     return inspect("male_shirt.sm2d", "male_shirt.smis")
+
+
+@pytest.fixture(scope="session")
+def scene(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
+    from avatar_engine import AvatarEngine
+    from sm2d_engine.engine import Engine, EngineOptions, EngineRequest
+
+    base = tmp_path_factory.mktemp("scene")
+    models = ROOT / "models" / "smplx"
+    if not (models / "SMPLX_MALE.npz").is_file():
+        pytest.skip("models/smplx not present")
+    AvatarEngine().build((ROOT / "assert/body/male_173.json").read_text(), models, base / "avatar")
+    sm2d = (ROOT / "assert/sm2d/male_shirt.sm2d").read_text(encoding="utf-8")
+    smis = (ROOT / "assert/smis/male_shirt.smis").read_text(encoding="utf-8")
+    Engine().run(
+        EngineRequest(sm2d, smis, EngineOptions(output_dir=base / "pieces"), "male_shirt.sm2d", "male_shirt.smis")
+    )
+    return {"avatar": base / "avatar", "pieces": base / "pieces", "out": base / "out"}

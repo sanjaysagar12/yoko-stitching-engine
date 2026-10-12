@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "placement_spec.schema.json",
+  "title": "Placement spec (what the user chose)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "placements"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "placements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "piece",
+          "point"
+        ],
+        "properties": {
+          "piece": {
+            "type": "string"
+          },
+          "point": {
+            "type": "string"
+          },
+          "offset_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "rotation_deg": {
+            "type": "number"
+          },
+          "mirror": {
+            "type": "boolean"
+          },
+          "wrap": {
+            "enum": [
+              "flat",
+              "around",
+              "body_slice"
+            ]
+          },
+          "flip_facing": {
+            "type": "boolean"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "ring": {
+            "type": "string"
+          },
+          "layer": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "shift_m": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+    "stitches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "a",
+          "b"
+        ],
+        "properties": {
+          "a": {
+            "$ref": "#/$defs/edge"
+          },
+          "b": {
+            "$ref": "#/$defs/edge"
+          }
+        }
+      }
+    },
+    "rings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "pieces",
+          "avatar_measurement"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "pieces": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "avatar_measurement": {
+            "type": "string"
+          },
+          "include_clones": {
+            "type": "boolean"
+          },
+          "level_point": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "derived_pieces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source",
+          "op",
+          "axis"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          },
+          "source": {
+            "type": "string"
+          },
+          "op": {
+            "const": "mirror"
+          },
+          "axis": {
+            "$ref": "#/$defs/axis"
+          }
+        }
+      }
+    },
+    "arrange_options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clearance_body": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gap_piece": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gap_layer": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_standoff": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max_shift": {
+          "type": "number",
+          "minimum": 0
+        },
+        "refine_max_edge": {
+          "type": "number",
+          "exclusiveMinimum": 0.002
+        },
+        "standoff_mode": {
+          "enum": [
+            "uniform",
+            "per_row"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "piece",
+        "from_point",
+        "to_point"
+      ],
+      "properties": {
+        "piece": {
+          "type": "string"
+        },
+        "from_point": {
+          "type": "string"
+        },
+        "to_point": {
+          "type": "string"
+        }
+      }
+    },
+    "axis": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "bbox_center"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "from_point",
+            "to_point"
+          ],
+          "properties": {
+            "type": {
+              "const": "edge"
+            },
+            "from_point": {
+              "type": "string"
+            },
+            "to_point": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "value_m"
+          ],
+          "properties": {
+            "type": {
+              "const": "x"
+            },
+            "value_m": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,683 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "alignment_result.schema.json",
+  "title": "Alignment result (metres; matrices are row-major 4x4 = 16 numbers)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "units",
+    "placements",
+    "stitch_reports",
+    "ring_reports",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "units": {
+      "const": "m"
+    },
+    "placements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "piece",
+          "point",
+          "matrix",
+          "mirrored",
+          "wrapped_vertices",
+          "wrapped_faces",
+          "reference_position_m",
+          "bbox_cm",
+          "warnings",
+          "fit"
+        ],
+        "properties": {
+          "piece": {
+            "type": "string"
+          },
+          "point": {
+            "type": "string"
+          },
+          "matrix": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 16,
+            "maxItems": 16
+          },
+          "mirrored": {
+            "type": "boolean"
+          },
+          "wrapped_faces": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                }
+              }
+            ]
+          },
+          "wrapped_vertices": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/vec3"
+                }
+              }
+            ]
+          },
+          "reference_position_m": {
+            "$ref": "#/$defs/vec3"
+          },
+          "bbox_cm": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "width",
+              "height"
+            ],
+            "properties": {
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fit": {
+            "type": "object"
+          },
+          "extends": {
+            "enum": [
+              "left",
+              "right",
+              "centre"
+            ]
+          },
+          "arrange": {
+            "type": "object",
+            "required": [
+              "ring",
+              "layer",
+              "locked",
+              "shift_m",
+              "min_distance_to_avatar_m",
+              "min_distance_to_pieces_m",
+              "flags"
+            ],
+            "properties": {
+              "ring": {
+                "type": "string"
+              },
+              "layer": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "locked": {
+                "type": "boolean"
+              },
+              "standoff_m": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "shift_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "min_distance_to_avatar_m": {
+                "type": "number"
+              },
+              "min_distance_to_pieces_m": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "flags": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "CLEARANCE_BODY",
+                    "GAP_PIECES"
+                  ]
+                }
+              },
+              "area_ratio": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "edge_change_p50_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "edge_change_p90_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "max_edge_change_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "max_edge_change_body_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "max_edge_change_shoulder_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "self_intersections": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "vertices_outside_shell": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "world_outline_m": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          },
+          "world_named_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "world_m"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "on_outline": {
+                  "type": "boolean"
+                },
+                "world_m": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "world_edges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "from",
+                "to",
+                "length_m",
+                "polyline_m"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "length_m": {
+                  "type": "number"
+                },
+                "polyline_m": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    "stitch_reports": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "ring_reports": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "derived_pieces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source",
+          "axis",
+          "origin_shift_m",
+          "obj",
+          "bundle",
+          "bbox_cm"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "axis": {
+            "$ref": "#/$defs/axis"
+          },
+          "origin_shift_m": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "obj": {
+            "type": "string"
+          },
+          "bundle": {
+            "type": "string"
+          },
+          "bbox_cm": {
+            "type": "object"
+          },
+          "suggested_stitch": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "arrangement": {
+      "type": "object",
+      "required": [
+        "options",
+        "rings",
+        "seam_candidates",
+        "violations",
+        "timing_s"
+      ],
+      "properties": {
+        "options": {
+          "type": "object"
+        },
+        "rings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ring",
+              "pieces",
+              "body_loop_m",
+              "garment_loop_m",
+              "true_ease_m",
+              "standoff_used_m",
+              "standoff_required_m"
+            ],
+            "properties": {
+              "ring": {
+                "type": "string"
+              },
+              "pieces": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "body_loop_m": {
+                "type": "number"
+              },
+              "garment_loop_m": {
+                "type": "number"
+              },
+              "true_ease_m": {
+                "type": "number"
+              },
+              "standoff_used_m": {
+                "type": "number"
+              },
+              "standoff_required_m": {
+                "type": "number"
+              },
+              "exceeded": {
+                "type": "boolean"
+              },
+              "binding_row_m": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "violating_rows": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "seam_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "a",
+              "b",
+              "distance_m",
+              "length_ratio"
+            ],
+            "properties": {
+              "a": {
+                "type": "object",
+                "required": [
+                  "piece",
+                  "edge",
+                  "length_m",
+                  "polyline_m"
+                ],
+                "properties": {
+                  "piece": {
+                    "type": "string"
+                  },
+                  "edge": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "length_m": {
+                    "type": "number"
+                  },
+                  "polyline_m": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "b": {
+                "type": "object",
+                "required": [
+                  "piece",
+                  "edge",
+                  "length_m",
+                  "polyline_m"
+                ],
+                "properties": {
+                  "piece": {
+                    "type": "string"
+                  },
+                  "edge": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "length_m": {
+                    "type": "number"
+                  },
+                  "polyline_m": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "distance_m": {
+                "type": "number"
+              },
+              "length_ratio": {
+                "type": "number"
+              },
+              "overlap": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "pieces",
+              "value_m",
+              "required_m"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "CLEARANCE_BODY",
+                  "GAP_PIECES",
+                  "STANDOFF_EXCEEDED"
+                ]
+              },
+              "pieces": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "value_m": {
+                "type": "number"
+              },
+              "required_m": {
+                "type": "number"
+              },
+              "at_m": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timing_s": {
+          "type": "number"
+        },
+        "convention": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "vec3": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "axis": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "bbox_center"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "from_point",
+            "to_point"
+          ],
+          "properties": {
+            "type": {
+              "const": "edge"
+            },
+            "from_point": {
+              "type": "string"
+            },
+            "to_point": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "value_m"
+          ],
+          "properties": {
+            "type": {
+              "const": "x"
+            },
+            "value_m": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

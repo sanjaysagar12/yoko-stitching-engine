@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "piece_bundle.schema.json",
+  "title": "Piece bundle (<piece>.piece.json, written by sm2d_engine; metres; piece frame: x right, y up, z = 0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "name",
+    "units",
+    "obj",
+    "bbox_m",
+    "outline_m",
+    "named_points",
+    "edges",
+    "fold_edge",
+    "grainline",
+    "default_reference"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "units": {
+      "const": "m"
+    },
+    "obj": {
+      "type": "string"
+    },
+    "bbox_m": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "$ref": "#/$defs/vec2"
+        },
+        "max": {
+          "$ref": "#/$defs/vec2"
+        }
+      }
+    },
+    "outline_m": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vec2"
+      },
+      "minItems": 2
+    },
+    "named_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "label",
+          "xy_m",
+          "on_outline",
+          "outline_s_m"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "xy_m": {
+            "$ref": "#/$defs/vec2"
+          },
+          "on_outline": {
+            "type": "boolean"
+          },
+          "outline_s_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from",
+          "to",
+          "length_m"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "length_m": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "fold_edge": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "grainline": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "anchor_xy_m",
+            "rotation_deg",
+            "length_m"
+          ],
+          "properties": {
+            "anchor_xy_m": {
+              "$ref": "#/$defs/vec2"
+            },
+            "rotation_deg": {
+              "type": "number"
+            },
+            "length_m": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "default_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "xy_m"
+      ],
+      "properties": {
+        "type": {
+          "const": "bbox_centre"
+        },
+        "xy_m": {
+          "$ref": "#/$defs/vec2"
+        }
+      }
+    },
+    "mirror_of": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "axis": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/axis"
+        }
+      ]
+    },
+    "origin_shift_m": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "vec2": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "axis": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "bbox_center"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "from_point",
+            "to_point"
+          ],
+          "properties": {
+            "type": {
+              "const": "edge"
+            },
+            "from_point": {
+              "type": "string"
+            },
+            "to_point": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "value_m"
+          ],
+          "properties": {
+            "type": {
+              "const": "x"
+            },
+            "value_m": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
