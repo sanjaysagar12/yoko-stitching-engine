@@ -179,7 +179,7 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
         b = ready_build(body)
         op = body.get("op", "mirror")
         new = {"id": body.get("id"), "source": body.get("source"), "op": op}
-        if op != "copy":
+        if op != "copy" or "axis" in body:  # an axis on a copy is rejected by the spec schema
             new["axis"] = body.get("axis")
         derived = [d for d in body.get("derived_pieces") or [] if d.get("id") != new["id"]] + [new]
         res = aligner.align(
@@ -190,8 +190,13 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
         )
         d = res.doc["derived_pieces"][-1]
         bundle = json.loads((b.dir / "derived" / d["bundle"]).read_text(encoding="utf-8"))
-        link = {"copy_of": bundle["copy_of"]} if op == "copy" else {"mirror_of": bundle["mirror_of"], "axis": d["axis"]}
+        link = (
+            {"clone_of": bundle["clone_of"], "mirror_of": None}
+            if op == "copy"
+            else {"mirror_of": bundle["mirror_of"], "axis": d["axis"]}
+        )
         return {
+            "id": d["id"],
             "name": d["id"],
             "status": "ok",
             "source": d["source"],

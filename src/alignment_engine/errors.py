@@ -59,6 +59,22 @@ class DerivedOfDerivedError(AlignmentError):
         )
 
 
+class DerivedCycleError(AlignmentError):
+    """Derived pieces whose sources form a cycle (``A`` copies ``B`` copies ``A``)."""
+
+    def __init__(self, chain: list[str]) -> None:
+        self.chain = chain
+        super().__init__(f"derived pieces form a cycle: {' -> '.join(chain)}")
+
+
+class NotAMirrorCloneError(AlignmentError):
+    """A pair asked for a plain copy (``op: "copy"``): only a mirror clone makes a pair."""
+
+    def __init__(self, derived_id: str) -> None:
+        self.derived_id = derived_id
+        super().__init__(f"{derived_id!r} is a copy, not a mirror clone; place it like any other piece")
+
+
 class DuplicatePieceError(AlignmentError):
     """A derived piece id that is already used by a piece or by another derived piece."""
 

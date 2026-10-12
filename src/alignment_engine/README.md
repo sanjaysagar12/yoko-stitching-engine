@@ -101,10 +101,10 @@ left/right halves (two pockets, belt loops, a second collar stand, a symmetric p
 left/right halves (shirt fronts, sleeves of an asymmetric pattern, trouser legs).
 
 * `copy_clone(piece_bundle, vertices, faces, new_id)` (`mirror.py`) keeps mesh, outline, named points, edges, fold edge,
-  grainline, bbox, default reference and `pattern_origin_m`; it records `copy_of`, no `mirror_of` / `axis`,
+  grainline, bbox, default reference and `pattern_origin_m`; it records `clone_of`, no `mirror_of` / `axis`,
   `origin_shift_m = [0, 0]`. A missing `op` means `mirror` (old specs load); `axis` on a copy or no `axis` on a mirror is
   an error. A copy may be made of a derived piece defined earlier in the list (a copy of a mirror clone copies the
-  mirrored geometry, `copy_of` names the clone); a mirror of any derived piece is `DerivedOfDerivedError`.
+  mirrored geometry, `clone_of` names the clone); a mirror of any derived piece is `DerivedOfDerivedError`.
 * **A copy is never half of a pair**: only `op: mirror` enters the clone -> source map the layout builds pairs, groups,
   `PAIR_*` checks and the half-gap logic from, and `pair()` refuses a copy. A copy on the counterpart point with a
   negated rotation is two independent pieces (gap, layers and body clearance as for any two pieces); a copy on the same

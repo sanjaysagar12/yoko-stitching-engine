@@ -129,13 +129,13 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
     put(
       h("div", { class: "pname-big" }, name),
       info.mirror_of ? h("div", { class: "meta", "data-testid": "mirror-of" }, `⇆ linked mirrored copy of ${info.mirror_of}`) : null,
-      info.copy_of ? h("div", { class: "meta", "data-testid": "copy-of" }, `⧉ exact copy of ${info.copy_of}`) : null,
+      info.clone_of ? h("div", { class: "meta", "data-testid": "copy-of" }, `⧉ exact copy of ${info.clone_of}`) : null,
       h(
         "div",
         { class: "btn-row" },
         h("button", { class: "btn", "data-testid": "copy-open", title: "Exact copies, same orientation", onclick: () => actions.openCopy(name) }, "Clone"),
         h("button", { class: "btn", "data-testid": "clone-open", onclick: () => actions.openClone(name) }, "Clone & mirror"),
-        info.mirror_of || info.copy_of ? h("button", { class: "btn danger", "data-testid": "derived-delete", onclick: () => actions.deleteDerived(name) }, "Delete clone") : null,
+        info.mirror_of || info.clone_of ? h("button", { class: "btn danger", "data-testid": "derived-delete", onclick: () => actions.deleteDerived(name) }, "Delete clone") : null,
       ),
       h("div", { class: "placed-on", "data-testid": "placed-on" }, pl ? `placed on ${pl.point}` : "not placed - click an arrangement point"),
       res ? h("div", { class: `side side-${res.extends}`, "data-testid": "extends" }, `extends ${sideText}`) : null,

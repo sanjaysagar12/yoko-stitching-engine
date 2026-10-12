@@ -189,7 +189,7 @@
         "null"
       ]
     },
-    "copy_of": {
+    "clone_of": {
       "description": "name of the piece this one is an exact copy of (same orientation); null / absent if none",
       "type": [
         "string",

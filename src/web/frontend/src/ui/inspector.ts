@@ -1,8 +1,10 @@
 // Piece inspector: the outline of the selected piece with its named points as labelled, clickable dots.
 // Clicking a dot sets the piece reference (or, while the clone dialog is open, picks an axis point). Display only.
+import { ASYMMETRY_M, mirrorDeviation, sideOf } from "../lib";
 import type { Store } from "../state";
 import type { PieceBundle, PieceInfo } from "../types";
 import type { Actions } from "./actions";
+import { h as el } from "./dom";
 
 const W = 276;
 const H = 230;
@@ -74,7 +76,7 @@ export function mountInspector(
       }
     };
     if (info.mirror_of) addAxis(info.axis);
-    else if (!info.copy_of) for (const d of s.derived.filter((d) => d.source === info.name)) addAxis(d.axis); // copies have no axis
+    else if (!info.clone_of) for (const d of s.derived.filter((d) => d.source === info.name)) addAxis(d.axis); // copies have no axis
     for (const a of axes) root.append(svg("line", { ...a, class: "axis" }));
 
     const placement = s.placements.get(info.name);
@@ -108,6 +110,13 @@ export function mountInspector(
       root.append(g);
     }
     box.replaceChildren(root);
+    // a copy keeps the handedness of its source: on the other side an asymmetric piece is the wrong way round
+    const copyOf = s.derived.find((d) => d.id === info.name && d.op === "copy");
+    const side = placement ? sideOf(placement.point) : null;
+    const srcPoint = copyOf ? s.placements.get(copyOf.source)?.point : undefined;
+    if (copyOf && side && side !== (srcPoint ? sideOf(srcPoint) : null) && mirrorDeviation(b.outline_m) > ASYMMETRY_M) {
+      box.append(el("div", { class: "notice", "data-testid": "copy-handedness" }, "This piece is not symmetric: a copy on the other side has the wrong handedness. Use Clone & mirror for left/right pieces."));
+    }
     title.textContent = `${info.name}: click a dot to set the reference${info.mirror_of ? ` (mirror of ${info.mirror_of})` : ""}. Dashed line = mirror axis.`;
   };
 

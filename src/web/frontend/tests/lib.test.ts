@@ -1,6 +1,7 @@
 import { Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import {
+  ASYMMETRY_M,
   baseOf,
   bodyPart,
   cloneName,
@@ -9,8 +10,10 @@ import {
   formatSigned,
   layoutOffsets,
   matrixFromRowMajor,
+  mirrorDeviation,
   mirrorName,
   partColor,
+  sideOf,
   splitWarning,
   withDependents,
 } from "../src/lib";
@@ -112,5 +115,17 @@ describe("default placement", () => {
     expect(defaultWrap(undefined)).toBe("around");
     const p = defaultPlacement("FrontPanel", "Chest_Front", "Chest", "A33");
     expect(p).toMatchObject({ wrap: "roll", reference: "A33", offset_m: null, mirror: false });
+  });
+});
+
+describe("copy handedness", () => {
+  it("sideOf reads the point suffix", () => {
+    expect([sideOf("Wrist_L"), sideOf("Hip_Right"), sideOf("Chest_Front")]).toEqual(["L", "R", null]);
+  });
+  it("mirrorDeviation is 0 for a symmetric outline and large for an asymmetric one", () => {
+    const rect: Array<[number, number]> = [[0, 0], [0.2, 0], [0.2, 0.1], [0, 0.1]];
+    const odd: Array<[number, number]> = [[0, 0], [0.2, 0], [0.2, 0.1], [0.05, 0.1]];
+    expect(mirrorDeviation(rect)).toBeLessThan(1e-12);
+    expect(mirrorDeviation(odd)).toBeGreaterThan(ASYMMETRY_M);
   });
 });

@@ -27,12 +27,7 @@ export type Axis =
   | { type: "x"; value_m: number };
 
 /** A derived piece: a mirrored clone (``op`` "mirror", the default when absent; needs ``axis``) or an exact copy. */
-export interface DerivedDef {
-  id: string;
-  source: string;
-  op?: "mirror" | "copy";
-  axis?: Axis;
-}
+export type DerivedDef = { id: string; source: string; op?: "mirror"; axis: Axis } | { id: string; source: string; op: "copy"; axis?: undefined };
 
 export interface StitchEnd {
   piece: string;
@@ -59,9 +54,9 @@ export interface PieceInfo {
   named_points?: NamedPoint[];
   default_reference?: [number, number];
   warnings?: string[];
-  /** Derived pieces only: ``mirror_of`` for a mirrored clone, ``copy_of`` for an exact copy. */
+  /** Derived pieces only: ``mirror_of`` for a mirrored clone, ``clone_of`` for an exact copy. */
   mirror_of?: string;
-  copy_of?: string;
+  clone_of?: string;
   source?: string;
   axis?: Axis;
   suggested_stitch?: Stitch | null;
@@ -321,6 +316,7 @@ export interface DerivedEntry {
   source: string;
   op?: "mirror" | "copy";
   axis?: Axis;
+  clone_of?: string;
   obj: string;
   bundle: string;
   bbox_cm: { width: number; height: number };

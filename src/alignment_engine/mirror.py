@@ -157,17 +157,18 @@ def copy_clone(bundle: dict[str, Any], vertices: F64, faces: I64, new_id: str) -
     """An exact copy of a piece (same orientation; CLO3D "Duplicate"): a separate piece, never a mirror half.
 
     Mesh, outline, named points, edges, fold edge, grainline, bbox, default reference and ``pattern_origin_m`` are the
-    source's; the copy records ``copy_of``, has no ``mirror_of`` / ``axis`` and ``origin_shift_m = [0, 0]``.
+    source's; the copy records ``clone_of`` (``bundle``'s name), ``mirror_of = axis = None`` and
+    ``origin_shift_m = [0, 0]``.
     """
     out = copy.deepcopy(bundle)
-    for k in ("mirror_of", "axis", "copy_of"):
-        out.pop(k, None)
     out.update(
         {
             "schema_version": 3,
             "name": new_id,
             "obj": f"{new_id}_m.obj",
-            "copy_of": bundle["name"],
+            "mirror_of": None,
+            "axis": None,
+            "clone_of": bundle["name"],
             "origin_shift_m": [0.0, 0.0],
         }
     )

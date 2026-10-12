@@ -500,6 +500,10 @@
           "axis": {
             "$ref": "#/$defs/axis"
           },
+          "clone_of": {
+            "description": "copies only: the piece whose geometry this one duplicates (a base piece or a mirror clone)",
+            "type": "string"
+          },
           "origin_shift_m": {
             "type": "array",
             "items": {

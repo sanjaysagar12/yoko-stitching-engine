@@ -70,6 +70,36 @@ export function cloneName(source: string, extendsSide?: "left" | "right" | "cent
   return `${source}_${extendsSide === "left" ? "R" : "L"}`;
 }
 
+/** Wearer's side of an arrangement point from its suffix (``_L`` / ``_Left`` -> "L", ``_R`` / ``_Right`` -> "R"). */
+export const sideOf = (point: string): "L" | "R" | null => (/_(L|Left)$/.test(point) ? "L" : /_(R|Right)$/.test(point) ? "R" : null);
+
+/** Largest distance (m) from the outline mirrored about its bbox-centre vertical line to the outline itself: 0 for a
+ * left/right symmetric piece. A copy of an asymmetric piece on the other side has the wrong handedness. */
+export function mirrorDeviation(outline: ReadonlyArray<readonly [number, number]>): number {
+  const n = outline.length;
+  if (n < 3) return 0;
+  const xs = outline.map((p) => p[0]);
+  const c = Math.min(...xs) + Math.max(...xs);
+  let worst = 0;
+  for (const [x, y] of outline) {
+    const qx = c - x;
+    let best = Infinity;
+    for (let i = 0; i < n; i++) {
+      const [ax, ay] = outline[i] as readonly [number, number];
+      const [bx, by] = outline[(i + 1) % n] as readonly [number, number];
+      const dx = bx - ax;
+      const dy = by - ay;
+      const t = Math.max(0, Math.min(1, ((qx - ax) * dx + (y - ay) * dy) / Math.max(dx * dx + dy * dy, 1e-18)));
+      best = Math.min(best, Math.hypot(ax + t * dx - qx, ay + t * dy - y));
+    }
+    worst = Math.max(worst, best);
+  }
+  return worst;
+}
+
+/** Above this the piece is not left/right symmetric (2 mm). */
+export const ASYMMETRY_M = 0.002;
+
 /** ``count`` unused names ``base``, ``base2``, ``base3``, ... (the names of new copies: ``Pocket_copy``, ``Pocket_copy2``). */
 export function copyNames(base: string, count: number, taken: ReadonlySet<string>): string[] {
   const out: string[] = [];

@@ -33,19 +33,21 @@ export function mountPieceList(host: HTMLElement, store: Store, actions: Actions
       h("span", { class: "pname" }, nested ? `↳ ${p.name}` : p.name),
       h("span", { class: "psize" }, `${formatCm(p.width_cm)} x ${formatCm(p.height_cm)} cm`),
       p.mirror_of ? h("span", { class: "plink", title: `linked mirrored copy of ${p.mirror_of}` }, `⇆ mirror of ${p.mirror_of}`) : null,
-      p.copy_of ? h("span", { class: "plink", "data-testid": `copy-badge-${p.name}`, title: `exact copy of ${p.copy_of}` }, `⧉ copy of ${p.copy_of}`) : null,
+      p.clone_of ? h("span", { class: "plink", "data-testid": `copy-badge-${p.name}`, title: `exact copy of ${p.clone_of}` }, `⧉ copy of ${p.clone_of}`) : null,
       placed ? h("span", { class: "pplaced" }, `on ${placed.point}${side}`) : null,
     );
     const hiddenNow = s.hiddenPieces.has(p.name);
     const eye = placed
       ? h("button", { class: `btn small eye${hiddenNow ? " off" : ""}`, title: hiddenNow ? `Show ${p.name}` : `Hide ${p.name}`, "data-testid": `eye-${p.name}`, onclick: () => actions.toggleHidden(p.name) }, hiddenNow ? "show" : "hide")
       : null;
-    if (!nested) return eye ? h("div", { class: "piece-row" }, btn, eye) : btn;
+    const copy = h("button", { class: "btn small", title: `Clone ${p.name} (exact copy)`, "data-testid": `copy-${p.name}`, onclick: () => actions.openCopy(p.name) }, "⧉");
+    if (!nested) return h("div", { class: "piece-row" }, btn, eye, copy);
     return h(
       "div",
       { class: "nested-row" },
       btn,
       eye,
+      copy,
       h("button", { class: "btn small del", title: `Delete ${p.name}`, "data-testid": `derived-del-${p.name}`, onclick: () => actions.deleteDerived(p.name) }, "✕"),
     );
   };

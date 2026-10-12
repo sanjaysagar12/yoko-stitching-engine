@@ -279,7 +279,7 @@ A half piece stays one piece. A **derived piece** is a linked mirrored copy made
 then places base and derived pieces alike. Derived meshes are cached as `<id>_m.obj` + `<id>.piece.json` (schema
 `piece_bundle` v2: `mirror_of`, `axis`, `origin_shift_m`).
 A plain copy (`{id, source, op: "copy"}`, no `axis`; the UI's **Clone**) is made by `copy_clone` (same geometry and
-orientation, `copy_of`); it is an ordinary piece and never half of a pair (see `src/alignment_engine/README.md`).
+orientation, `clone_of`); it is an ordinary piece and never half of a pair (see `src/alignment_engine/README.md`).
 
 * **Axis** is a 2D line: `bbox_center` (vertical through the bbox centre), `edge` (through two named points; general 2D
   reflection, so non-vertical edges work) or `x` (vertical at a piece x). Reflection `p' = p - 2((p - p0) . n) n`.

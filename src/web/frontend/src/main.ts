@@ -170,6 +170,8 @@ const actions: Actions = {
   deleteDerived(id) {
     const s = store.get();
     const gone = withDependents(s.derived, id); // copies made from this clone go with it
+    const others = [...gone].filter((g) => g !== id);
+    if (others.length > 0 && !window.confirm(`Delete ${id} and the pieces made from it: ${others.join(", ")}?`)) return;
     store.set({ derived: s.derived.filter((d) => !gone.has(d.id)), selectedPiece: s.selectedPiece && gone.has(s.selectedPiece) ? null : s.selectedPiece });
     for (const g of gone) {
       s.placements.delete(g);
@@ -245,8 +247,18 @@ const actions: Actions = {
 
 // -- placing -------------------------------------------------------------------------------------------------------------
 function newPlacement(piece: string, point: string): Placement {
-  const ref = store.get().referenceDraft.get(piece) ?? "bbox_centre";
-  return defaultPlacement(piece, point, bvOf(point), ref);
+  const s = store.get();
+  const ref = s.referenceDraft.get(piece);
+  // a copy starts from its placed source's wrap / offset / rotation / reference (same rotation: not a mirror)
+  const d = s.derived.find((x) => x.id === piece && x.op === "copy");
+  const src = d ? s.placements.get(d.source) : undefined;
+  if (src) {
+    const next: Placement = { ...src, piece, point, ...(ref ? { reference: ref } : {}) };
+    delete next.solved;
+    delete next.locked;
+    return next;
+  }
+  return defaultPlacement(piece, point, bvOf(point), ref ?? "bbox_centre");
 }
 
 function place(piece: string, point: string): void {
@@ -302,7 +314,7 @@ async function ensureDerived(res: AlignResult): Promise<void> {
       name: d.id,
       status: "ok",
       source: d.source,
-      ...(d.op === "copy" ? { copy_of: d.source } : { mirror_of: d.source, axis: d.axis }),
+      ...(d.op === "copy" ? { clone_of: d.clone_of ?? d.source } : { mirror_of: d.source, axis: d.axis }),
       width_cm: d.bbox_cm.width,
       height_cm: d.bbox_cm.height,
       obj: `derived/${d.obj}`,
@@ -468,15 +480,9 @@ async function copyPieces(req: CopyRequest): Promise<void> {
   const src = s.placements.get(req.source);
   const known = new Set(s.build?.avatar.points.map((p) => p.name) ?? []);
   const twin = src ? mirrorName(src.point, known) : null;
-  if (req.placeAtCounterpart && src && twin) {
-    const next: Placement = { ...src, piece: first, point: twin };
-    delete next.solved;
-    delete next.locked;
-    s.placements.set(first, next);
-    store.set({ selectedPiece: first });
-    store.touch("placements");
-    scheduleAlign(0);
-  } else actions.selectPiece(first); // placed on the next point click (or on the point chosen before)
+  if (req.place === "opposite" && twin) place(first, twin);
+  else if (req.place === "now") actions.selectPiece(first); // placed on the next point click (or the point chosen before)
+  else store.set({ selectedPiece: first });
 }
 
 // -- save and load ----------------------------------------------------------------------------------------------------------

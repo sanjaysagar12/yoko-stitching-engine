@@ -332,3 +332,33 @@ def test_arrange_endpoint_returns_the_arrangement(client: TestClient, shirt: dic
         json={**body, "placements": [{"piece": "BackPanel", "point": "Chest_Back", "ring": "tail", "wrap": "roll"}]},
     )
     assert bad.status_code == 422 and bad.json()["error"]["code"] == "ring_not_found"
+
+
+def test_clone_copy_pair_rejection_and_job_round_trip(client: TestClient, shirt: dict[str, Any]) -> None:
+    bid = shirt["id"]
+    r = client.post("/api/clone", json={"build": bid, "source": "Pocket", "id": "Pocket_copy", "op": "copy"})
+    assert r.status_code == 200, r.text
+    p = r.json()
+    assert p["id"] == p["name"] == "Pocket_copy" and p["op"] == "copy" and p["source"] == "Pocket"
+    assert p["clone_of"] == "Pocket" and p["mirror_of"] is None and "axis" not in p and p["suggested_stitch"] is None
+    assert "copy of Pocket" in client.get(f"/api/builds/{bid}/files/{p['obj']}").text
+    copy_ = {"id": "Pocket_copy", "source": "Pocket", "op": "copy"}
+    bad = client.post("/api/clone", json={"build": bid, "source": "Pocket", "id": "P2", "op": "copy", "axis": CF})
+    assert bad.status_code == 422
+    bad_id = client.post("/api/clone", json={"build": bid, "source": "Pocket", "id": "a b", "op": "copy"})
+    assert bad_id.status_code == 422 and bad_id.json()["error"]["code"] == "invalid_document"
+    pair = client.post(
+        "/api/pair",
+        json={
+            "build": bid,
+            "base": {"piece": "Pocket", "point": "Chest_FrontSide_R"},
+            "derived_id": "Pocket_copy",
+            "mode": "mirror_anchor",
+            "derived_pieces": [copy_],
+        },
+    )
+    assert pair.status_code == 422 and pair.json()["error"]["code"] == "not_a_mirror_clone", pair.text
+    both = [*DERIVED, copy_, {"id": "FrontPanel_L_copy", "source": "FrontPanel_L", "op": "copy"}]
+    pls = [{"piece": "Pocket", "point": "Chest_FrontSide_R"}, {"piece": "Pocket_copy", "point": "Chest_FrontSide_L"}]
+    saved = client.put("/api/jobs/male_shirt/placements", json={"placements": pls, "derived_pieces": both}).json()
+    assert saved["derived_pieces"] == both == client.get("/api/jobs/male_shirt/placements").json()["derived_pieces"]

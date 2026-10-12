@@ -19,7 +19,12 @@ from scipy.spatial import cKDTree
 
 from . import contracts
 from .derived import Derived, build_derived, derived_doc, write_derived
-from .errors import AlignmentError, UnknownMeasurementError, UnknownPieceError, UnknownPointError
+from .errors import (
+    NotAMirrorCloneError,
+    UnknownMeasurementError,
+    UnknownPieceError,
+    UnknownPointError,
+)
 from .loaders import Avatar, PieceInfo, PointRecord, read_avatar, read_pieces
 from .pairs import place_pair
 from .placement import apply_matrix, mirror_matrix, mirror_mesh, refine_mesh, rigid_matrix, target_frame
@@ -341,7 +346,7 @@ class AlignmentEngine:
             raise UnknownPieceError(derived_id, list(derived))
         d = derived[derived_id]
         if d.op != "mirror" or d.mirrored.line_source is None:
-            raise AlignmentError(f"{derived_id!r} is a copy, not a mirror clone; place it like any other piece")
+            raise NotAMirrorCloneError(derived_id)
         dist: float | None = None
         fresh = {k: v for k, v in base_placement.items() if k != "solved"}  # both copies are solved anew, together
         if mode == "same_anchor":
@@ -584,7 +589,9 @@ class AlignmentEngine:
         names = list(r["pieces"])
         if r.get("include_clones", True):  # a listed piece also counts its mirrored clones (2 x front + 2 x back)
             for n in list(names):
-                names += [d.id for d in derived.values() if d.spec["source"] == n and d.id not in names]
+                names += [
+                    d.id for d in derived.values() if d.op == "mirror" and d.spec["source"] == n and d.id not in names
+                ]
         warns: list[str] = []
         widths = []
         for n in names:

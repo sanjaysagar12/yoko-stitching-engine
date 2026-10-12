@@ -14,8 +14,9 @@ export interface CopyRequest {
   source: string;
   /** Names of the new copies (one per copy). */
   ids: string[];
-  /** If the source is on a side point: put the first copy on the counterpart point, same rotation. */
-  placeAtCounterpart: boolean;
+  /** ``now``: the first copy is placed on the next point clicked; ``opposite``: on the counterpart (``_L`` / ``_R``) of
+   * the source's point, same wrap / offset / reference / rotation; ``none``: not placed. */
+  place: "none" | "now" | "opposite";
 }
 
 export type ViewSide = "front" | "back" | "left" | "right" | "top";

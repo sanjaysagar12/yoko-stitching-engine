@@ -226,12 +226,14 @@ def test_clone_makes_plain_copies_that_are_never_a_pair(page: Any, server: str) 
     page.wait_for_selector("[data-testid=copy-dialog]")
     assert page.input_value("[data-testid=copy-name]") == "ShortSleeve_copy"  # never _L / _R for a copy
     page.fill("[data-testid=copy-count]", "3")
-    assert page.is_checked("[data-testid=copy-place-counterpart]")
-    with page.expect_request(lambda r: r.url.endswith("/api/align")) as req, page.expect_response(
-        lambda r: r.url.endswith("/api/align")
-    ) as resp:
+    assert page.input_value("[data-testid=copy-place]") == "opposite"  # the source is on a side point
+    with (
+        page.expect_request(lambda r: r.url.endswith("/api/align")) as req,
+        page.expect_response(lambda r: r.url.endswith("/api/align")) as resp,
+    ):
         page.click("[data-testid=copy-create]")
-    assert page.evaluate("window.__fit.state().derived") == ["ShortSleeve_copy", "ShortSleeve_copy2", "ShortSleeve_copy3"]
+    copies = ["ShortSleeve_copy", "ShortSleeve_copy2", "ShortSleeve_copy3"]
+    assert page.evaluate("window.__fit.state().derived") == copies
     sent = req.value.post_data_json
     assert all(d["op"] == "copy" and "axis" not in d for d in sent["derived_pieces"])
     doc = resp.value.json()
@@ -245,6 +247,7 @@ def test_clone_makes_plain_copies_that_are_never_a_pair(page: Any, server: str) 
     # a copy has no pair rows (and neither has its source, which has no mirror clone)
     assert page.evaluate("window.__fit.state().selectedPiece") == "ShortSleeve_copy"  # the new copy is selected
     page.wait_for_selector("[data-testid=copy-of]")
+    page.wait_for_selector("[data-testid=copy-handedness]")  # a sleeve is not symmetric: wrong way round there
     assert page.query_selector("[data-testid^=pair-same-]") is None
     page.click("[data-testid=piece-ShortSleeve]")
     assert page.query_selector("[data-testid^=pair-same-]") is None
@@ -359,3 +362,31 @@ def test_auto_arrange_shows_the_pieces_apart_with_true_ease(page: Any, server: s
     with page.expect_response(lambda r: r.url.endswith("/api/align"), timeout=240_000):
         page.click("[data-testid=arrange-reset]")
     page.wait_for_function("!window.__fit.arrangeState().arranged")
+    # a copy of a copy, then deleting the first copy asks first and takes its dependant along
+    page.click("[data-testid=piece-ShortSleeve_copy]")
+    with page.expect_response(lambda r: r.url.endswith("/api/clone")):
+        page.click("[data-testid=copy-open]")
+        page.select_option("[data-testid=copy-place]", "none")
+        page.click("[data-testid=copy-create]")
+    assert page.evaluate("window.__fit.state().derived")[-1] == "ShortSleeve_copy_copy"
+    seen: list[str] = []
+    page.once("dialog", lambda d: (seen.append(d.message), d.accept()))
+    page.click("[data-testid=piece-ShortSleeve_copy]")
+    page.click("[data-testid=derived-delete]")
+    assert "ShortSleeve_copy_copy" in seen[0]
+    assert page.evaluate("window.__fit.state().derived") == ["ShortSleeve_copy3"]
+
+
+def test_symmetric_copy_on_the_other_side_has_no_handedness_hint(page: Any, server: str) -> None:
+    fresh(page, server)
+    page.click("[data-testid=piece-Cuff]")
+    click_point(page, "Forearm_Outer_R")
+    page.click("[data-testid=copy-Cuff]")  # the piece list button
+    page.wait_for_selector("[data-testid=copy-dialog]")
+    with page.expect_response(lambda r: r.url.endswith("/api/align")) as resp:
+        page.click("[data-testid=copy-create]")
+    placements = {p["piece"]: p for p in resp.value.json()["placements"]}
+    assert placements["Cuff_copy"]["point"] == "Forearm_Outer_L" and placements["Cuff_copy"]["mirrored"] is False
+    page.wait_for_selector("[data-testid=copy-of]")
+    page.wait_for_timeout(300)
+    assert page.query_selector("[data-testid=copy-handedness]") is None

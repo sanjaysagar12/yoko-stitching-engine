@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from . import contracts
-from .errors import AxisError, DerivedOfDerivedError, DuplicatePieceError, UnknownPieceError
+from .errors import AxisError, DerivedCycleError, DerivedOfDerivedError, DuplicatePieceError, UnknownPieceError
 from .loaders import PieceInfo
 from .mirror import MirroredPiece, copy_clone, mirror_clone
 
@@ -48,39 +48,56 @@ class Derived:
 
 
 def build_derived(defs: list[dict[str, Any]], pieces: dict[str, PieceInfo], out_dir: Path) -> dict[str, Derived]:
-    """Build every derived piece of ``defs`` in order (duplicate ids are errors).
+    """Build every derived piece of ``defs`` (any order; duplicate ids, unknown sources and cycles are errors).
 
     ``op: "mirror"`` (default) needs an ``axis`` and a base piece (mirroring a derived piece is an error).
-    ``op: "copy"`` has no ``axis`` and may copy a base piece or a derived piece defined earlier in ``defs`` (a copy of
-    a mirror clone copies the mirrored geometry); sources must come first, so chains cannot form cycles.
+    ``op: "copy"`` has no ``axis`` and may copy a base piece or a derived piece: a copy of a copy is a copy of the
+    root (``clone_of`` names it), a copy of a mirror clone copies the mirrored geometry (``clone_of`` = the clone).
     ``pieces`` is the dict of base pieces; ``out_dir`` is where the files will be (only used for the file names).
     """
-    built: dict[str, Derived] = {}
+    by_id: dict[str, dict[str, Any]] = {}
     for d in defs:
-        pid, src, op = d["id"], d["source"], d.get("op", "mirror")
-        if pid in pieces or pid in built:
-            raise DuplicatePieceError(pid)
+        if d["id"] in pieces or d["id"] in by_id:
+            raise DuplicatePieceError(d["id"])
+        by_id[d["id"]] = d
+    built: dict[str, Derived] = {}
+
+    def build(pid: str) -> Derived:
+        if pid in built:
+            return built[pid]
+        d = by_id[pid]
+        src, op = d["source"], d.get("op", "mirror")
+        if src not in pieces and src not in by_id:
+            raise UnknownPieceError(src, [*pieces, *by_id])
         if op == "copy":
-            if "axis" in d:
+            if d.get("axis") is not None:
                 raise AxisError(f"derived piece {pid!r}: a copy has no mirror axis (remove 'axis' or use op 'mirror')")
-            if src not in pieces and src not in built:
-                raise UnknownPieceError(src, [*pieces, *built])
-            base = pieces[src] if src in pieces else built[src].info
+            root, seen = src, [pid]  # follow copies of copies to the root: a base piece or a mirror clone
+            while root in by_id and by_id[root].get("op", "mirror") == "copy":
+                if root in seen:
+                    raise DerivedCycleError([*seen, root])
+                seen.append(root)
+                root = by_id[root]["source"]
+                if root not in pieces and root not in by_id:
+                    raise UnknownPieceError(root, [*pieces, *by_id])
+            base = pieces[root] if root in pieces else build(root).info
             v, f = base.mesh()
             m = copy_clone(base.bundle, v, f, pid)
         else:
-            if "axis" not in d:
+            if d.get("axis") is None:
                 raise AxisError(f"derived piece {pid!r}: a mirror clone needs an 'axis'")
-            if src in built:
+            if src in by_id:
                 raise DerivedOfDerivedError(pid, src)
-            if src not in pieces:
-                raise UnknownPieceError(src, list(pieces))
             base = pieces[src]
             v, f = base.mesh()
             m = mirror_clone(base.bundle, v, f, d["axis"], pid)
         info = PieceInfo(m.bundle, Path(out_dir) / m.bundle["obj"], (m.vertices, m.faces))
         built[pid] = Derived(d, m, info)
-    return built
+        return built[pid]
+
+    for pid in by_id:
+        build(pid)
+    return {pid: built[pid] for pid in by_id}
 
 
 def write_derived(out_dir: Path, derived: dict[str, Derived]) -> list[Path]:
@@ -90,7 +107,7 @@ def write_derived(out_dir: Path, derived: dict[str, Derived]) -> list[Path]:
     for d in derived.values():
         b = d.mirrored.bundle
         lines = [
-            f"# piece: {b['name']} (copy of {b['copy_of']})"
+            f"# piece: {b['name']} (copy of {b['clone_of']})"
             if d.op == "copy"
             else f"# piece: {b['name']} (mirror of {b['mirror_of']})",
             "# units: metres (1 OBJ unit = 1 m); z = 0; x right, y up",
@@ -124,10 +141,12 @@ def derived_doc(d: Derived) -> dict[str, Any]:
     if d.op == "copy":
         return {
             **doc,
+            "clone_of": b["clone_of"],
             "origin_shift_m": [0.0, 0.0],
             "obj": b["obj"],
             "bundle": f"{b['name']}.piece.json",
             "bbox_cm": {"width": round(w * 100.0, 4), "height": round(h * 100.0, 4)},
+            "suggested_stitch": None,
         }
     stitch = d.suggested_stitch()
     return {
