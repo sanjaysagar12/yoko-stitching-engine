@@ -121,10 +121,13 @@ def test_select_piece_then_click_chest_front(page: Any, server: str) -> None:
     pt = next(p for p in build_result(server)["avatar"]["points"] if p["name"] == "Chest_Front")
     placement = click_point(page, "Chest_Front")["placements"][0]
     assert placement["piece"] == "FrontPanel" and placement["point"] == "Chest_Front"
-    # a torso point defaults to the body_slice wrap; the reference sits at the point (within the offset geometry)
-    assert page.input_value("[data-testid=ctl-wrap]") == "body_slice"
-    assert placement["wrapped_vertices"] is not None
-    assert placement["reference_position_m"] == pytest.approx(pt["position_m"], abs=0.012)
+    # a torso point defaults to rolling the piece (size exact); the reference sits on the ray from the torso axis
+    # through the point, at the roll radius (display space), and the answer says the layout is valid
+    assert page.input_value("[data-testid=ctl-wrap]") == "roll"
+    assert placement["wrapped_mesh"]["vertices"] and placement["size_check"]["max_edge_change_pct"] <= 0.05
+    ref = placement["reference_position_m"]
+    assert abs(ref[0] - pt["position_m"][0]) < 0.002 and ref[2] >= pt["position_m"][2] - 0.001
+    assert placement["arrange"]["min_distance_to_avatar_m"] >= 0.029
     assert placement["bbox_cm"] == {"width": pytest.approx(37.25, abs=0.01), "height": pytest.approx(74.40, abs=0.01)}
     page.wait_for_selector("[data-testid=scale-check-placed]")
     text = page.inner_text("[data-testid=scale-check-placed]")
@@ -137,7 +140,7 @@ def test_wrap_control_calls_the_backend_and_keeps_the_size(page: Any) -> None:
     with page.expect_response(lambda r: r.url.endswith("/api/align")) as info:
         page.select_option("[data-testid=ctl-wrap]", "around")
     r = info.value.json()["placements"][0]
-    assert r["wrapped_vertices"] is not None and r["bbox_cm"]["width"] == pytest.approx(37.25, abs=0.01)
+    assert r["wrapped_mesh"]["vertices"] and r["bbox_cm"]["width"] == pytest.approx(37.25, abs=0.01)
     with page.expect_response(lambda r: r.url.endswith("/api/align")) as info:
         page.fill("[data-testid=ctl-rotation]", "10")
         page.press("[data-testid=ctl-rotation]", "Enter")
@@ -168,15 +171,19 @@ def test_clone_and_place_a_centre_line_pair(page: Any, server: str) -> None:
     assert set(placements) == {"FrontPanel", "FrontPanel_L"}
     a, b = placements["FrontPanel"], placements["FrontPanel_L"]
     assert a["point"] == b["point"] == "Chest_Front"
-    assert a["reference_position_m"] == pytest.approx(b["reference_position_m"], abs=1e-6)  # the same anchor
+    ra, rb = (
+        a["reference_position_m"],
+        b["reference_position_m"],
+    )  # the same anchor, half a gap off the centre line each
+    assert abs(ra[0] + rb[0]) < 1e-5 and abs(ra[1] - rb[1]) < 1e-5 and abs(ra[2] - rb[2]) < 1e-5
     assert {a["extends"], b["extends"]} == {"left", "right"}  # opposite sides of the centre line
     size = {"width": pytest.approx(37.25, abs=0.01), "height": pytest.approx(74.40, abs=0.01)}
     assert a["bbox_cm"] == size and b["bbox_cm"] == size
-    # the CF edges coincide: the stitch between that edge on both copies has zero length everywhere
+    # the CF edges are the gap apart all along (room to draw the seam), never on top of each other
     (stitch,) = doc["stitch_reports"]
     assert stitch["diff_cm"] == pytest.approx(0.0, abs=1e-6) and stitch["segments"]
     gaps = [sum((u - v) ** 2 for u, v in zip(p, q, strict=True)) ** 0.5 for p, q in stitch["segments"]]
-    assert max(gaps) < 1e-6
+    assert min(gaps) == pytest.approx(0.03, abs=0.001) and doc["validity"]["valid"] is True
     assert doc["derived_pieces"][0]["id"] == "FrontPanel_L"
     assert not any("SIDE_" in w for w in a["warnings"] + b["warnings"])
 
@@ -205,7 +212,7 @@ def test_a_side_pair_for_sleeves(page: Any, server: str) -> None:
     assert placements["ShortSleeve_L"]["point"] == "UpperArm_Outer_L"
     a, b = placements["ShortSleeve"]["reference_position_m"], placements["ShortSleeve_L"]["reference_position_m"]
     assert abs(a[0] + b[0]) < 0.005 and abs(a[1] - b[1]) < 0.005 and abs(a[2] - b[2]) < 0.005
-    assert page.input_value("[data-testid=ctl-wrap]") == "around"  # limb points default to wrapping around the part
+    assert page.input_value("[data-testid=ctl-wrap]") == "roll"  # limb points roll around the arm (size exact)
 
 
 def test_back_points_are_not_pickable_in_the_front_view_until_xray(page: Any, server: str) -> None:
@@ -262,10 +269,6 @@ def test_auto_arrange_shows_the_pieces_apart_with_true_ease(page: Any, server: s
     for p in ("FrontPanel", "FrontPanel_L"):  # Neck_Front belongs to the neck: these two wrap the torso
         page.click(f"[data-testid=piece-{p}]")
         page.select_option("[data-testid=ctl-ring]", "torso")
-    for p in ("ShortSleeve", "ShortSleeve_L"):  # the sleeve hangs below the shoulder point
-        page.click(f"[data-testid=piece-{p}]")
-        page.fill("[data-testid=ctl-shift]", "13")
-        page.press("[data-testid=ctl-shift]", "Enter")
     clearance = 0.03
     SHOTS.mkdir(parents=True, exist_ok=True)
     for view in ("front", "left"):  # the same two views before and after
@@ -279,12 +282,13 @@ def test_auto_arrange_shows_the_pieces_apart_with_true_ease(page: Any, server: s
     page.wait_for_selector("[data-testid=arrange-rings]")
     arr = doc["arrangement"]
     assert not any(w.startswith(("CLEARANCE_BODY", "GAP_PIECES")) for w in doc["warnings"]), doc["warnings"]
-    assert arr["violations"] == []
+    assert arr["violations"] == [] and doc["validity"]["valid"] is True
     gap = arr["options"]["gap_piece"]
-    for p in doc["placements"]:
+    for p in doc["placements"]:  # every pair, every layer: no exemption any more
         a = p["arrange"]
         assert a["min_distance_to_avatar_m"] >= clearance - 0.001, p["piece"]
-        assert all(d >= gap - 0.001 for d in a["min_distance_to_pieces_m"].values()) or a["layer"] > 0, p["piece"]
+        assert all(d >= gap - 0.001 for d in a["min_distance_to_pieces_m"].values()), p["piece"]
+    page.wait_for_function("window.__fit.status().valid === true")
     for ring in arr["rings"]:  # one row of the true-ease table per ring, with the numbers of the report
         assert page.inner_text(f"[data-testid=ring-{ring['ring']}]")
         shown = float(page.inner_text(f"[data-testid=ease-{ring['ring']}]"))
@@ -314,5 +318,6 @@ def test_auto_arrange_shows_the_pieces_apart_with_true_ease(page: Any, server: s
     assert picked, "no edge could be picked"
     text = page.inner_text("[data-testid=selection]")
     assert picked["id"] in text and f"{picked['length_m'] * 100:.2f}" in text
-    page.click("[data-testid=arrange-reset]")
+    with page.expect_response(lambda r: r.url.endswith("/api/align"), timeout=240_000):
+        page.click("[data-testid=arrange-reset]")
     page.wait_for_function("!window.__fit.arrangeState().arranged")

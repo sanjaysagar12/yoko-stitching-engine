@@ -51,20 +51,29 @@ cd src/web/frontend; npm test; npm run lint; npm run build
 python -m playwright install chromium # once, for tests/e2e
 ```
 
-The browser test is skipped when the frontend has not been built or Chromium is not installed; tests that need the
-avatar are skipped when `models/smplx` is absent.
+The browser tests are skipped when the frontend has not been built or Chromium is not installed. The placement tests
+(sizes, collisions, interactive order, API, status strip) run on a synthetic symmetric body (`tests/synthetic_avatar.py`,
+through the real avatar_engine code) and need no model files; with `models/smplx` present they run on SMPL-X too.
 
 ## The scale guarantee
 
 What is tested: pattern pieces match their formulas and the reference sizes (shirt, skirt) to 0.01 cm; an avatar of
 173 cm has a bounding box 1.730 m high (+-1 mm) with its feet on y = 0; circumferences hit their targets to 0.2 mm after
-ring correction; rigid placement preserves all pairwise vertex distances (1e-9 m) and the piece area; wrapping
-preserves arc length along the piece x direction (0.1 %) and distances along y; the size the browser reports for a
-piece is the backend's flat bounding box and is unchanged by placement.
+ring correction. **Placed pieces are isometric copies of the pattern**: after every placement (`/api/align`, every click)
+and every Auto-arrange the engine measures every mesh edge, the outline length, the area and the distance between every
+two named points of every placed piece against the flat pattern; more than 0.05 % is an error and nothing is returned
+(measured: at most about 0.02 % for the 23-piece shirt, the chord of a 5 mm edge on the body's curvature). Pieces are
+moved rigidly or rolled onto cylinders (a developable surface), never stretched onto the body. **Collision-freeness is
+enforced and verified after every placement**: no piece closer than 3 cm to the avatar, no two pieces closer than 3 cm
+(every pair, every layer, exact point-to-triangle distances); the answer's `validity` block says so, and a layout that
+cannot meet it within `max_standoff` / `max_shift` is shown with `valid: false` and the violations, never as fine. The
+distance of a piece from the body (the standoff, the roll radius) is display space, not ease; ease is reported
+separately (garment loop minus skin loop). The size the browser reports is the backend's measurement.
 
 What is not tested or guaranteed: that the avatar is *the person* (it is a statistical body fitted to 12
-measurements; other dimensions follow the model); seam allowance (ignored); fabric behaviour (no simulation);
-collisions between a placed piece and the body (only the nearest-vertex distance is reported).
+measurements; other dimensions follow the model); seam allowance (ignored); fabric behaviour (no simulation, no draping:
+a piece rolled on one cylinder stands off the waist further than off the chest). The `body_slice` wrap, which follows
+the torso sections and therefore changes sizes, is only available with `allow_distortion` and is never valid.
 
 ## Licence note: SMPL and SMPL-X
 

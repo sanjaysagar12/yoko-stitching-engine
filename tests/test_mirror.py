@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+from scipy.spatial import cKDTree
 
 from alignment_engine import AlignmentEngine
 from alignment_engine.errors import (
@@ -19,6 +20,7 @@ from alignment_engine.errors import (
 from alignment_engine.loaders import read_pieces
 from alignment_engine.mirror import mirror_clone
 from alignment_engine.pairs import counterpart_point, place_pair
+from alignment_engine.verify import surface_samples
 
 CF = {"type": "edge", "from_point": "A33", "to_point": "A32"}  # the centre-front edge of FrontPanel
 
@@ -193,8 +195,10 @@ def test_derived_of_derived_and_duplicates_are_errors(scene: dict[str, Path]) ->
 
 
 # 4 ------------------------------------------------------------------------------------------------------------
-@pytest.mark.parametrize("wrap", ["flat", "around"])
-def test_4_centre_line_pair_cf_edges_coincide(scene: dict[str, Path], tmp_path: Path, wrap: str) -> None:
+@pytest.mark.parametrize("wrap", ["flat", "around", "roll"])
+def test_4_centre_line_pair_keeps_the_gap_across_the_centre_line(
+    scene: dict[str, Path], tmp_path: Path, wrap: str
+) -> None:
     eng = AlignmentEngine()
     derived = [{"id": "FrontPanel_L", "source": "FrontPanel", "op": "mirror", "axis": CF}]
     base = {"piece": "FrontPanel", "point": "Chest_Front", "reference": "A33", "wrap": wrap}
@@ -210,7 +214,13 @@ def test_4_centre_line_pair_cf_edges_coincide(scene: dict[str, Path], tmp_path: 
         pb = next(q["xy_m"] for q in c["named_points"] if q["name"] == name)
         wa = placed["FrontPanel"].transform(np.array([pa]))[0]
         wb = placed["FrontPanel_L"].transform(np.array([pb]))[0]
-        assert np.linalg.norm(wa - wb) < 1e-6, name  # the CF edges coincide
+        # the CF points mirror across the centre line, a gap apart (they never touch: room for the seam)
+        assert 0.03 - 0.001 <= np.linalg.norm(wa - wb) <= 0.035, name
+        assert np.abs(wa * [-1, 1, 1] - wb).max() < 1e-4, name  # the point is at x = 0 within 0.1 mm
+    sa = surface_samples(placed["FrontPanel"].vertices, placed["FrontPanel"].faces, 0.003)
+    sb = surface_samples(placed["FrontPanel_L"].vertices, placed["FrontPanel_L"].faces, 0.003)
+    # the gap across the centre line (a flat pair may widen a little where its outer edge meets the T-pose arm)
+    assert 0.03 - 0.001 <= float(cKDTree(sb).query(sa)[0].min()) <= 0.035
     ext = {p["piece"]: p["extends"] for p in res.doc["placements"]}
     assert ext["FrontPanel"] != ext["FrontPanel_L"] and {ext["FrontPanel"], ext["FrontPanel_L"]} == {"left", "right"}
     assert not any("SIDE_" in w for p in res.doc["placements"] for w in p["warnings"])
@@ -232,11 +242,18 @@ def test_5_side_pair_for_sleeves(scene: dict[str, Path]) -> None:
     mr, ml = np.array(r["matrix"]).reshape(4, 4), np.array(lf["matrix"]).reshape(4, 4)
     n_r, n_l = mr[:3, 2], ml[:3, 2]
     assert np.abs(n_r - n_l * np.array([-1.0, 1.0, 1.0])).max() < 2e-3  # normals mirror across x = 0 (0.1 deg)
-    # the whole placed sleeve is the mirror image of the other one
+    # the whole placed sleeve is the mirror image of the other one: every named point (the clone keeps the names; its
+    # mesh is refined on its own, so vertices are not compared one to one)
     a, b = res.placed
-    va = a.vertices[np.lexsort(a.vertices.T)]
-    vb = (b.vertices * np.array([-1.0, 1.0, 1.0]))[np.lexsort((b.vertices * np.array([-1.0, 1.0, 1.0])).T)]
-    assert np.abs(va - vb).max() < 0.005
+    src = json.loads((scene["pieces"] / "ShortSleeve.piece.json").read_text())
+    na = {q["name"]: q["xy_m"] for q in src["named_points"]}
+    clone = eng.align(scene["avatar"], scene["pieces"], spec(*pair, derived=derived), derived_dir=scene["out"] / "d5")
+    dst = json.loads((scene["out"] / "d5" / "ShortSleeve_L.piece.json").read_text())
+    nb = {q["name"]: q["xy_m"] for q in dst["named_points"]}
+    names = sorted(set(na) & set(nb))
+    wa = a.transform(np.array([na[n] for n in names]))
+    wb = clone.placed[1].transform(np.array([nb[n] for n in names])) * np.array([-1.0, 1.0, 1.0])
+    assert np.abs(wa - wb).max() < 0.005
 
 
 # 6 ------------------------------------------------------------------------------------------------------------

@@ -146,3 +146,17 @@ aside h2:first-child { margin-top: 0; }
 .btn.eye.off { opacity: 0.6; }
 .piece-list .piece-row { display: flex; gap: 4px; align-items: stretch; }
 .piece-list .piece-row .piece { flex: 1; }
+
+/* status strip under the 3D view: the engine's verdict on the last placement (green only when valid) */
+.status-strip {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 12px; font-size: 13px; z-index: 5;
+  border-top: 1px solid var(--line); background: #f0fdf4; color: #14532d; max-height: 40%; overflow-y: auto;
+}
+.status-strip.ok { background: #f0fdf4; color: #14532d; border-top-color: #86efac; }
+.status-strip.bad { background: #fef2f2; color: var(--danger); border-top-color: #fca5a5; }
+.status-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.status-violation {
+  border: 1px solid #fca5a5; background: #fff; color: var(--danger); border-radius: 4px; padding: 2px 7px; font: inherit;
+  cursor: pointer;
+}
+.status-violation:hover { border-color: var(--danger); }

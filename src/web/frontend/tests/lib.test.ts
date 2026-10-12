@@ -81,12 +81,16 @@ describe("point and piece names", () => {
 });
 
 describe("default placement", () => {
-  it("wraps the torso with body_slice and everything else around the body part", () => {
-    expect(defaultWrap("Chest")).toBe("body_slice");
-    expect(defaultWrap("Hip")).toBe("body_slice");
-    expect(defaultWrap("UpperArm_L")).toBe("around");
+  it("rolls pieces on the torso, neck, arms and legs (size exact) and wraps the rest around the body part", () => {
+    expect(defaultWrap("Chest")).toBe("roll");
+    expect(defaultWrap("Hip")).toBe("roll");
+    expect(defaultWrap("Neck")).toBe("roll");
+    expect(defaultWrap("UpperArm_L")).toBe("roll");
+    expect(defaultWrap("Shin_R")).toBe("roll");
+    expect(defaultWrap("Head")).toBe("around");
+    expect(defaultWrap("Hand_L")).toBe("around");
     expect(defaultWrap(undefined)).toBe("around");
     const p = defaultPlacement("FrontPanel", "Chest_Front", "Chest", "A33");
-    expect(p).toMatchObject({ wrap: "body_slice", reference: "A33", offset_m: null, mirror: false });
+    expect(p).toMatchObject({ wrap: "roll", reference: "A33", offset_m: null, mirror: false });
   });
 });

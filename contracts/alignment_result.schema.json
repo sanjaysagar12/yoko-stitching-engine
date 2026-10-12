@@ -17,7 +17,8 @@
       "enum": [
         1,
         2,
-        3
+        3,
+        4
       ]
     },
     "units": {
@@ -175,7 +176,8 @@
                 "items": {
                   "enum": [
                     "CLEARANCE_BODY",
-                    "GAP_PIECES"
+                    "GAP_PIECES",
+                    "SIZE_CHANGED"
                   ]
                 }
               },
@@ -222,6 +224,30 @@
               "vertices_outside_shell": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "mode": {
+                "type": "string"
+              },
+              "solved_now": {
+                "type": "boolean"
+              },
+              "radius_m": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "limits": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "required_gap_to_pieces_m": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number"
+                }
               }
             },
             "additionalProperties": false
@@ -305,6 +331,68 @@
               },
               "additionalProperties": false
             }
+          },
+          "size_check": {
+            "type": "object",
+            "description": "Measured on the placed mesh against the flat pattern (per cent)",
+            "required": [
+              "max_edge_change_pct",
+              "perimeter_change_pct",
+              "area_change_pct",
+              "named_point_change_pct"
+            ],
+            "properties": {
+              "max_edge_change_pct": {
+                "type": "number"
+              },
+              "perimeter_change_pct": {
+                "type": "number"
+              },
+              "area_change_pct": {
+                "type": "number"
+              },
+              "named_point_change_pct": {
+                "type": "number"
+              },
+              "max_mesh_edge_m": {
+                "type": "number"
+              },
+              "mesh_map_mismatch_m": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false
+          },
+          "changes_piece_size": {
+            "type": "boolean"
+          },
+          "solved": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "radius_m",
+                  "shift_m"
+                ],
+                "properties": {
+                  "radius_m": {
+                    "type": "number"
+                  },
+                  "shift_m": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                }
+              }
+            ]
           }
         }
       }
@@ -449,6 +537,9 @@
               },
               "note": {
                 "type": "string"
+              },
+              "radius_m": {
+                "type": "number"
               }
             }
           }
@@ -568,7 +659,8 @@
                 "enum": [
                   "CLEARANCE_BODY",
                   "GAP_PIECES",
-                  "STANDOFF_EXCEEDED"
+                  "STANDOFF_EXCEEDED",
+                  "SIZE_CHANGED"
                 ]
               },
               "pieces": {
@@ -586,17 +678,15 @@
               "at_m": {
                 "oneOf": [
                   {
-                    "type": "array",
-                    "items": {
-                      "type": "number"
-                    },
-                    "minItems": 3,
-                    "maxItems": 3
+                    "$ref": "#/$defs/vec3"
                   },
                   {
                     "type": "null"
                   }
                 ]
+              },
+              "limit": {
+                "type": "string"
               }
             },
             "additionalProperties": false
@@ -613,6 +703,101 @@
         },
         "convention": {
           "type": "string"
+        },
+        "iterations": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "validity": {
+      "type": "object",
+      "description": "Measured after every solve on the placed meshes; valid only if sizes, clearances and all gaps hold",
+      "required": [
+        "valid",
+        "size_ok",
+        "clearance_ok",
+        "gaps_ok",
+        "violations"
+      ],
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "size_ok": {
+          "type": "boolean"
+        },
+        "clearance_ok": {
+          "type": "boolean"
+        },
+        "gaps_ok": {
+          "type": "boolean"
+        },
+        "max_size_change_pct": {
+          "type": "number"
+        },
+        "min_distance_to_avatar_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "min_distance_between_pieces_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "required": {
+          "type": "object"
+        },
+        "violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "pieces",
+              "value_m",
+              "required_m"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "CLEARANCE_BODY",
+                  "GAP_PIECES",
+                  "STANDOFF_EXCEEDED",
+                  "SIZE_CHANGED"
+                ]
+              },
+              "pieces": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "value_m": {
+                "type": "number"
+              },
+              "required_m": {
+                "type": "number"
+              },
+              "at_m": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/vec3"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "limit": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
         }
       },
       "additionalProperties": false

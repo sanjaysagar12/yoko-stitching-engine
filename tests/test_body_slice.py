@@ -1,4 +1,4 @@
-"""body_slice wrap (alignment_engine Part C) and ring multiplicity (A5)."""
+"""body_slice wrap (alignment_engine Part C; only with ``allow_distortion``) and ring multiplicity (A5)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,10 @@ CF = {"type": "edge", "from_point": "A33", "to_point": "A32"}
 
 
 def spec(*placements: dict[str, Any], **extra: Any) -> str:
-    return json.dumps({"schema_version": 2, "placements": list(placements), **extra})
+    """body_slice stretches the piece (it is kept for comparison only), so these specs allow distortion explicitly."""
+    return json.dumps(
+        {"schema_version": 4, "placements": list(placements), "arrange_options": {"allow_distortion": True}, **extra}
+    )
 
 
 def avatar_points(scene: dict[str, Path]) -> dict[str, Any]:

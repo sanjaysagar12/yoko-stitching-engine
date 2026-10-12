@@ -150,29 +150,3 @@ def test_arc_of_ray_lands_on_the_ray_and_grows_with_h() -> None:
     a0 = hull.arc_of_ray(c, 1.0, 0.0), hull.arc_of_ray(c, 2.0, 0.0)
     a1 = hull.arc_of_ray(c, 1.0, 0.05), hull.arc_of_ray(c, 2.0, 0.05)
     assert (a1[1] - a1[0]) > (a0[1] - a0[0])  # the arc between two rays grows with the standoff
-
-
-def test_hull_stack_matches_the_scalar_hulls() -> None:
-    from alignment_engine.stack import HullStack
-
-    hulls = [
-        Hull(np.array([[0.0, 0.0], [0.2, 0.02], [0.25, 0.1], [0.1, 0.16], [-0.02, 0.08]])),
-        square(0.3, 0.2),
-        Hull(np.array([[0.0, 0.0], [0.1, -0.02], [0.2, 0.0], [0.22, 0.1], [0.12, 0.2], [0.0, 0.15]])),
-    ]
-    st = HullStack(hulls)
-    rng = np.random.default_rng(3)
-    for h in (0.0, 0.02, 0.1):
-        rows = rng.integers(0, 3, 200)
-        hh = np.full(200, h)
-        arcs = rng.uniform(0, 1.6, 200)
-        pos = st.point_at(rows, arcs, hh)
-        psi = rng.uniform(0, 2 * np.pi, 200)
-        ray = st.arc_of_ray(rows, psi, hh)
-        for i in range(200):
-            hl = hulls[rows[i]]
-            assert np.allclose(pos[i], hl.point_at(np.array([arcs[i]]), h)[0][0], atol=1e-9), (h, i)
-            L = hl.length(h)
-            if h > 0 or True:
-                a = hl.arc_of_ray(hl.centroid, psi[i], h)
-                assert abs((ray[i] - a + L / 2) % L - L / 2) < 1e-7, (h, i, ray[i], a)

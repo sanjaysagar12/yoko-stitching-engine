@@ -2,6 +2,7 @@
 // Display only: the matrices and wrapped vertices come from /api/align; nothing is scaled or recomputed here.
 import {
   Box3,
+  BufferAttribute,
   BufferGeometry,
   Camera,
   Color,
@@ -185,20 +186,20 @@ export class PiecesView {
   }
 
   /** Apply a backend placement result. Rigid: tween the matrix. Wrapped: swap in the wrapped mesh and fade it in. */
-  apply(r: PlacedResult, animate = true): void {
+  apply(r: PlacedResult, animate = true, arranged = false): void {
     const e = this.entries.get(r.piece);
     if (!e) return;
     e.placed = true;
     const mat = e.mesh.material as MeshStandardMaterial;
-    if (r.arrange && r.wrapped_vertices && r.wrapped_faces) {
+    if (arranged && r.vertexArray && r.faceArray) {
       this.applyArranged(e, r);
       return;
     }
     if (e.arranged) this.leaveArranged(e);
-    if (r.wrapped_vertices && r.wrapped_faces) {
+    if (r.vertexArray && r.faceArray) {
       const g = new BufferGeometry();
-      g.setAttribute("position", new Float32BufferAttribute(r.wrapped_vertices.flat(), 3));
-      g.setIndex(r.wrapped_faces.flat());
+      g.setAttribute("position", new Float32BufferAttribute(r.vertexArray, 3));
+      g.setIndex(new BufferAttribute(r.faceArray, 1));
       g.computeVertexNormals();
       if (e.mesh.geometry !== e.flat) e.mesh.geometry.dispose();
       e.mesh.geometry = g;
@@ -281,8 +282,8 @@ export class PiecesView {
   /** Arranged piece: wrapped mesh from the backend, semi-transparent and double sided, with outline, edges and points. */
   private applyArranged(e: Entry, r: PlacedResult): void {
     const g = new BufferGeometry();
-    g.setAttribute("position", new Float32BufferAttribute((r.wrapped_vertices ?? []).flat(), 3));
-    g.setIndex((r.wrapped_faces ?? []).flat());
+    g.setAttribute("position", new Float32BufferAttribute(r.vertexArray ?? new Float32Array(0), 3));
+    g.setIndex(new BufferAttribute(r.faceArray ?? new Uint32Array(0), 1));
     g.computeVertexNormals();
     if (e.mesh.geometry !== e.flat) e.mesh.geometry.dispose();
     e.mesh.geometry = g;

@@ -54,6 +54,10 @@ class PlacedPiece:
     stem: str
     extends: str = "centre"
     source: str = ""
+    size_check: dict[str, float] = field(default_factory=dict)  # measured against the flat pattern, per cent
+    changes_piece_size: bool = False  # True only for a distorting wrap allowed by ``allow_distortion``
+    key: bytes | None = None  # content key (equal keys: identical placed piece)
+    flat: F64 | None = None  # the same mesh flat, in piece coordinates (N,2): what the size check compares against
 
 
 @dataclass
@@ -82,6 +86,10 @@ class AlignmentEngine:
     def __init__(self) -> None:
         self._avatars: dict[tuple[str, int], Avatar] = {}
         self._refine: dict[str, RefineCache] = {}
+        self._checks: dict[Any, Any] = {}  # exact distances of unchanged pieces and pairs (keyed by content)
+        self._geom: dict[Any, Any] = {}  # static local geometry of the pieces (keyed by content)
+        self._bundles: dict[Any, dict[str, PieceInfo]] = {}  # validated piece folders (keyed by file times)
+        self._pieces: dict[bytes, dict[str, Any]] = {}  # per placed piece: size check, report data (keyed by content)
 
     @staticmethod
     def validate_spec(spec_json_text: str) -> dict[str, Any]:
@@ -95,7 +103,14 @@ class AlignmentEngine:
         key = (str(Path(avatar_dir).resolve()), (Path(avatar_dir) / "avatar_bundle.json").stat().st_mtime_ns)
         avatar = self._avatars.get(key) or read_avatar(Path(avatar_dir))
         self._avatars = {key: avatar}  # keep only the latest avatar
-        base = read_pieces(Path(piece_dir))
+        folder = Path(piece_dir)
+        stamp = (
+            str(folder.resolve()),
+            tuple((q.name, q.stat().st_mtime_ns) for q in sorted(folder.glob("*.piece.json"))),
+        )
+        if stamp not in self._bundles:  # validated once per content of the folder
+            self._bundles = {stamp: read_pieces(folder)}
+        base = self._bundles[stamp]
         derived = build_derived(derived_defs, base, derived_dir)
         return avatar, {**base, **{k: v.info for k, v in derived.items()}}, derived
 
@@ -106,50 +121,18 @@ class AlignmentEngine:
         spec_json_text: str,
         out_dir: Path | None = None,
         derived_dir: Path | None = None,
+        cache_dir: Path | None = None,
     ) -> AlignmentResult:
-        """Solve all placements of the spec.
+        """Place the pieces of the spec, collision-free and size-exact (see ``arrange.py``).
 
-        Derived pieces are built first. With ``out_dir`` the engine writes ``alignment_result.json``, placed OBJs, a
-        scene OBJ and the derived pieces; with only ``derived_dir`` it writes just the derived pieces (what a viewer
-        needs).
+        Incremental: a placement that carries ``solved`` parameters (from an earlier answer) stays exactly where it is;
+        every other placement is solved in spec order against what is already placed. Derived pieces are built first.
+        With ``out_dir`` the engine writes ``alignment_result.json``, placed OBJs, a scene OBJ and the derived pieces;
+        with only ``derived_dir`` it writes just the derived pieces (what a viewer needs). ``cache_dir`` keeps the
+        refined meshes between runs. Raises ``SizeChangedError`` if a placed piece would not be an exact copy of its
+        pattern (only possible with ``body_slice`` without ``allow_distortion``).
         """
-        spec = contracts.loads("placement_spec", spec_json_text)
-        where = Path(derived_dir or out_dir or ".")
-        avatar, pieces, derived = self._load(avatar_dir, piece_dir, spec.get("derived_pieces", []), where)
-        if derived and (derived_dir is not None or out_dir is not None):
-            write_derived(where, derived)
-        tree = cKDTree(avatar.vertices)
-
-        placed: list[PlacedPiece] = []
-        for pl in spec["placements"]:
-            if pl["piece"] not in pieces:
-                raise UnknownPieceError(pl["piece"], list(pieces))
-            if pl["point"] not in avatar.points:
-                raise UnknownPointError(pl["point"], list(avatar.points))
-            src = derived[pl["piece"]].spec["source"] if pl["piece"] in derived else ""
-            placed.append(self._place(pl, pieces[pl["piece"]], avatar, tree, src))
-
-        by_name = {p.name: p for p in placed}  # a piece placed twice: the last placement wins for stitches
-        bundles = {k: v.bundle for k, v in pieces.items()}
-        transforms: dict[str, Callable[[F64], F64]] = {n: p.transform for n, p in by_name.items()}
-        stitches = [stitch_report(s, bundles, transforms) for s in spec.get("stitches", [])]
-        rings = [self._ring(r, pieces, avatar, derived) for r in spec.get("rings", [])]
-        warns = [f"{p.name}: {w}" for p in placed for w in p.warnings]
-        doc = {
-            "schema_version": 2,
-            "units": "m",
-            "placements": [self._doc(p, pieces[p.name]) for p in placed],
-            "stitch_reports": [_round_tree(s) for s in stitches],
-            "ring_reports": rings,
-            "derived_pieces": [derived_doc(d) for d in derived.values()],
-            "warnings": warns,
-        }
-        result = AlignmentResult(doc, placed, {}, warns)
-        if out_dir is not None:
-            from .writer import write_outputs
-
-            result.paths = write_outputs(Path(out_dir), doc, placed, avatar)
-        return result
+        return self._solve(avatar_dir, piece_dir, spec_json_text, out_dir, derived_dir, cache_dir, incremental=True)
 
     def arrange(
         self,
@@ -160,16 +143,24 @@ class AlignmentEngine:
         derived_dir: Path | None = None,
         cache_dir: Path | None = None,
     ) -> AlignmentResult:
-        """Place the pieces on offset body shells, spread out so that nothing overlays (see ``arrange.py``).
+        """Re-solve every piece that is not locked, jointly (``solved`` blocks are only a warm start).
 
-        Non-locked pieces are mapped row by row onto the shell of their body region; locked pieces keep the
-        placement the
-        spec gives them (their ``wrap``) and act as obstacles. The result document (``schema_version`` 3) has, per
-        placement, an ``arrange`` block, the world outline and the named points, and an ``arrangement`` block with the
-        per-ring numbers (true ease, standoff), the seam candidates and the violations. ``cache_dir`` holds the refined
-        piece meshes between runs.
+        Same result document as ``align``: per placement the ``arrange`` block, ``size_check`` and ``solved``; the
+        ``arrangement`` block (rings with the true ease, seam candidates, violations) and ``validity``.
         """
-        from .arrange import ArrangeOptions, Arranger
+        return self._solve(avatar_dir, piece_dir, spec_json_text, out_dir, derived_dir, cache_dir, incremental=False)
+
+    def _solve(
+        self,
+        avatar_dir: Path,
+        piece_dir: Path,
+        spec_json_text: str,
+        out_dir: Path | None,
+        derived_dir: Path | None,
+        cache_dir: Path | None,
+        incremental: bool,
+    ) -> AlignmentResult:
+        from .arrange import ArrangeOptions, Layout
         from .arrange_report import build_report
 
         t0 = time.perf_counter()
@@ -183,40 +174,47 @@ class AlignmentEngine:
                 raise UnknownPieceError(pl["piece"], list(pieces))
             if pl["point"] not in avatar.points:
                 raise UnknownPointError(pl["point"], list(avatar.points))
-        tree = cKDTree(avatar.vertices)
+        options = ArrangeOptions.from_doc(spec.get("arrange_options"))
         cache = self._refine.setdefault(str(cache_dir or ""), RefineCache(cache_dir))
         sources = {k: v.spec["source"] for k, v in derived.items()}
+        tree = cKDTree(avatar.vertices)
 
-        def place_locked(pl: dict[str, Any], info: PieceInfo, source: str) -> PlacedPiece:
+        def place_distorting(pl: dict[str, Any], info: PieceInfo, source: str) -> PlacedPiece:
             return self._place(pl, info, avatar, tree, source)
 
-        ar = Arranger(
-            avatar, pieces, spec, ArrangeOptions.from_doc(spec.get("arrange_options")), place_locked, cache, sources
-        )
-        ar.prepare()
-        ar.solve()
-        placed = ar.build_placed()
-        extras, arrangement, warns_extra = build_report(ar, placed, time.perf_counter() - t0)
-        by_name = {p.name: p for p in placed}
+        if len(self._checks) > 20000:
+            self._checks.clear()
+        lay = Layout(avatar, pieces, spec, options, cache, sources, place_distorting, self._checks, self._geom)
+        lay.prepare(incremental)
+        lay.solve(incremental)
+        lay.run_check()
+        placed = [self._placed(lay, it, options.allow_distortion) for it in lay.items]
+        for it, p in zip(lay.items, placed, strict=True):
+            p.key = lay.piece_key(it)
+        extras, arrangement, validity, warns_extra = build_report(lay, placed, time.perf_counter() - t0, self._pieces)
+        by_name = {p.name: p for p in placed}  # a piece placed twice: the last placement wins for stitches
         bundles = {k: v.bundle for k, v in pieces.items()}
         transforms: dict[str, Callable[[F64], F64]] = {n: p.transform for n, p in by_name.items()}
         stitches = [stitch_report(s, bundles, transforms) for s in spec.get("stitches", [])]
         rings = [self._ring(r, pieces, avatar, derived) for r in spec.get("rings", [])]
-        warns = [*warns_extra, *ar.warnings, *[f"{p.name}: {w}" for p in placed for w in p.warnings]]
+        warns = [*warns_extra, *[f"{p.name}: {w}" for p in placed for w in p.warnings]]
         docs = []
         for p, ex in zip(placed, extras, strict=True):
             d = self._doc(p, pieces[p.name])
             d.update(ex)
+            d["size_check"] = {k: round(float(v), 6) for k, v in p.size_check.items()}
+            d["changes_piece_size"] = p.changes_piece_size
             docs.append(d)
         arrangement["timing_s"] = round(time.perf_counter() - t0, 3)
         doc = {
-            "schema_version": 3,
+            "schema_version": 4,
             "units": "m",
             "placements": docs,
             "stitch_reports": [_round_tree(s) for s in stitches],
             "ring_reports": rings,
             "derived_pieces": [derived_doc(d) for d in derived.values()],
             "arrangement": arrangement,
+            "validity": validity,
             "warnings": warns,
         }
         result = AlignmentResult(doc, placed, {}, warns)
@@ -225,6 +223,100 @@ class AlignmentEngine:
 
             result.paths = write_outputs(Path(out_dir), doc, placed, avatar)
         return result
+
+    def _placed(self, lay: Any, it: Any, allow_distortion: bool) -> PlacedPiece:
+        """The placed piece of a solved item, with its size check (raises ``SizeChangedError`` when not allowed)."""
+        from .roll import local_coords
+        from .validity import enforce_size, size_check
+
+        info = it.info
+        bundle = info.bundle
+        outline = np.asarray(bundle["outline_m"], dtype=np.float64)
+        named = np.array([q["xy_m"] for q in bundle["named_points"]], dtype=np.float64).reshape(-1, 2)
+        if it.piece is None:  # distorting wrap (body_slice): placed by ``_place``, never moved
+            placed: PlacedPiece = it.placed
+            v0, f0 = info.mesh()
+            v0, f0 = refine_mesh(v0, f0, WRAP_MAX_EDGE_M)
+            check = size_check(v0[:, :2], f0, placed.vertices, placed.transform, outline, named)
+            placed.size_check = check
+            placed.flat = v0[:, :2]
+            placed.changes_piece_size = enforce_size(info.name, check, allow_distortion)
+            placed.warnings = [*it.warnings, *placed.warnings]
+            return placed
+        piece = it.piece
+        surf, theta = piece.surface, piece.theta.copy()
+        ref, rot, mirror = it.ref, it.rotation, it.mirror
+
+        def transform(p2: F64) -> F64:
+            out: F64 = surf.map(local_coords(np.asarray(p2, dtype=np.float64)[:, :2], ref, rot, mirror), theta)
+            return out
+
+        assert it.refined is not None
+        world = piece.world
+        key = lay.piece_key(it)
+        c = self._pieces.get(key) if key is not None else None
+        if c is None:
+            check = size_check(it.refined.vertices[:, :2], piece.faces, world, transform, outline, named, it.edges)
+            ref_world = transform(ref[None, :2])[0]
+            h = 1e-4  # tangent frame at the reference (exact for flat pieces): the matrix of the rigid part
+            cx = (transform(ref[None, :2] + np.array([[h, 0.0]]))[0] - ref_world) / h
+            cy = (transform(ref[None, :2] + np.array([[0.0, h]]))[0] - ref_world) / h
+            cz = np.cross(cx, cy)
+            cz = cz / np.linalg.norm(cz) * (-1.0 if mirror else 1.0)
+            m = np.eye(4)
+            m[:3, 0], m[:3, 1], m[:3, 2] = cx, cy, cz
+            m[:3, 3] = ref_world - m[:3, :3] @ ref
+            c = {
+                "check": check,
+                "ref_world": ref_world,
+                "matrix": m,
+                "lateral": lateral_offset(world, piece.faces, ref_world),
+                "extent": (world.max(axis=0) - world.min(axis=0)) * 100.0,
+            }
+            if key is not None:
+                if len(self._pieces) > 400:
+                    self._pieces.clear()
+                self._pieces[key] = c
+        check, ref_world, m, lateral, extent = c["check"], c["ref_world"], c["matrix"], c["lateral"], c["extent"]
+        changed = enforce_size(info.name, check, allow_distortion)
+        bb = bundle["bbox_m"]
+        ext = extends(lateral, float(bb["max"][0] - bb["min"][0]))
+        fit: dict[str, Any] = {
+            "mode": it.mode,
+            "placed_extent_cm": [float(x) for x in extent],
+            "offset_m": surf.standoff(theta),
+            "lateral_offset_m": lateral,
+        }
+        if surf.kind == "cylinder":
+            ang = float(np.ptp(piece.local[:, 0])) / float(theta[0])
+            fit.update(
+                ring=it.ring,
+                wrap_radius_m=float(theta[0]),
+                circumference_m=2 * np.pi * float(theta[0]),
+                wrap_angle_deg=float(np.degrees(ang)),
+                width_over_circumference=ang / (2 * np.pi),
+            )
+        warnings = [*it.warnings, *side_warnings(info.name, it.source, it.point.name, ext)]
+        return PlacedPiece(
+            info.name,
+            it.point.name,
+            m,
+            mirror,
+            world,
+            piece.faces,
+            surf.kind == "cylinder",
+            ref_world,
+            warnings,
+            fit,
+            transform,
+            info.stem,
+            ext,
+            it.source,
+            check,
+            changed,
+            None,
+            it.refined.vertices[:, :2],
+        )
 
     def pair(
         self,
@@ -250,7 +342,8 @@ class AlignmentEngine:
             p0, u = d.mirrored.line_source
             v = ref - p0
             dist = float(abs(v[0] * u[1] - v[1] * u[0]))
-        return place_pair(base_placement, derived_id, mode, point_names=avatar.points, ref_axis_distance_m=dist)
+        fresh = {k: v for k, v in base_placement.items() if k != "solved"}  # both copies are solved anew, together
+        return place_pair(fresh, derived_id, mode, point_names=avatar.points, ref_axis_distance_m=dist)
 
     # -- one placement -----------------------------------------------------------------------------------------
     def _sections(self, avatar: Avatar) -> TorsoSections:
@@ -423,17 +516,25 @@ class AlignmentEngine:
                 levels[name] = e
         return {"rows": rows, "levels": levels}
 
-    @staticmethod
-    def _doc(p: PlacedPiece, piece: PieceInfo) -> dict[str, Any]:
+    def _doc(self, p: PlacedPiece, piece: PieceInfo) -> dict[str, Any]:
         bb = piece.bundle["bbox_m"]
+        slot = self._pieces.get(p.key) if p.key is not None else None
+
+        def cached(name: str, make: Callable[[], Any]) -> Any:
+            if slot is None:
+                return make()
+            if name not in slot:
+                slot[name] = make()
+            return slot[name]
+
         return {
             "piece": p.name,
             "point": p.point,
             "matrix": _r(p.matrix),
             "mirrored": p.mirrored,
             "extends": p.extends,
-            "wrapped_vertices": [[round(float(x), 6) for x in row] for row in p.vertices] if p.wrapped else None,
-            "wrapped_faces": p.faces.tolist() if p.wrapped else None,
+            "wrapped_vertices": cached("wv", lambda: np.round(p.vertices, 6).tolist()) if p.wrapped else None,
+            "wrapped_faces": cached("wf", lambda: p.faces.tolist()) if p.wrapped else None,
             "reference_position_m": _r(p.reference_world, 6),
             "bbox_cm": {
                 "width": round((bb["max"][0] - bb["min"][0]) * 100.0, 4),

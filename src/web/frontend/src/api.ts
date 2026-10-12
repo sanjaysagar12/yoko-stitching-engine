@@ -51,18 +51,33 @@ export const startBuild = (job: string): Promise<{ build_id: string; status: str
 
 export const buildStatus = (id: string): Promise<BuildStatus> => request<BuildStatus>(`/api/builds/${encodeURIComponent(id)}`);
 
-export const align = (build: string, placements: Placement[], derived: DerivedDef[], stitches: Stitch[] = []): Promise<AlignResult> =>
-  request<AlignResult>("/api/align", json("POST", { build, placements, derived_pieces: derived, stitches }));
+/** Place the pieces (incremental: placements with `solved` stay where they are). Meshes come compact (base64). */
+export const align = (
+  build: string,
+  placements: Placement[],
+  derived: DerivedDef[],
+  stitches: Stitch[] = [],
+  options?: ArrangeOptions,
+  knownMeshes: string[] = [],
+): Promise<AlignResult> =>
+  request<AlignResult>(
+    "/api/align",
+    json("POST", { build, placements, derived_pieces: derived, stitches, arrange_options: options, compact: true, known_meshes: knownMeshes }),
+  );
 
-/** Auto-arrange the placed pieces on offset body shells (display space around the body; see the README). */
+/** Re-solve every piece that is not locked (Auto-arrange). Same answer as align. */
 export const arrange = (
   build: string,
   placements: Placement[],
   derived: DerivedDef[],
   options: ArrangeOptions,
   stitches: Stitch[] = [],
+  knownMeshes: string[] = [],
 ): Promise<AlignResult> =>
-  request<AlignResult>("/api/arrange", json("POST", { build, placements, derived_pieces: derived, stitches, arrange_options: options }));
+  request<AlignResult>(
+    "/api/arrange",
+    json("POST", { build, placements, derived_pieces: derived, stitches, arrange_options: options, compact: true, known_meshes: knownMeshes }),
+  );
 
 /** Make a linked mirrored copy of a piece (the backend asks the alignment engine). */
 export const clonePiece = (build: string, source: string, axis: Axis, id: string): Promise<PieceInfo> =>

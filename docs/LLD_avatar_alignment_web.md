@@ -336,72 +336,140 @@ A ring check expands each listed piece with its derived clones (`include_clones`
 For an `edge` pair the engine suggests a stitch between the same edge on both copies.
 
 
-## 12. Auto-arrange (exploded arrangement)
+## 12. Size-exact, collision-free placement (align and auto-arrange)
 
-### 12.1 Problem (measured before any code)
+This section replaces the earlier shell/hull arrangement. That design mapped every piece row by row onto the offset
+convex hull of the body; a flat piece cannot follow a double-curved surface without stretch (Gauss), and the measured
+result was a median edge change of about 0.9 %, p90 3 - 10 % and 20 - 45 % at the shoulders. A fit check cannot use
+pieces whose measurements change, so that mapping is gone from the placement path.
 
-With `body_slice` or `around`, a flat piece is wrapped onto the skin at the offset of its arrangement point. Measured on
-`male_shirt` / `male_173` (front pair, back pair, sleeves): the pieces of one ring are 144 cm wide in total on a 100 cm loop,
-so they interpenetrate; the largest triangles of the source meshes (outline-only triangulation) are flat chords through the
-body (min distance to the avatar well below zero in the interior); and nothing is a gap wide enough to draw a seam.
-`refine_piece` (Part A) fixes the chords, the shells (Part B) and the solver (Part C) create the space.
+### 12.1 Problem (measured before any code, `male_173`, the 17-piece shirt plus front pair, back pair, mirrored sleeves)
 
-### 12.2 Parts
+| | before |
+|---|---|
+| edge-length change, `body_slice` (UI default on the torso) | median 0.01 - 3.9 %, p90 up to 54 %, max up to 6000 % (FrontPanel) |
+| edge-length change, `around` (UI default on limbs) | sleeves clamped: p90 54 %, max 100 - 1380 % |
+| edge-length change, `/api/arrange` | FrontPanel/sleeves median 8 - 50 %, max 300 - 8400 % |
+| pairs closer than 3 cm in the normal aligning flow | 49 (most at 0 mm: pieces on the same point lie on top of each other) |
+| pieces closer than 3 cm to the avatar in the normal flow | 20 of 21 (8 inside the body, down to -5.4 cm) |
+| pairs closer than 3 cm after `/api/arrange` | 23 (FrontPanel / FrontPanel_L and FrontPanel / CollarBase at 0 mm) |
 
-* `refine.py` - conforming Delaunay triangulation of the outline (scipy + shapely), outline vertices unchanged, edges <= 1 cm,
-  normals +z, cached by outline hash. A self-touching outline (placket slit of `FullSleeve`) falls back to midpoint subdivision.
-* `shells.py` - regions torso/neck/arm_L/arm_R/leg_L/leg_R from the bounding volumes. The cross-section at axial position `p` is a
-  convex polygon: the support function of the region vertices within a window (`clearance + 1 cm`) along the axis,
-  enveloped and Gaussian-smoothed over the rows (so the perimeter does not jump from row to row), torso and neck also
-  symmetrised about the sagittal plane. Offset by `h` the polygon has length `perimeter + 2 pi h` (Steiner), exactly; arc
-  coordinate <-> position is closed form (`stack.py`, vectorised over all 1 mm rows).
-* `arrange.py` - the solver. A piece vertex at flat offset `(x, y)` from the reference goes to the row `p0 + shift + L(y)`
-  and to arc distance `x` from the anchor ray of that row; `L` is the surface length along the axis so vertical edges keep their length on
-  tilted shells. Arc length along a row and distance along the axis are therefore exact.
+Findings: (1) sizes changed by design; (2) only the separate Auto-arrange button avoided collisions, clicking a point did
+not; (3) the gap was only enforced for pieces of the same layer, outline to outline, 30 iterations, 6 cm shift cap,
+facing pairs skipped; (4) no test proved it on a realistic scene and all of them needed SMPL-X; (5) pieces on the same
+point started stacked.
 
-### 12.3 Algorithm
+### 12.2 Size-exact surfaces (`roll.py`)
 
-1. Refine every free piece (cached), unroll it, assign layers (a piece covering >= 40 % of a larger piece of its ring gets
-   that piece's layer + 1; `layer` in the spec overrides).
-2. Per ring (uniform standoff `h`, display space): `h` is the larger of (a) the row-sum bound
-   `max_rows (sum of piece widths + n * gap_piece - perimeter) / 2 pi`, and (b) the standoff at which every sampled vertex
-   (outline and interior) is `clearance_body` from the *whole avatar*, found by a secant iteration on the signed distance
-   (this is what lifts the torso shell off the T-pose arms at the armpits). `standoff_mode = per_row` smooths a per-row need
-   (max filter 3 cm then blur 1.5 cm) instead of a constant.
-3. Relaxation (<= 30 iterations): pieces of the same layer closer than `gap_piece` are pushed apart along their own surface
-   (arc/axis components of the separating direction), damped, each clamped to `max_shift` from its initial shift. Locked pieces
-   never move and are obstacles. A sleeve alone on its ring slides along the axis only; across rings the arm yields to the torso.
-4. The standoff depends on positions and positions on the standoff: rounds alternate until both are stable; gap shortfalls the
-   row sums cannot see (slanted edges) are added to the ring standoff by a secant iteration; a final "settle" restarts from the
-   found shifts, so the result is a fixed point and a rerun with `shift_m` = the reported shifts changes nothing (< 0.1 mm).
-5. Layers sit at `h + k * gap_layer` (measured along the 3D normal: the offset is scaled by the local tilt secant, then corrected in
-   a closed loop against the layer below).
-6. If a ring needs more than `max_standoff` the shell is shown at `max_standoff`, `STANDOFF_EXCEEDED` is reported with the needed
-   value and the rows, nothing is clamped silently.
+Only isometries of the flat piece are used. A local point `(x, y)` (piece coordinates relative to the reference, after
+mirror and the user's rotation) goes to
 
-### 12.4 Standoff is display space, never ease
+* `flat`: `origin + r n + (x + s) e_x + (y + t) e_y` (rigid),
+* `roll` / `around` (cylinder): angle `phi = (x + s) / r` about the axis, axial position `y + t`, radius `r`.
 
-`arrangement.rings[].true_ease_m = garment loop - skin loop` at the binding row (widest garment against the convex section),
-where the garment loop is the sum of the flat widths of the ring's pieces and the skin loop is a radial first-hit loop of
-the actual mesh. Neither depends on the standoff, the gap or the clearance (test 5 reruns with other options and compares).
+A cylinder is developable: arc length along rows, distance along the axis and every angle on the surface are exact.
+`theta = (r, s, t)` are the only things that change while solving, so the solver can never change a size.
+`roll` uses the axis of the body region of the point (torso: least-squares line through the Hip, Waist and Chest volume
+axes, kept in the sagittal plane; neck: the Neck axis; arms: shoulder to wrist; legs: hip to ankle). `around` uses the
+axis of the point's own bounding volume. Head, hand and foot points have no ring: `roll` falls back to `around` with a
+`WRAP_FALLBACK` warning. Pieces are refined to edges of at most 5 mm before rolling, so a chord differs from its arc by
+less than `(L/r)^2/24 = 0.02 %` for radii from 7 cm; the measured maximum is reported per piece.
 
-### 12.5 Verification and report (`arrange_report.py`)
+`body_slice` (row-by-row onto the body sections) stays only behind `arrange_options.allow_distortion: true`; without it
+the size check raises `SizeChangedError`, with it the result says `changes_piece_size: true` and is never valid.
 
-Measured on the placed meshes, independent of the solver: signed distance to the avatar (vertices, outline, interior), pairwise
-minimum distances (`CLEARANCE_BODY`, `GAP_PIECES` flags and warnings), self-overlap count, 3D area / flat area, edge-length
-change (median, p90, max; shoulder/underarm rows with a steep perimeter slope reported separately), world outline, named points
-and edges (`world_edges`, clickable in the UI), `seam_candidates` (edge pairs of the same layer closer than 3 gap_piece and
-running side by side for >= 2 of 21 samples) and the per-ring table. Schema `schema_version` 3 (v1/v2 documents still validate).
+### 12.3 Start radius (the standoff is the roll radius; display space, not ease)
 
-### 12.6 Limits (measured, not hidden)
+For the pieces of a ring that are being solved the start radius is the smallest `R` such that
 
-* A flat piece cannot be wrapped onto a double-curved body without stretch (Gauss). Row arcs and axial lengths are exact; diagonal
-  edges are not: median edge change about 0.9 %, p90 about 3 - 10 % (panels), worst edges 20 - 45 % in the shoulder/underarm
-  bands (reported separately as `max_edge_change_shoulder_pct`). A strain-minimising warp of the flat coordinates was tried:
-  it brought p90 to 2 - 3 % but broke the exact row arc length (BackPanel rows 0.93 - 1.01) and was removed.
-* Regions follow the T-pose: an arm region starts after the shoulder cap, a sleeve longer than the arm or placed over the shoulder
-  leaves the shell (`SHELL_RANGE`; `FullSleeve` is 62 cm on a 44 cm arm and shows `CLEARANCE_BODY`).
-* `refine_piece` has a fallback only for self-touching outlines; its triangles are slivers (midpoint subdivision).
-* Pieces on different layers are only kept `gap_layer` apart (measured on 3D samples), not `gap_piece`.
-* Time: 6 pieces 2.6 s warm / 9 s cold (refinement cache), 17 pieces 7 s warm on this CPU. Over HTTP while a browser renders
-  with software GL (SwiftShader) it was 100 s: the CPU is shared.
+* the ring's layer-0 pieces fit side by side with a gap each on every row: `sum(widths) + n gap_piece <= 2 pi R`
+  (a piece mostly covered (>= 40 %) by a larger piece of the ring is one layer out and not counted);
+* every avatar vertex under a piece's footprint (outline buffered by the clearance, in developed coordinates) is
+  `clearance_body` inside the cylinder. A larger radius shrinks the angular footprint, so this also clears a T-pose arm
+  beside a torso panel. Vertices that stay under the footprint even at `max_standoff` (the torso under a sleeve cap)
+  cannot be cleared by a radius and are left to the slides (bisection).
+
+Layer `k` starts at `R + k gap_layer`. In incremental mode a new piece starts at the largest of its own `R` and the
+radius of the pieces of its ring that are already placed, so it joins them on one cylinder when that works.
+
+### 12.4 Solver (`solver.py`)
+
+Constraints, recomputed from the current positions in every iteration, no exemptions:
+
+* body: every sample (all boundary vertices, interior vertices thinned to about 1 cm; all vertices in the last pass) at
+  least `clearance_body` from the avatar, exact point-triangle distance; points deeper inside than the query range are
+  found by the side of the nearest vertex's tangent plane;
+* pieces: every pair of pieces (any ring, any layer, fixed ones too) at least `gap_piece` apart, from the samples of
+  one piece to the exact triangles of the other, both ways (candidate triangles found in the other piece's developed
+  coordinates, so its KD-tree never changes).
+
+A violated sample `p` with closest point `q` asks for a displacement along `p - q` when the pieces are side by side, or
+along the other piece's outward normal when they face each other or cross. Which piece of a pair is outside is decided
+once per pair, for one subject (the piece being moved, else the smaller): on one ring the subject goes on top unless it
+is already further in; otherwise the side of the other piece's surface most of the subject's vertices lie on (a sleeve
+whose cap dips under a torso panel still counts as outside). A sample on the wrong side is pushed through, never further
+under. The displacements become parameter changes by a weighted Kaczmarz projection of the linearised constraints
+(exact Jacobian of the surface map; a radial move costs 3 times a slide), capped at 1.5 cm per parameter and
+iteration, clamped to the limits. The two copies of a centre-line or side pair share their parameters with `s` mirrored,
+so a symmetric body gives a symmetric result; a centre-line pair starts half a gap off the centre line each.
+
+Widening stages instead of a silent cap: (1) slides up to 5 cm; (2) pairs of one ring that still collide are layered
+(`|r_a - r_b| >= gap`, an exact separation of coaxial cylinders) and their moving pieces restart from the anchors, slides
+up to `max_shift`; (3) radii grow 2 cm at a time up to `max_standoff`; (4) a pass with every vertex. A stage ends when
+the total deficit has not dropped 2 % in 8 iterations. Whatever remains is reported (12.6) with the limit that stopped
+the solver (`max_standoff`, `max_shift`, `iterations`, `fixed`).
+
+### 12.5 Incremental placement (align) and arrange
+
+`align` is incremental: a placement carrying `solved: {radius_m, shift_m}` (returned by an earlier answer) is rebuilt
+exactly there and is an obstacle; every other placement is solved in spec order against what is already placed, one
+block (a piece, or a pair solved together) at a time. The browser sends `solved` back and drops it for a piece the user
+changes, so earlier pieces never move (1e-9 m). Changing an option forgets every `solved` (a re-solve in placement
+order). `arrange` re-solves every piece that is not locked, jointly, from the anchors (`solved` is a warm start only).
+Locked pieces keep their `solved` place (or their start) and are obstacles. `shift_m` is the user's start shift; `max_shift`
+limits the distance from it.
+
+### 12.6 Validity and size check (`validity.py`), after every solve
+
+Measured on the placed meshes, independently of the solver:
+
+* sizes: every mesh edge (3D chord against the flat edge), the outline length (3D samples every 2 mm through the map),
+  the area (3D triangles) and, for every pair of named points, the length of the placed image of the straight segment
+  between them (a geodesic of a developable surface). More than 0.05 % raises `SizeChangedError` (no result).
+* clearance and gaps, exact: samples are vertices plus every edge midpoint (at most 2.5 mm apart). If the closest point
+  of a sample lies inside a face or an edge, the offset is perpendicular to it, so a vertex of that face is within
+  `sqrt(D^2 + R^2)` (`R` = longest edge / sqrt 3, slivers included): only samples whose nearest vertex is within
+  `sqrt(U^2 + R^2)` of the best exact value `U` can attain the minimum, and those get exact point-triangle distances
+  around every vertex in that radius. Pieces rolled on one axis are first bounded analytically
+  (`|r_a - r_b|` minus the chord sagitta); when that already meets the gap no sampling is needed. Results are cached by
+  the content of the pieces, so an incremental call measures only what changed.
+
+`validity = {valid, size_ok, clearance_ok, gaps_ok, max_size_change_pct, min_distance_to_avatar_m,
+min_distance_between_pieces_m, violations[]}`; a violation names the pieces, the value, the requirement, the place and
+the limit. Body distances above `clearance + 1.2 cm` are reported as that bound ("at least").
+
+### 12.7 Report (`arrange_report.py`)
+
+Per placement: `arrange {ring, mode, layer, locked, radius_m, standoff_m, shift_m, min_distance_to_avatar_m,
+min_distance_to_pieces_m, flags, limits}`, `size_check`, `changes_piece_size`, `solved`, world outline, edges and named
+points. `arrangement`: options, rings (true ease = garment loop - skin loop at the binding row, at the positions the user
+gave, independent of every option), seam candidates, violations. Schema `schema_version` 4 (1 - 3 still validate).
+
+### 12.8 Web
+
+Default wrap: `roll` on torso, neck, arm and leg points, `around` elsewhere; the drop-down offers `flat`, `roll`,
+`around`. A status strip under the view shows the engine's numbers after every placement, green only when `valid`, red
+with clickable violations otherwise. Rolled meshes travel compact (`compact: true`: base64 float32 vertices, uint32
+faces once per `mesh_id`; `known_meshes` lists the ones the browser has), about a tenth of the JSON size.
+
+### 12.9 Limits (measured, not hidden)
+
+* One radius per piece: a cylinder that clears the chest and the T-pose arms stands well off the waist (the torso
+  standoff is 10 - 20 cm at the waist for the shirt). A cone or a radius per row would follow the body more closely; a
+  per-row radius is not an isometry, a cone is and could be added as a third surface.
+* The solver is local (projection of linearised constraints with widening stages). It cannot prove that no layout exists:
+  `valid: false` means "not found within the limits", with the limit named.
+* Pieces rolled around an arm and over the torso meet at the shoulder; the solver slides the sleeve along the arm.
+  Both sleeves on one arm (ShortSleeve and FullSleeve) stack radially, 3 cm per layer.
+* Time on this CPU (AMD, no GPU): one changed piece of the 23-piece shirt about 0.7 - 1.7 s in the engine; a full arrange
+  of the 23 pieces 8 - 12 s warm; the first run refines the pieces to 5 mm (about 30 s for the shirt, cached on disk).

@@ -2,7 +2,6 @@
 // violations, notices) and the picked edge or point. Everything shown is a number from /api/arrange.
 import { formatCm, formatMm, nearestPiece, splitWarning } from "../lib";
 import type { Store } from "../state";
-import type { ArrangeOptions } from "../types";
 import type { Actions } from "./actions";
 import { h } from "./dom";
 
@@ -19,7 +18,7 @@ const SLIDERS: Slider[] = [
   { key: "clearance_body", label: "Clearance to the body (cm)", min: 0, max: 8, step: 0.5, testid: "arr-clearance" },
   { key: "gap_piece", label: "Gap between pieces (cm)", min: 0, max: 10, step: 0.5, testid: "arr-gap-piece" },
   { key: "gap_layer", label: "Gap between layers (cm)", min: 0, max: 5, step: 0.5, testid: "arr-gap-layer" },
-  { key: "max_standoff", label: "Largest standoff (cm)", min: 3, max: 30, step: 1, testid: "arr-max-standoff" },
+  { key: "max_standoff", label: "Largest standoff (cm)", min: 3, max: 40, step: 1, testid: "arr-max-standoff" },
 ];
 
 export function mountArrange(host: HTMLElement, store: Store, actions: Actions): void {
@@ -46,26 +45,18 @@ export function mountArrange(host: HTMLElement, store: Store, actions: Actions):
     input.addEventListener("change", () => actions.setArrangeOptions({ [sl.key]: Number(input.value) / 100 }));
     controls.append(h("label", { class: "arr-row" }, h("span", {}, sl.label), input, out));
   }
-  const mode = h(
-    "select",
-    { "data-testid": "arr-mode" },
-    h("option", { value: "uniform" }, "uniform standoff"),
-    h("option", { value: "per_row" }, "standoff per row"),
-  );
-  mode.addEventListener("change", () => actions.setArrangeOptions({ standoff_mode: mode.value as ArrangeOptions["standoff_mode"] }));
-  controls.append(h("label", { class: "arr-row" }, h("span", {}, "Standoff"), mode));
   const mesh = h("input", { type: "checkbox", "data-testid": "arr-mesh-lines" });
   mesh.addEventListener("change", () => actions.setMeshLines(mesh.checked));
   controls.append(h("label", { class: "arr-row" }, h("span", {}, "Show mesh lines"), mesh));
   const run = h("button", { class: "btn primary", "data-testid": "arrange-run", onclick: () => actions.arrange() }, "Auto-arrange");
-  const reset = h("button", { class: "btn", "data-testid": "arrange-reset", onclick: () => actions.resetArrange() }, "Reset to anchors");
+  const reset = h("button", { class: "btn", "data-testid": "arrange-reset", onclick: () => actions.resetArrange() }, "Place again from anchors");
   const bar = h("div", { class: "progress arr-progress", "data-testid": "arrange-progress" }, h("div", { class: "progress-fill" }));
   const status = h("div", { class: "meta", "data-testid": "arrange-status" }, "");
   controls.append(h("div", { class: "btn-row" }, run, reset), bar, status);
   const honesty = h(
     "p",
     { class: "hint", "data-testid": "arrange-honesty" },
-    "The pieces are spread out on shells around the body so that seams can be drawn. The standoff is display space, never ease; ease is the garment loop minus the skin loop.",
+    "Every placement is checked: pieces keep their exact size (rolled, never stretched), stay clear of the body and of each other. Auto-arrange spreads all pieces again. The standoff is display space, never ease; ease is the garment loop minus the skin loop.",
   );
   const results = h("div", { class: "arrange-results", "data-testid": "arrange-results" });
   const hover = h("div", { class: "meta", "data-testid": "hover-text" });
@@ -77,12 +68,11 @@ export function mountArrange(host: HTMLElement, store: Store, actions: Actions):
       const out = readouts.get(sl.key);
       if (out) out.textContent = (s.arrangeOptions[sl.key] * 100).toFixed(1);
     }
-    mode.value = s.arrangeOptions.standoff_mode;
     mesh.checked = s.showMeshLines;
     const placed = s.placements.size;
     run.disabled = s.busy !== null || placed === 0;
     run.title = placed === 0 ? "Place pieces on arrangement points first" : "";
-    reset.disabled = !s.arranged;
+    reset.disabled = placed === 0;
     bar.classList.toggle("active", s.busy?.text.startsWith("arranging") ?? false);
     (bar.firstElementChild as HTMLElement).style.width = s.busy?.text.startsWith("arranging") ? "100%" : "0";
     status.textContent = s.busy?.text.startsWith("arranging") ? s.busy.text : "";
@@ -91,7 +81,7 @@ export function mountArrange(host: HTMLElement, store: Store, actions: Actions):
   const renderResults = (): void => {
     const s = store.get();
     const a = s.arrangement;
-    if (!s.arranged || !a) {
+    if (!a) {
       results.replaceChildren(h("p", { class: "hint" }, "Place pieces, then press Auto-arrange."));
       return;
     }
@@ -125,13 +115,14 @@ export function mountArrange(host: HTMLElement, store: Store, actions: Actions):
       ),
     );
     const ringNote = h("div", { class: "meta" }, "cm. body = skin loop, garment = sum of piece widths at the binding row, true ease = garment - body. Standoff is display space.");
+    const vlist = s.lastAlign?.validity?.violations ?? a.violations;
     const viol = h(
       "div",
       { class: "violations", "data-testid": "arrange-violations" },
-      h("h3", {}, `Violations (${a.violations.length})`),
-      ...(a.violations.length === 0
-        ? [h("div", { class: "meta" }, "none: every piece keeps the clearance and the gaps")]
-        : a.violations.map((v, i) =>
+      h("h3", {}, `Violations (${vlist.length})`),
+      ...(vlist.length === 0
+        ? [h("div", { class: "meta" }, "none: every piece keeps its size, the clearance and the gaps")]
+        : vlist.map((v, i) =>
             h(
               "button",
               { class: "btn violation", "data-testid": `violation-${i}`, onclick: () => actions.focusViolation(i) },

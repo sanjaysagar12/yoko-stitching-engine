@@ -13,7 +13,8 @@
       "enum": [
         1,
         2,
-        3
+        3,
+        4
       ]
     },
     "placements": {
@@ -48,9 +49,11 @@
           "wrap": {
             "enum": [
               "flat",
+              "roll",
               "around",
               "body_slice"
-            ]
+            ],
+            "description": "flat, roll and around are isometric (sizes exact); body_slice distorts and needs arrange_options.allow_distortion"
           },
           "flip_facing": {
             "type": "boolean"
@@ -75,6 +78,28 @@
             },
             "minItems": 2,
             "maxItems": 2
+          },
+          "solved": {
+            "description": "Parameters returned by an earlier answer: the piece stays exactly there (incremental align)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "radius_m",
+              "shift_m"
+            ],
+            "properties": {
+              "radius_m": {
+                "type": "number"
+              },
+              "shift_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
           }
         }
       }
@@ -172,7 +197,10 @@
           "minimum": 0
         },
         "gap_layer": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0
         },
         "max_standoff": {
@@ -191,7 +219,14 @@
           "enum": [
             "uniform",
             "per_row"
-          ]
+          ],
+          "description": "accepted for old specs; display only (the roll radius is the standoff)"
+        },
+        "incremental": {
+          "type": "boolean"
+        },
+        "allow_distortion": {
+          "type": "boolean"
         }
       }
     }

@@ -246,7 +246,10 @@ def test_engine_places_front_panel_on_chest_front(scene: dict[str, Path]) -> Non
     pts = {p["name"]: p for p in json.loads((scene["avatar"] / "arrangement_points.json").read_text())["points"]}
     p = pts["Chest_Front"]
     ref = np.array(pl["reference_position_m"])
-    assert ref == pytest.approx(p["position_m"], abs=1e-6)  # default offset: the point's own position
+    # a 74 cm flat panel tangent at the chest would touch the body lower down: it is pushed out (and may slide in its
+    # own plane), never into the body; the layout is valid
+    assert (ref - np.array(p["position_m"])) @ np.array(p["normal"]) >= -1e-6
+    assert res.doc["validity"]["valid"] is True
     assert pl["bbox_cm"]["width"] == pytest.approx(37.25, abs=0.01) and pl["bbox_cm"]["height"] == pytest.approx(
         74.40, abs=0.01
     )
@@ -257,9 +260,12 @@ def test_engine_places_front_panel_on_chest_front(scene: dict[str, Path]) -> Non
 
 
 def test_engine_offset_replaces_default_offset(scene: dict[str, Path]) -> None:
-    a = AlignmentEngine().align(scene["avatar"], scene["pieces"], spec({"piece": "Cuff", "point": "Chest_Front"}))
+    # a small piece that clears the body at the point's own offset, so the solver does not move it
+    a = AlignmentEngine().align(
+        scene["avatar"], scene["pieces"], spec({"piece": "PocketFlap", "point": "Chest_Front", "offset_m": 0.05})
+    )
     b = AlignmentEngine().align(
-        scene["avatar"], scene["pieces"], spec({"piece": "Cuff", "point": "Chest_Front", "offset_m": 0.08})
+        scene["avatar"], scene["pieces"], spec({"piece": "PocketFlap", "point": "Chest_Front", "offset_m": 0.10})
     )
     p = {q["name"]: q for q in json.loads((scene["avatar"] / "arrangement_points.json").read_text())["points"]}[
         "Chest_Front"
@@ -267,7 +273,7 @@ def test_engine_offset_replaces_default_offset(scene: dict[str, Path]) -> None:
     d = np.array(b.doc["placements"][0]["reference_position_m"]) - np.array(
         a.doc["placements"][0]["reference_position_m"]
     )
-    assert d == pytest.approx((0.08 - p["offset_m"]) * np.array(p["normal"]), abs=1e-5)
+    assert d == pytest.approx(0.05 * np.array(p["normal"]), abs=1e-5)
 
 
 def test_engine_wrap_on_the_torso(scene: dict[str, Path]) -> None:
@@ -324,15 +330,15 @@ def test_engine_stitch_report_on_placed_pieces(scene: dict[str, Path]) -> None:
         scene["avatar"],
         scene["pieces"],
         spec(
-            {"piece": "Cuff", "point": "Chest_Front"},
-            {"piece": "CuffInterface", "point": "Chest_Front", "offset_m": 0.1},
+            {"piece": "Cuff", "point": "Chest_Front", "offset_m": 0.1},  # both clear of the body: neither moves
+            {"piece": "CuffInterface", "point": "Chest_Front", "offset_m": 0.17},
             stitches=[st],
         ),
     )
     s = res.doc["stitch_reports"][0]
     assert abs(s["diff_cm"]) < 1e-6 and len(s["segments"]) > 5
     gap = np.linalg.norm(np.array(s["segments"])[:, 0] - np.array(s["segments"])[:, 1], axis=1)
-    assert gap == pytest.approx(0.1 - 0.03, abs=1e-6)  # pieces sit 7 cm apart along the same normal
+    assert gap == pytest.approx(0.17 - 0.1, abs=1e-6)  # pieces sit 7 cm apart along the same normal
 
 
 def test_engine_is_deterministic(scene: dict[str, Path], tmp_path: Path) -> None:

@@ -49,5 +49,7 @@ def write_outputs(out_dir: Path, doc: dict[str, Any], placed: list[PlacedPiece],
         "\n".join([*[f"# {h}" for h in header], *scene_v, *scene_f]) + "\n", encoding="utf-8", newline="\n"
     )
     paths["scene"] = scene
+    if "arrangement" in doc:  # files are byte-identical for identical inputs: the run time is only in the API answer
+        doc = {**doc, "arrangement": {**doc["arrangement"], "timing_s": 0.0}}
     paths["result"] = contracts.write_json(out_dir / "alignment_result.json", doc, "alignment_result")
     return paths

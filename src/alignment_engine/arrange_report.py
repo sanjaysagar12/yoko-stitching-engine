@@ -1,6 +1,7 @@
-"""Report of an arrangement (Part D): distances, size preservation, ring numbers, seam candidates. Metres.
+"""Report of a solved layout: per piece numbers, rings (true ease), seam candidates, validity. Metres.
 
-All numbers are measured on the placed meshes, independently of the solver, so a violation the solver missed shows up.
+Distances come from the layout check on the placed meshes (``validity``), not from the solver, so a violation the
+solver missed shows up here.
 """
 
 from __future__ import annotations
@@ -11,13 +12,12 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.spatial import cKDTree
 
-from .arrange import RANGE_MARGIN, STEEP_PERIMETER_SLOPE, Arranger, Item
-from .errors import UnknownNamedPointError
+from .arrange import Item, Layout
+from .errors import RingNotFoundError, UnknownNamedPointError
 from .stitch import edge_between
-from .verify import self_overlaps, surface_samples
+from .widths import row_width
 
 F64 = NDArray[np.float64]
-TOLERANCE = 0.001  # a distance this far below its requirement is reported as a violation
 EDGE_SAMPLES = 21
 
 
@@ -27,243 +27,236 @@ def _r(x: Any, nd: int = 6) -> Any:
     return None if x is None else round(float(x), nd)
 
 
-def _area(v: F64, f: NDArray[np.int64]) -> float:
-    t = v[f]
-    return float(0.5 * np.linalg.norm(np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1).sum())
-
-
-def _edges(f: NDArray[np.int64]) -> NDArray[np.int64]:
-    return np.unique(np.sort(np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1), axis=0)
-
-
-def _points(ar: Arranger, it: Item, placed: Any) -> F64:
-    """Vertices plus the outline every 5 mm (free pieces) or surface samples (locked pieces)."""
-    if it.locked:
-        return surface_samples(placed.vertices, placed.faces, 0.006)
-    return np.vstack([placed.vertices, ar.boundary_world(it)])
+def layers(lay: Layout) -> dict[int, int]:
+    """Radial level of every piece: roll pieces count gaps above the innermost piece of their ring; others 0."""
+    out: dict[int, int] = {}
+    gap = lay.o.gap_layer if lay.o.gap_layer is not None else lay.o.gap_piece
+    for it in lay.items:
+        out[it.index] = 0
+        if it.mode == "roll" and it.piece is not None:
+            base = min(j.piece.theta[0] for j in lay.items if j.mode == "roll" and j.ring == it.ring and j.piece)
+            out[it.index] = int(max(0, round((it.piece.theta[0] - base) / max(gap, 1e-6))))
+    return out
 
 
 def build_report(
-    ar: Arranger, placed: list[Any], timing_s: float
-) -> tuple[list[dict[str, Any]], dict[str, Any], list[str]]:
-    """(per placement dicts with ``arrange``, ``world_outline_m``, ``world_named_points``; the ``arrangement``
-    block; warnings)."""
-    o = ar.o
+    lay: Layout, placed: list[Any], timing_s: float, cache: dict[bytes, dict[str, Any]] | None = None
+) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any], list[str]]:
+    """(per placement extras, the ``arrangement`` block, the ``validity`` block, warnings).
+
+    ``cache`` (by the content key of each placed piece) keeps the world outline, edges and named points of pieces that
+    did not change since an earlier call."""
+    cache = cache if cache is not None else {}
+    assert lay.check is not None
+    o = lay.o
+    lv = layers(lay)
+    violations = lay.violations()
     warns: list[str] = []
-    violations: list[dict[str, Any]] = []
-    pts = {it.index: _points(ar, it, placed[it.index]) for it in ar.items}
-    trees = {k: cKDTree(v) for k, v in pts.items()}
-
-    # distances between pieces and to the body
-    pair: dict[tuple[int, int], float] = {}
-    near: dict[tuple[int, int], tuple[F64, F64]] = {}
-    for a in ar.items:
-        for b in ar.items:
-            if a.index >= b.index:
-                continue
-            d1, j1 = trees[b.index].query(pts[a.index])
-            k = int(np.argmin(d1))
-            pair[(a.index, b.index)] = float(d1[k])
-            near[(a.index, b.index)] = (pts[a.index][k], pts[b.index][j1[k]])
-    out_pieces: list[dict[str, Any]] = []
-    for it in ar.items:
-        p = placed[it.index]
-        sd = ar.body.signed_distance(pts[it.index])
-        k = int(np.argmin(sd))
-        dmin = float(sd[k])
-        others = {ar.items[b if a == it.index else a].name: _r(d) for (a, b), d in pair.items() if it.index in (a, b)}
-        flags: list[str] = []
-        if dmin < o.clearance_body - TOLERANCE:
-            flags.append("CLEARANCE_BODY")
-            warns.append(
-                f"CLEARANCE_BODY: {it.name} comes within {dmin * 1000:.1f} mm of the body (clearance_body "
-                f"{o.clearance_body * 1000:.0f} mm)"
-            )
-            violations.append(
-                {
-                    "kind": "CLEARANCE_BODY",
-                    "pieces": [it.name],
-                    "value_m": _r(dmin),
-                    "required_m": o.clearance_body,
-                    "at_m": _r(pts[it.index][k]),
-                }
-            )
-        arr: dict[str, Any] = {
-            "ring": it.region,
-            "layer": it.layer,
-            "locked": it.locked,
-            "standoff_m": None,
-            "shift_m": _r(it.delta) if not it.locked else [0.0, 0.0],
-            "min_distance_to_avatar_m": _r(dmin),
-            "min_distance_to_pieces_m": others,
-            "flags": flags,
-            "area_ratio": None,
-            "edge_change_p50_pct": None,
-            "edge_change_p90_pct": None,
-            "max_edge_change_pct": None,
-            "max_edge_change_body_pct": None,
-            "max_edge_change_shoulder_pct": None,
-            "self_intersections": int(self_overlaps(p.vertices, p.faces)),
-            "vertices_outside_shell": 0,
+    for v in violations:
+        names = " and ".join(v["pieces"])
+        warns.append(
+            f"{v['kind']}: {names} {'are' if len(v['pieces']) > 1 else 'is'} {v['value_m'] * 1000:.1f} mm "
+            f"{'apart' if len(v['pieces']) > 1 else 'from the body'} (required {v['required_m'] * 1000:.0f} mm; "
+            f"limit: {v['limit']})"
+        )
+    bad_pieces: dict[str, list[str]] = {}
+    for v in violations:
+        for n in v["pieces"]:
+            bad_pieces.setdefault(n, []).append(v["kind"])
+    extras: list[dict[str, Any]] = []
+    for it in lay.items:
+        body_d = lay.check.body[it.index][0]
+        others = {
+            lay.items[b if a == it.index else a].name: _r(d)
+            for (a, b), (d, _, _) in lay.check.pairs.items()
+            if it.index in (a, b)
         }
-        if not it.locked:
-            _size_numbers(ar, it, p, arr)
-            arr["standoff_m"] = _r(float(ar.hrows(it)[int(ar.surf[it.region].row_of(np.array([it.p0]))[0])]))
-        out_pieces.append({"arrange": arr})
-    for (ka, kb), d in sorted(pair.items()):
-        ia, ib = ar.items[ka], ar.items[kb]
-        need = o.gap_piece if ia.layer == ib.layer else (o.gap_layer if abs(ia.layer - ib.layer) == 1 else 0.0)
-        if d < need - TOLERANCE:
-            for other in (ia, ib):
-                out_pieces[other.index]["arrange"]["flags"].append("GAP_PIECES")
-            warns.append(
-                f"GAP_PIECES: {ia.name} and {ib.name} are {d * 1000:.1f} mm apart (required {need * 1000:.0f} mm)"
-            )
-            qa, qb = near[(ka, kb)]
-            violations.append(
-                {
-                    "kind": "GAP_PIECES",
-                    "pieces": [ia.name, ib.name],
-                    "value_m": _r(d),
-                    "required_m": need,
-                    "at_m": _r(0.5 * (qa + qb)),
-                }
-            )
-
-    rings = []
-    for region in sorted(ar.surf):
-        its = ar.free(region, 0)
-        if not its:
-            continue
-        rings.append(_ring(ar, region, its, placed, warns, violations))
-    edge_data = _edge_data(ar, placed)
-    seams = _seam_candidates(ar, edge_data, o.gap_piece * 3.0)
-    for k, it in enumerate(ar.items):
-        p = placed[k]
-        outline = it.refined.bundle["outline_m"] if it.refined is not None else it.info.bundle["outline_m"]
-        o2 = np.asarray(outline, dtype=np.float64)
-        out_pieces[k]["world_outline_m"] = _r(p.transform(o2))
-        out_pieces[k]["world_edges"] = [
+        required = {  # gap_layer applies to pairs that face each other, and only if it was set lower
+            lay.items[b if a == it.index else a].name: lay.required(facing)
+            for (a, b), (_, _, facing) in lay.check.pairs.items()
+            if it.index in (a, b)
+        }
+        theta = it.piece.theta if it.piece is not None else None
+        surf = it.piece.surface if it.piece is not None else None
+        arr: dict[str, Any] = {
+            "ring": it.ring or "",
+            "mode": it.mode,
+            "layer": lv[it.index],
+            "locked": it.locked,
+            "solved_now": bool(it.solve),
+            "radius_m": _r(theta[0]) if theta is not None and surf is not None and surf.kind == "cylinder" else None,
+            "standoff_m": _r(surf.standoff(theta)) if theta is not None and surf is not None else None,
+            "shift_m": [_r(theta[1]), _r(theta[2])] if theta is not None else [0.0, 0.0],
+            "min_distance_to_avatar_m": _r(body_d),
+            "min_distance_to_pieces_m": others,
+            "required_gap_to_pieces_m": required,
+            "flags": sorted(set(bad_pieces.get(it.name, []))),
+            "limits": sorted(it.piece.limits_hit) if it.piece is not None else [],
+        }
+        extras.append(
             {
-                "id": e["edge"],
-                "from": e["from"],
-                "to": e["to"],
-                "length_m": _r(e["length_m"]),
-                "polyline_m": _r(e["polyline"]),
+                "arrange": arr,
+                "solved": {"radius_m": _r(theta[0], 9), "shift_m": [_r(theta[1], 9), _r(theta[2], 9)]}
+                if theta is not None
+                else None,
             }
-            for e in (edge_data[k][2] if k in edge_data else [])
-        ]
+        )
+    rings = [_ring(lay, ring) for ring in sorted({it.ring for it in lay.items if it.mode == "roll"})]
+    edge_data = _edge_data(lay, placed, cache)
+    seams = _seam_candidates(lay, lv, edge_data, o.gap_piece * 3.0)
+    for k, it in enumerate(lay.items):
+        p = placed[k]
+        slot = cache.get(p.key) if p.key is not None else None
+        if slot is not None and "world" in slot:
+            extras[k].update(slot["world"])
+            continue
+        o2 = np.asarray(it.info.bundle["outline_m"], dtype=np.float64)
         named = it.info.bundle["named_points"]
-        if named:
-            w = p.transform(np.array([q["xy_m"] for q in named], dtype=np.float64))
-            out_pieces[k]["world_named_points"] = [
+        w = p.transform(np.array([q["xy_m"] for q in named], dtype=np.float64)) if named else np.zeros((0, 3))
+        world = {
+            "world_outline_m": _r(p.transform(o2)),
+            "world_edges": [
+                {
+                    "id": e["edge"],
+                    "from": e["from"],
+                    "to": e["to"],
+                    "length_m": _r(e["length_m"]),
+                    "polyline_m": _r(e["polyline"]),
+                }
+                for e in (edge_data[k][2] if k in edge_data else [])
+            ],
+            "world_named_points": [
                 {"name": q["name"], "label": q["label"], "on_outline": q["on_outline"], "world_m": _r(w[i])}
                 for i, q in enumerate(named)
-            ]
-        else:
-            out_pieces[k]["world_named_points"] = []
+            ],
+        }
+        if slot is not None:
+            slot["world"] = world
+        extras[k].update(world)
+    size_bad = [p.name for p in placed if p.changes_piece_size]
+    for n in size_bad:
+        violations.append(
+            {
+                "kind": "SIZE_CHANGED",
+                "pieces": [n],
+                "value_m": 0.0,
+                "required_m": 0.0,
+                "at_m": None,
+                "limit": "allow_distortion",
+            }
+        )
+    clearance_ok = not any(v["kind"] == "CLEARANCE_BODY" for v in violations)
+    gaps_ok = not any(v["kind"] == "GAP_PIECES" for v in violations)
+    min_body = min((d for d, _ in lay.check.body.values()), default=None)
+    min_pair = min((d for d, _, _ in lay.check.pairs.values()), default=None)
+    validity = {
+        "valid": clearance_ok and gaps_ok and not size_bad,
+        "size_ok": not size_bad,
+        "clearance_ok": clearance_ok,
+        "gaps_ok": gaps_ok,
+        "max_size_change_pct": _r(max((max(p.size_check[k] for k in _PCT) for p in placed), default=0.0), 4),
+        "min_distance_to_avatar_m": _r(min_body),
+        "min_distance_between_pieces_m": _r(min_pair),
+        "required": {
+            "clearance_body_m": o.clearance_body,
+            "gap_piece_m": o.gap_piece,
+            "gap_layer_m": o.as_dict()["gap_layer"],
+        },
+        "violations": violations,
+    }
+    if not validity["valid"]:
+        warns.insert(0, f"ArrangementInfeasible: {len(violations)} violation(s); the layout is shown but not valid")
     arrangement = {
         "options": o.as_dict(),
         "rings": rings,
         "seam_candidates": seams,
-        "violations": violations,
-        "notes": ar.notes,
+        "violations": [v for v in violations if v["kind"] != "SIZE_CHANGED"],
+        "notes": lay.notes,
+        "iterations": lay.iterations,
         "timing_s": round(timing_s, 3),
         "convention": "metres, y up, +z front, +x the wearer's left; standoff is display space, never ease",
     }
-    return out_pieces, arrangement, warns
+    return extras, arrangement, validity, warns
 
 
-def _size_numbers(ar: Arranger, it: Item, p: Any, arr: dict[str, Any]) -> None:
-    r = it.refined
-    assert r is not None
-    flat = r.vertices[:, :2]
-    area_flat = _area(r.vertices, r.faces)
-    arr["area_ratio"] = _r(_area(p.vertices, p.faces) / area_flat, 5)
-    e = _edges(r.faces)
-    fl = np.linalg.norm(flat[e[:, 0]] - flat[e[:, 1]], axis=1)
-    wl = np.linalg.norm(p.vertices[e[:, 0]] - p.vertices[e[:, 1]], axis=1)
-    pct = np.abs(wl / np.maximum(fl, 1e-12) - 1.0) * 100.0
-    surf = ar.surf[it.region]
-    reg = surf.region
-    pv = ar.p_of(it, it.uv[:, 1])
-    outside = (pv < reg.p_range[0] - RANGE_MARGIN) | (pv > reg.p_range[1] + RANGE_MARGIN)
-    per = surf.stack.perim
-    step = 10
-    slope = np.zeros(len(per))
-    slope[step:-step] = np.abs(per[2 * step :] - per[: -2 * step]) / (2 * step * 0.001)
-    steep = (slope[surf.row_of(pv)] > STEEP_PERIMETER_SLOPE) | outside
-    es = steep[e[:, 0]] | steep[e[:, 1]]
-    arr["edge_change_p50_pct"] = _r(float(np.percentile(pct, 50)), 3)
-    arr["edge_change_p90_pct"] = _r(float(np.percentile(pct[~es], 90)) if (~es).any() else 0.0, 3)
-    arr["max_edge_change_pct"] = _r(float(pct.max()), 3)
-    arr["max_edge_change_body_pct"] = _r(float(pct[~es].max()) if (~es).any() else 0.0, 3)
-    arr["max_edge_change_shoulder_pct"] = _r(float(pct[es].max()), 3) if es.any() else None
-    arr["vertices_outside_shell"] = int(outside.sum())
-    if outside.any():
-        ar.warnings.append(
-            f"SHELL_RANGE: {int(outside.sum())} vertices of {it.name} lie beyond the end of the {it.region} shell; the "
-            "nearest cross-section is used there"
-        )
+_PCT = ("max_edge_change_pct", "perimeter_change_pct", "area_change_pct", "named_point_change_pct")
 
 
-def _ring(
-    ar: Arranger, region: str, its: list[Item], placed: list[Any], warns: list[str], violations: list[dict[str, Any]]
-) -> dict[str, Any]:
-    o = ar.o
-    st = ar.rings[region]
-    reg = ar.shells.regions[region]
-    ps, total, count = ar.row_sums(region, initial=True)  # at the positions the user gave: no option changes the ease
-    # the binding row is where the garment is widest compared with the convex section of the body (a fixed 4 cm window,
-    # so that no option changes it); there the standoff has to be largest
-    cand = np.flatnonzero(count > 0)
-    cand = cand[:: max(1, len(cand) // 80)]
-    tight = np.array([total[i] - reg.hull_at(float(ps[i]), 0.04)[0].perimeter for i in cand])
-    idx = int(cand[int(np.argmax(tight))])
-    p_star = float(ps[idx])
-    garment = float(total[idx])
-    body = float(reg.skin_loop(p_star))
+def _ring(lay: Layout, ring: str) -> dict[str, Any]:
+    """Garment loop against skin loop at the binding row (at the positions the user gave: no option changes it)."""
+    from .roll import ring_axis
+
+    its = [it for it in lay.items if it.mode == "roll" and it.ring == ring and it.piece is not None]
+    base = [it for it in its if it.layer == 0] or its
+    c, a = ring_axis(lay.avatar, ring)
+    rows: dict[int, float] = {}
+    for it in base:
+        assert it.piece is not None
+        b = it.outline
+        t0 = float(it.piece.theta0[2])
+        for y in np.arange(float(b[:, 1].min()), float(b[:, 1].max()) + 0.005, 0.005):
+            w = row_width(b, float(y))
+            if w > 1e-4:
+                key = int(round((it.axial0 + y + t0) / 0.005))
+                rows[key] = rows.get(key, 0.0) + w
+    reg = lay.shells().regions.get(ring)
+    radii = [float(it.piece.theta[0]) for it in its if it.piece is not None]
+    skins = [it.piece.surface.r_skin for it in its if it.piece is not None and it.piece.surface is not None]
+    used = min(r - s for r, s in zip(radii, skins, strict=True)) if radii else 0.0
+    required = max(
+        (it.needed_radius - it.piece.surface.r_skin for it in its if it.piece and it.piece.surface), default=used
+    )
+    exceeded = any("max_standoff" in it.piece.limits_hit for it in its if it.piece is not None)
+    if not rows or reg is None:
+        garment, body, p_star = 0.0, 0.0, None
+    else:
+        keys = sorted(rows)[:: max(1, len(rows) // 80)]
+        sign = 1.0 if a[1] >= 0 else -1.0
+        e_y = its[0].piece.surface.e_y if its[0].piece and its[0].piece.surface else a * sign
+
+        def p_of(k: int) -> float:
+            return float(reg.coords(c + k * 0.005 * e_y)[0][0])
+
+        tight: list[tuple[float, int]] = []
+        for k in keys:
+            try:  # rows outside the body region (a collar above the neck) have no section
+                tight.append((rows[k] - reg.hull_at(p_of(k), 0.04)[0].perimeter, k))
+            except RingNotFoundError:
+                continue
+        if tight:
+            kb = max(tight)[1]
+            p_star = p_of(kb)
+            garment, body = float(rows[kb]), float(reg.skin_loop(p_star))
+        else:
+            garment, body, p_star = 0.0, 0.0, None
     g_r, b_r = round(garment, 6), round(body, 6)
-    used = float(st.used[0])
-    rows: list[dict[str, float]] = []
-    if st.exceeded:
-        bad = np.flatnonzero(np.isfinite(st.proxy_need) & (st.proxy_need > used + 0.0005))
-        rows = [
-            {"row_m": round(float(st.proxy_rows_m[i]), 3), "needed_standoff_m": round(float(st.proxy_need[i]), 4)}
-            for i in bad[:: max(1, len(bad) // 20)]
-        ]
-        warns.append(
-            f"STANDOFF_EXCEEDED: ring {region} needs a standoff of {st.required * 100:.1f} cm but max_standoff is "
-            f"{o.max_standoff * 100:.1f} cm; shown at {used * 100:.1f} cm, pieces may overlap each other or the body"
-        )
-        violations.append(
-            {
-                "kind": "STANDOFF_EXCEEDED",
-                "pieces": [i.name for i in its],
-                "value_m": _r(used),
-                "required_m": _r(st.required),
-                "at_m": None,
-            }
-        )
     return {
-        "ring": region,
-        "pieces": [i.name for i in its],
+        "ring": ring,
+        "pieces": [it.name for it in base],
         "body_loop_m": b_r,
         "garment_loop_m": g_r,
         "true_ease_m": round(g_r - b_r, 6),
         "standoff_used_m": _r(used),
-        "standoff_required_m": _r(st.required),
-        "exceeded": bool(st.exceeded),
+        "standoff_required_m": _r(max(required, used)),
+        "radius_m": _r(lay.ring_radius.get(ring, min(radii, default=0.0))),
+        "exceeded": bool(exceeded),
         "binding_row_m": _r(p_star),
-        "violating_rows": rows,
+        "violating_rows": [],
         "note": "true ease = garment loop - skin loop at the binding row; the standoff is display space, not ease",
     }
 
 
-def _edge_data(ar: Arranger, placed: list[Any]) -> dict[int, tuple[F64, NDArray[np.int64], list[dict[str, Any]]]]:
+def _edge_data(
+    lay: Layout, placed: list[Any], cache: dict[bytes, dict[str, Any]]
+) -> dict[int, tuple[F64, NDArray[np.int64], list[dict[str, Any]]]]:
     """Per piece: all edge samples in world space (stacked), the edge index of every sample and the edge records."""
     data: dict[int, tuple[F64, NDArray[np.int64], list[dict[str, Any]]]] = {}
-    for it in ar.items:
+    for it in lay.items:
+        slot = cache.get(placed[it.index].key) if placed[it.index].key is not None else None
+        if slot is not None and "edges" in slot:
+            if slot["edges"] is not None:
+                data[it.index] = slot["edges"]
+            continue
         b = it.info.bundle
         polys: list[F64] = []
         meta: list[dict[str, Any]] = []
@@ -274,21 +267,26 @@ def _edge_data(ar: Arranger, placed: list[Any]) -> dict[int, tuple[F64, NDArray[
                 continue
             polys.append(placed[it.index].transform(flat))
             meta.append({"edge": f"{e['from']}-{e['to']}", "from": e["from"], "to": e["to"], "length_m": length})
-        if not polys:
-            continue
-        eid = np.repeat(np.arange(len(polys)), EDGE_SAMPLES)
-        data[it.index] = (np.vstack(polys), eid, [{**m, "polyline": pl} for m, pl in zip(meta, polys, strict=True)])
+        entry = None
+        if polys:
+            eid = np.repeat(np.arange(len(polys)), EDGE_SAMPLES)
+            entry = (np.vstack(polys), eid, [{**m, "polyline": pl} for m, pl in zip(meta, polys, strict=True)])
+            data[it.index] = entry
+        if slot is not None:
+            slot["edges"] = entry
     return data
 
 
 def _seam_candidates(
-    ar: Arranger, data: dict[int, tuple[F64, NDArray[np.int64], list[dict[str, Any]]]], thr: float
+    lay: Layout, lv: dict[int, int], data: dict[int, tuple[F64, NDArray[np.int64], list[dict[str, Any]]]], thr: float
 ) -> list[dict[str, Any]]:
+    """Edge pairs of pieces on the same layer closer than ``thr`` and running side by side for >= 2 samples."""
     trees = {k: cKDTree(v[0]) for k, v in data.items()}
     out: list[dict[str, Any]] = []
-    for a in ar.items:
-        for b in ar.items:
-            if a.index >= b.index or a.layer != b.layer or a.index not in data or b.index not in data:
+    items: list[Item] = lay.items
+    for a in items:
+        for b in items:
+            if a.index >= b.index or lv[a.index] != lv[b.index] or a.index not in data or b.index not in data:
                 continue
             pa, ea, ma = data[a.index]
             pb, eb, mb = data[b.index]
@@ -302,7 +300,7 @@ def _seam_candidates(
             cnt_b = dict(zip(*np.unique(kb, return_counts=True), strict=True))
             for key in sorted(set(cnt_a) | set(cnt_b)):
                 ca, cb = int(cnt_a.get(key, 0)), int(cnt_b.get(key, 0))
-                if min(ca, cb) < 2:  # the two edges must run side by side for at least two samples
+                if min(ca, cb) < 2:
                     continue
                 i_a, i_b = divmod(int(key), len(mb))
                 dm = float(min(d1[keys_a][ka == key].min(initial=9.0), d2[keys_b][kb == key].min(initial=9.0)))

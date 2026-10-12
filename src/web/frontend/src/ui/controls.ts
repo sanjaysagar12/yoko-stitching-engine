@@ -44,13 +44,15 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
       el.addEventListener("change", () => on(el.checked));
       return el;
     };
+    // every offered wrap keeps the piece's sizes exact (body_slice distorts and is not offered)
     const wrap = h(
       "select",
       { "data-testid": "ctl-wrap", disabled: off },
       h("option", { value: "flat" }, "flat"),
+      h("option", { value: "roll" }, "roll around the body"),
       h("option", { value: "around" }, "around the body part"),
-      h("option", { value: "body_slice" }, "body slice (torso)"),
     );
+    if (pl?.wrap === "body_slice") wrap.append(h("option", { value: "body_slice" }, "body slice (changes sizes)"));
     wrap.value = pl?.wrap ?? "flat";
     wrap.addEventListener("change", () => actions.updatePlacement(name, { wrap: wrap.value as WrapMode }));
     const ref = h(
@@ -142,7 +144,13 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
       row("Arrange: layer", layer),
       row("Arrange: shift along axis (cm)", num("ctl-shift", pl?.shift_m ? pl.shift_m[1] * 100 : 0, 1, (v) => actions.updatePlacement(name, { shift_m: v ? [pl?.shift_m?.[0] ?? 0, v / 100] : undefined }))),
       row("Arrange: locked", check("ctl-locked", pl?.locked ?? false, (b) => actions.updatePlacement(name, { locked: b || undefined }))),
-      arr ? h("div", { class: "meta", "data-testid": "arrange-piece" }, `arranged on ${arr.ring}, layer ${arr.layer}${arr.locked ? " (locked)" : ""}, standoff ${arr.standoff_m === null ? "-" : (arr.standoff_m * 100).toFixed(1) + " cm"}, shift ${arr.shift_m.map((x) => (x * 100).toFixed(1)).join(" / ")} cm, edges change ${arr.edge_change_p50_pct ?? "-"} % (median)`) : null,
+      arr
+        ? h(
+            "div",
+            { class: "meta", "data-testid": "arrange-piece" },
+            `${arr.mode ?? "placed"}${arr.ring ? ` on ${arr.ring}` : ""}, layer ${arr.layer}${arr.locked ? " (locked)" : ""}; standoff ${arr.standoff_m === null ? "-" : (arr.standoff_m * 100).toFixed(1) + " cm"} (display space, not ease); shift ${arr.shift_m.map((x) => (x * 100).toFixed(1)).join(" / ")} cm; body ${(arr.min_distance_to_avatar_m * 100).toFixed(1)} cm away`,
+          )
+        : null,
       h("button", { class: "btn danger", "data-testid": "ctl-remove", disabled: off, onclick: () => actions.removePlacement(name) }, "Remove placement"),
       pairBox,
       notices.length > 0 ? h("div", { class: "notices", "data-testid": "notices" }, ...notices) : null,
@@ -154,6 +162,7 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
         res
           ? h("div", { "data-testid": "scale-check-placed" }, `Placed (bbox reported): ${formatCm(res.bbox_cm.width)} x ${formatCm(res.bbox_cm.height)} cm ${same ? "- unchanged" : "- DIFFERENT"}`)
           : h("div", { class: "meta" }, "Placed: -"),
+        res?.size_check ? sizeLine(res) : null,
         ...pairLines,
         Array.isArray(ext) ? h("div", { class: "meta" }, `3D extent after placement: ${ext.map((x) => Number(x).toFixed(1)).join(" x ")} cm`) : null,
         res?.fit["wrap_angle_deg"] !== undefined ? h("div", { class: "meta" }, `Wrapped over ${Number(res.fit["wrap_angle_deg"]).toFixed(0)} deg (${(Number(res.fit["width_over_circumference"]) * 100).toFixed(0)} % of the circumference)`) : null,
@@ -165,6 +174,19 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
     if (["selectedPiece", "placements", "placed", "build", "derived", "derivedInfos", "referenceDraft"].some((k) => changed.includes(k as never))) render();
   });
   render();
+}
+
+/** The engine's own measurement of the placed piece against the flat pattern (never recomputed here). */
+function sizeLine(res: PlacedResult): HTMLElement {
+  const c = res.size_check;
+  if (!c) return h("span");
+  const worst = Math.max(c.max_edge_change_pct, c.perimeter_change_pct, c.area_change_pct, c.named_point_change_pct);
+  const changed = res.changes_piece_size === true;
+  return h(
+    "div",
+    { class: changed ? "bad" : "meta", "data-testid": "size-check" },
+    `${changed ? "Size CHANGED" : "Size unchanged"} (measured on the placed piece): edges ${c.max_edge_change_pct.toFixed(3)} %, outline ${c.perimeter_change_pct.toFixed(3)} %, area ${c.area_change_pct.toFixed(3)} %, named points ${c.named_point_change_pct.toFixed(3)} % (max ${worst.toFixed(3)} %)`,
+  );
 }
 
 /** Garment width against the body loop at the chest, waist and hip (body_slice only). */

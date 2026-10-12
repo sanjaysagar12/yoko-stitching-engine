@@ -122,10 +122,12 @@ export class Store {
   }
 }
 
-export const TORSO_PARTS = ["Chest", "Waist", "Hip", "Neck"];
+/** Bounding volumes with a ring (torso, neck, arms, legs): a piece placed there rolls around the ring's axis. */
+export const RING_PARTS = ["Chest", "Waist", "Hip", "Neck", "UpperArm", "Forearm", "Thigh", "Shin"];
 
-/** Default wrap of a new placement: body_slice on the torso, around on limbs and the head. */
-export const defaultWrap = (bv: string | undefined): WrapMode => (bv && TORSO_PARTS.includes(bv) ? "body_slice" : "around");
+/** Default wrap of a new placement: roll on the torso, neck, arms and legs; around on the head, hands and feet. */
+export const defaultWrap = (bv: string | undefined): WrapMode =>
+  bv && RING_PARTS.includes(bv.replace(/_[LR]$/, "")) ? "roll" : "around";
 
 export const defaultPlacement = (piece: string, point: string, bv?: string, reference = "bbox_centre"): Placement => ({
   piece,

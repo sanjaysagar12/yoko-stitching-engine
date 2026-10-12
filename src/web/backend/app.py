@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
+import numpy as np
 from fastapi import Body, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -22,6 +25,12 @@ from .errors import ENGINE_ERRORS, error_body, to_error
 from .jobs import JobError, list_jobs, load_job
 
 _SAFE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+def _b64(a: Any) -> str:
+    return base64.b64encode(np.ascontiguousarray(a).tobytes()).decode("ascii")
+
+
 EMPTY_SPEC: dict[str, Any] = {"schema_version": 2, "placements": []}
 
 
@@ -106,21 +115,50 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
             raise JobError("build_not_ready", f"build {b.id} is {b.status}")
         return b
 
+    def answer(res: Any, body: dict[str, Any]) -> Response:
+        """The alignment result (always with ``validity`` and per piece ``size_check`` and ``solved``).
+
+        With ``compact: true`` the rolled meshes travel as base64 (``wrapped_mesh``: float32 vertices, uint32 faces,
+        ``mesh_id``); faces are left out for the ``known_meshes`` ids the browser already holds. Same numbers, about a
+        tenth of the bytes of the JSON arrays.
+        """
+        if not body.get("compact"):
+            return JSONResponse(res.doc)
+        known = set(body.get("known_meshes") or [])
+        doc = dict(res.doc)
+        docs = []
+        for d, p in zip(res.doc["placements"], res.placed, strict=True):
+            d = dict(d)
+            if d.get("wrapped_vertices") is not None:
+                faces = np.ascontiguousarray(p.faces, dtype=np.uint32)
+                mid = hashlib.sha1(faces.tobytes() + str(len(p.vertices)).encode()).hexdigest()[:16]
+                mesh = {"mesh_id": mid, "vertices": _b64(np.asarray(p.vertices, dtype="<f4"))}
+                if mid not in known:
+                    mesh["faces"] = _b64(faces.astype("<u4"))
+                d["wrapped_vertices"], d["wrapped_faces"], d["wrapped_mesh"] = None, None, mesh
+            docs.append(d)
+        doc["placements"] = docs
+        return JSONResponse(doc)
+
     @app.post("/api/align")
-    def align(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+    def align(body: Annotated[dict[str, Any], Body()]) -> Response:
+        """Place the pieces collision-free and size-exact: ``{build, placements, derived_pieces, arrange_options?,
+        compact?, known_meshes?}``. Placements carrying ``solved`` (from an earlier answer) stay where they are; the
+        others are solved against them. The answer carries ``validity`` (never valid if anything collides or changed
+        size) and per piece ``size_check`` and ``solved``."""
         b = ready_build(body)
         res = aligner.align(
-            b.dir / "avatar", b.dir / "pieces", json.dumps(spec_of(body)), derived_dir=b.dir / "derived"
+            b.dir / "avatar",
+            b.dir / "pieces",
+            json.dumps(spec_of(body)),
+            derived_dir=b.dir / "derived",
+            cache_dir=b.dir / "refined",
         )
-        return res.doc
+        return answer(res, body)
 
     @app.post("/api/arrange")
-    def arrange(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
-        """Auto-arrange the placed pieces on offset body shells: ``{build, placements, derived_pieces,
-        arrange_options}``.
-
-        The answer is an alignment result with an ``arrangement`` block (rings, seam candidates, violations).
-        """
+    def arrange(body: Annotated[dict[str, Any], Body()]) -> Response:
+        """Re-solve every piece that is not locked (same body and answer as ``/api/align``)."""
         b = ready_build(body)
         res = aligner.arrange(
             b.dir / "avatar",
@@ -129,7 +167,7 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
             derived_dir=b.dir / "derived",
             cache_dir=b.dir / "refined",
         )
-        return res.doc
+        return answer(res, body)
 
     @app.post("/api/clone")
     def clone(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
@@ -202,7 +240,7 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
         saved = cfg.outputs_dir / b.job / "placements.json"
         spec = json.loads(saved.read_text(encoding="utf-8")) if saved.is_file() else dict(EMPTY_SPEC)
         out = b.dir / "export"
-        aligner.align(b.dir / "avatar", b.dir / "pieces", json.dumps(spec), out)
+        aligner.align(b.dir / "avatar", b.dir / "pieces", json.dumps(spec), out, cache_dir=b.dir / "refined")
         scene = out / "scene_m.obj"
         if format == "obj":
             return FileResponse(scene, media_type="text/plain", filename=f"{b.job}_scene_m.obj")

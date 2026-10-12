@@ -129,7 +129,8 @@ export interface BuildStatus {
   error?: ApiError;
 }
 
-export type WrapMode = "flat" | "around" | "body_slice";
+/** flat, roll and around keep every size exact; body_slice distorts (only with allow_distortion, not offered in the UI). */
+export type WrapMode = "flat" | "roll" | "around" | "body_slice";
 export type PairMode = "same_anchor" | "mirror_anchor";
 export type Side = "left" | "right" | "centre";
 
@@ -150,11 +151,18 @@ export interface Placement {
   shift_m?: [number, number];
   /** Auto-arrange: keep the placement as it is and treat the piece as an obstacle. */
   locked?: boolean;
+  /** Where the engine put the piece last time (radius, shift): sent back so the piece stays exactly there. */
+  solved?: Solved;
+}
+
+export interface Solved {
+  radius_m: number;
+  shift_m: [number, number];
 }
 
 export const RING_NAMES = ["torso", "neck", "arm_L", "arm_R", "leg_L", "leg_R"] as const;
 
-/** Options of /api/arrange (metres). */
+/** Options of /api/align and /api/arrange (metres). */
 export interface ArrangeOptions {
   clearance_body: number;
   gap_piece: number;
@@ -162,36 +170,39 @@ export interface ArrangeOptions {
   max_standoff: number;
   max_shift: number;
   refine_max_edge: number;
-  standoff_mode: "uniform" | "per_row";
 }
 
 export const DEFAULT_ARRANGE_OPTIONS: ArrangeOptions = {
   clearance_body: 0.03,
   gap_piece: 0.03,
-  gap_layer: 0.015,
-  max_standoff: 0.15,
-  max_shift: 0.06,
-  refine_max_edge: 0.01,
-  standoff_mode: "uniform",
+  gap_layer: 0.03,
+  max_standoff: 0.3,
+  max_shift: 0.25,
+  refine_max_edge: 0.005,
 };
 
-/** Per piece numbers of an arrangement. */
+/** Per piece numbers of the solve (every /api/align and /api/arrange answer). */
 export interface ArrangePiece {
   ring: string;
+  mode?: string;
   layer: number;
   locked: boolean;
+  radius_m?: number | null;
   standoff_m: number | null;
   shift_m: [number, number];
   min_distance_to_avatar_m: number;
   min_distance_to_pieces_m: Record<string, number>;
   flags: string[];
-  area_ratio: number | null;
-  edge_change_p50_pct?: number | null;
-  edge_change_p90_pct?: number | null;
-  max_edge_change_pct: number | null;
-  max_edge_change_body_pct: number | null;
-  max_edge_change_shoulder_pct: number | null;
-  self_intersections: number;
+  limits?: string[];
+}
+
+/** Measured by the engine on the placed piece against the flat pattern (per cent). */
+export interface SizeCheck {
+  max_edge_change_pct: number;
+  perimeter_change_pct: number;
+  area_change_pct: number;
+  named_point_change_pct: number;
+  max_mesh_edge_m?: number;
 }
 
 export interface WorldEdge {
@@ -217,17 +228,32 @@ export interface RingRow {
   true_ease_m: number;
   standoff_used_m: number;
   standoff_required_m: number;
+  radius_m?: number;
   exceeded: boolean;
   binding_row_m: number | null;
   violating_rows: Array<{ row_m: number; needed_standoff_m: number }>;
 }
 
 export interface Violation {
-  kind: "CLEARANCE_BODY" | "GAP_PIECES" | "STANDOFF_EXCEEDED";
+  kind: "CLEARANCE_BODY" | "GAP_PIECES" | "STANDOFF_EXCEEDED" | "SIZE_CHANGED";
   pieces: string[];
   value_m: number;
   required_m: number;
   at_m: [number, number, number] | null;
+  /** What stopped the solver: max_standoff, max_shift, iterations, fixed (a piece that keeps its place). */
+  limit?: string;
+}
+
+/** Measured after every solve on the placed meshes. Never valid if anything collides or changed size. */
+export interface Validity {
+  valid: boolean;
+  size_ok: boolean;
+  clearance_ok: boolean;
+  gaps_ok: boolean;
+  max_size_change_pct: number;
+  min_distance_to_avatar_m: number | null;
+  min_distance_between_pieces_m: number | null;
+  violations: Violation[];
 }
 
 export interface SeamCandidate {
@@ -259,8 +285,15 @@ export interface PlacedResult {
   bbox_cm: { width: number; height: number };
   warnings: string[];
   fit: Record<string, unknown>;
-  /** Present after /api/arrange. */
   arrange?: ArrangePiece;
+  size_check?: SizeCheck;
+  changes_piece_size?: boolean;
+  solved?: Solved | null;
+  /** Compact transport of a rolled mesh (base64 float32 vertices, uint32 faces sent once per mesh id). */
+  wrapped_mesh?: { mesh_id: string; vertices: string; faces?: string };
+  /** Decoded in the browser from wrapped_mesh (or wrapped_vertices/faces). */
+  vertexArray?: Float32Array;
+  faceArray?: Uint32Array;
   world_outline_m?: number[][];
   world_named_points?: WorldPoint[];
   world_edges?: WorldEdge[];
@@ -292,6 +325,7 @@ export interface AlignResult {
   stitch_reports: StitchReport[];
   warnings: string[];
   arrangement?: Arrangement;
+  validity?: Validity;
 }
 
 /** What the user picked on an arranged piece: an outline edge or a named point. */

@@ -93,8 +93,11 @@ def test_align_places_the_front_panel_at_chest_front(client: TestClient, shirt: 
     body = {"build": shirt["id"], "placements": [{"piece": "FrontPanel", "point": "Chest_Front"}]}
     r = client.post("/api/align", json=body)
     assert r.status_code == 200, r.text
-    pl = r.json()["placements"][0]
-    assert np.array(pl["reference_position_m"]) == pytest.approx(pts["Chest_Front"]["position_m"], abs=1e-5)
+    doc = r.json()
+    pl = doc["placements"][0]
+    # pushed out from the point where the flat panel would touch the body, never in; the answer says it is valid
+    off = np.array(pl["reference_position_m"]) - np.array(pts["Chest_Front"]["position_m"])
+    assert off @ np.array(pts["Chest_Front"]["normal"]) >= -1e-6 and doc["validity"]["valid"] is True
     assert pl["bbox_cm"] == {"width": pytest.approx(37.25, abs=0.01), "height": pytest.approx(74.40, abs=0.01)}
     m = np.array(pl["matrix"]).reshape(4, 4)
     assert m[:3, 2] == pytest.approx(pts["Chest_Front"]["normal"], abs=1e-5)  # the piece faces along the point normal
@@ -219,7 +222,7 @@ def test_clone_returns_the_derived_piece_and_its_files(client: TestClient, shirt
 
 
 def test_pair_and_align_with_derived_pieces(client: TestClient, shirt: dict[str, Any]) -> None:
-    base = {"piece": "FrontPanel", "point": "Chest_Front", "reference": "A33", "wrap": "body_slice"}
+    base = {"piece": "FrontPanel", "point": "Chest_Front", "reference": "A33", "wrap": "roll"}
     r = client.post(
         "/api/pair",
         json={
@@ -237,7 +240,8 @@ def test_pair_and_align_with_derived_pieces(client: TestClient, shirt: dict[str,
     assert a.status_code == 200, a.text
     doc = a.json()
     p0, p1 = doc["placements"]
-    assert p0["reference_position_m"] == pytest.approx(p1["reference_position_m"], abs=1e-6)  # the same anchor
+    r0, r1 = p0["reference_position_m"], p1["reference_position_m"]  # the same anchor, half a gap off the centre each
+    assert abs(r0[0] + r1[0]) < 1e-5 and abs(r0[1] - r1[1]) < 1e-5 and doc["validity"]["valid"] is True
     assert {p0["extends"], p1["extends"]} == {"left", "right"}
     assert (
         p0["bbox_cm"]
@@ -245,7 +249,7 @@ def test_pair_and_align_with_derived_pieces(client: TestClient, shirt: dict[str,
         == {"width": pytest.approx(37.25, abs=0.01), "height": pytest.approx(74.40, abs=0.01)}
     )
     assert doc["derived_pieces"][0]["id"] == "FrontPanel_L" and doc["derived_pieces"][0]["obj"] == "FrontPanel_L_m.obj"
-    assert doc["schema_version"] == 2
+    assert doc["schema_version"] == 4
 
 
 def test_half_piece_errors_have_specific_codes(client: TestClient, shirt: dict[str, Any]) -> None:
@@ -306,18 +310,19 @@ def test_arrange_endpoint_returns_the_arrangement(client: TestClient, shirt: dic
     body = {
         "build": shirt["id"],
         "placements": [
-            {"piece": "BackPanel", "point": "Chest_Back", "reference": "A24"},
-            {"piece": "Pocket", "point": "Chest_FrontSide_L", "layer": 1},
+            {"piece": "BackPanel", "point": "Chest_Back", "reference": "A24", "wrap": "roll"},
+            {"piece": "Pocket", "point": "Chest_FrontSide_L", "layer": 1, "wrap": "roll"},
         ],
         "arrange_options": {"gap_piece": 0.04},
     }
     r = client.post("/api/arrange", json=body)
     assert r.status_code == 200, r.text
     doc = r.json()
-    assert doc["schema_version"] == 3 and doc["arrangement"]["options"]["gap_piece"] == 0.04
-    assert {p["piece"]: p["arrange"]["layer"] for p in doc["placements"]} == {"BackPanel": 0, "Pocket": 1}
+    assert doc["schema_version"] == 4 and doc["arrangement"]["options"]["gap_piece"] == 0.04
+    assert doc["validity"]["valid"] is True and all("size_check" in p for p in doc["placements"])
     assert doc["arrangement"]["rings"][0]["ring"] == "torso"
     bad = client.post(
-        "/api/arrange", json={**body, "placements": [{"piece": "BackPanel", "point": "Chest_Back", "ring": "tail"}]}
+        "/api/arrange",
+        json={**body, "placements": [{"piece": "BackPanel", "point": "Chest_Back", "ring": "tail", "wrap": "roll"}]},
     )
     assert bad.status_code == 422 and bad.json()["error"]["code"] == "ring_not_found"

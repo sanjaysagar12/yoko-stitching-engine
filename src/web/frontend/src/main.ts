@@ -34,6 +34,7 @@ import { mountErrors } from "./ui/errors";
 import { mountInspector } from "./ui/inspector";
 import { mountMeasurements } from "./ui/measurements";
 import { mountPieceList } from "./ui/pieceList";
+import { mountStatus } from "./ui/status";
 import { mountTopbar } from "./ui/topbar";
 import { mountViewbar } from "./ui/viewbar";
 
@@ -48,6 +49,7 @@ declare global {
       arrangedEdges(): Array<{ piece: string; ids: string[] }>;
       selection(): unknown;
       arrangeState(): { arranged: boolean; rings: number; violations: number; hidden: string[]; meshLines: boolean };
+      status(): { visible: boolean; text: string; valid: boolean | null; className: string };
       state(): {
         selectedPiece: string | null;
         pendingPoint: string | null;
@@ -130,7 +132,10 @@ const actions: Actions = {
   updatePlacement(piece, patch) {
     const cur = store.get().placements.get(piece);
     if (!cur) return;
-    store.get().placements.set(piece, { ...cur, ...patch });
+    const next: Placement = { ...cur, ...patch };
+    // a changed piece is solved again against the others (which stay where they are); locking keeps its place
+    if (Object.keys(patch).some((k) => k !== "locked")) delete next.solved;
+    store.get().placements.set(piece, next);
     store.touch("placements");
     scheduleAlign(120);
   },
@@ -204,7 +209,8 @@ const actions: Actions = {
   },
   setArrangeOptions(patch: Partial<ArrangeOptions>) {
     store.set({ arrangeOptions: { ...store.get().arrangeOptions, ...patch } });
-    if (store.get().arranged) scheduleAlign(500);
+    forgetSolved(); // other clearances or gaps: every piece is solved again, in the order it was placed
+    scheduleAlign(500);
   },
   setMeshLines(on) {
     store.set({ showMeshLines: on });
@@ -215,7 +221,7 @@ const actions: Actions = {
     store.set({ hiddenPieces: next });
   },
   focusViolation(index) {
-    const v = store.get().arrangement?.violations[index];
+    const v = store.get().lastAlign?.validity?.violations[index];
     if (!v) return;
     store.set({ highlight: v.pieces });
     if (v.at_m) kit.focus(new Vector3(...v.at_m), VIOLATION_FRAME_M);
@@ -235,7 +241,9 @@ function newPlacement(piece: string, point: string): Placement {
 function place(piece: string, point: string): void {
   const s = store.get();
   const cur = s.placements.get(piece);
-  s.placements.set(piece, cur ? { ...cur, point } : newPlacement(piece, point));
+  const next = cur ? { ...cur, point } : newPlacement(piece, point);
+  delete next.solved;
+  s.placements.set(piece, next);
   store.set({ selectedPiece: piece, pendingPoint: null });
   store.touch("placements");
   scheduleAlign(0);
@@ -305,24 +313,69 @@ function suggestedStitches(): Stitch[] {
   return out;
 }
 
+/** Faces of the rolled meshes by mesh id: they never change for a piece, so the backend sends them once. */
+const meshFaces = new Map<string, Uint32Array>();
+
+function decodeBase64(text: string): ArrayBuffer {
+  const bin = atob(text);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out.buffer;
+}
+
+/** Typed arrays of the rolled meshes of an answer (compact transport, or plain arrays). */
+function decodeMeshes(res: AlignResult): void {
+  for (const r of res.placements) {
+    const m = r.wrapped_mesh;
+    if (m) {
+      if (m.faces) meshFaces.set(m.mesh_id, new Uint32Array(decodeBase64(m.faces)));
+      r.vertexArray = new Float32Array(decodeBase64(m.vertices));
+      r.faceArray = meshFaces.get(m.mesh_id);
+    } else if (r.wrapped_vertices && r.wrapped_faces) {
+      r.vertexArray = new Float32Array(r.wrapped_vertices.flat());
+      r.faceArray = new Uint32Array(r.wrapped_faces.flat());
+    }
+  }
+}
+
+/** Show an answer: every piece where the engine put it, and remember that place (`solved`) for the next request. */
+async function showResult(res: AlignResult, arranged: boolean): Promise<void> {
+  const s = store.get();
+  await ensureDerived(res);
+  decodeMeshes(res);
+  for (const r of res.placements) {
+    s.placed.set(r.piece, r);
+    pieces.apply(r, !arranged, arranged);
+    const pl = s.placements.get(r.piece);
+    if (pl && r.solved) s.placements.set(r.piece, { ...pl, solved: r.solved });
+  }
+  stitchView.setSegments(res.stitch_reports.flatMap((r) => (r.segments ? [r.segments] : [])));
+}
+
+/** Every piece is solved again from its anchor (in placement order) on the next request. */
+function forgetSolved(): void {
+  const s = store.get();
+  for (const [k, pl] of s.placements) {
+    if (pl.solved) {
+      const next = { ...pl };
+      delete next.solved;
+      s.placements.set(k, next);
+    }
+  }
+}
+
 async function runAlign(): Promise<void> {
   const s = store.get();
   if (!s.buildId) return;
-  if (s.arranged) return runArrange(); // an arrangement stays on show: placement changes arrange again
   const list = [...s.placements.values()];
   if (list.length === 0 && s.derived.length === 0) return;
   const seq = ++alignSeq;
   try {
-    const res = await align(s.buildId, list, s.derived, suggestedStitches());
+    const res = await align(s.buildId, list, s.derived, suggestedStitches(), s.arrangeOptions, [...meshFaces.keys()]);
     if (seq !== alignSeq) return; // a newer request is on its way
-    await ensureDerived(res);
-    for (const r of res.placements) {
-      s.placed.set(r.piece, r);
-      pieces.apply(r);
-    }
-    stitchView.setSegments(res.stitch_reports.flatMap((r) => (r.segments ? [r.segments] : [])));
-    store.set({ lastAlign: res, error: null });
-    store.touch("placed");
+    await showResult(res, s.arranged);
+    store.set({ lastAlign: res, arrangement: res.arrangement ?? null, error: null });
+    store.touch("placed", "placements");
   } catch (e) {
     if (seq === alignSeq) fail(e);
   }
@@ -332,30 +385,27 @@ async function runAlign(): Promise<void> {
 async function runArrange(): Promise<void> {
   const s = store.get();
   if (!s.buildId) return;
+  forgetSolved(); // a fresh arrangement of everything that is not locked
   const list = [...s.placements.values()];
   if (list.length === 0) return;
   const seq = ++alignSeq;
-  store.set({ busy: { text: "arranging on the body shells...", progress: 0.5 }, error: null });
+  store.set({ busy: { text: "arranging around the body...", progress: 0.5 }, error: null });
   try {
-    const res = await arrangeApi(s.buildId, list, s.derived, s.arrangeOptions, suggestedStitches());
+    const res = await arrangeApi(s.buildId, list, s.derived, s.arrangeOptions, suggestedStitches(), [...meshFaces.keys()]);
     if (seq !== alignSeq) return;
-    await ensureDerived(res);
-    for (const r of res.placements) {
-      s.placed.set(r.piece, r);
-      pieces.apply(r, false);
-    }
-    stitchView.setSegments(res.stitch_reports.flatMap((r) => (r.segments ? [r.segments] : [])));
+    await showResult(res, true);
     store.set({ lastAlign: res, arrangement: res.arrangement ?? null, arranged: true, busy: null, error: null, selection: null });
-    store.touch("placed");
+    store.touch("placed", "placements");
   } catch (e) {
     if (seq === alignSeq) fail(e);
   }
 }
 
-/** Leave the arrangement: back to the placements as they were made. */
+/** Leave the arrangement view and place every piece again from its anchor, in the order the pieces were placed. */
 function resetArrange(): void {
   pieces.endArrangement();
-  store.set({ arranged: false, arrangement: null, selection: null, highlight: [], hoverText: null });
+  forgetSolved();
+  store.set({ arranged: false, selection: null, highlight: [], hoverText: null });
   void runAlign();
 }
 
@@ -543,6 +593,7 @@ must("right").append(inspectorHost);
 const inspector = mountInspector(inspectorHost, store, actions, getBundle);
 mountControls(must("right"), store, actions);
 mountErrors(must("view"), store);
+mountStatus(must("view"), store, actions);
 const openCloneDialog = mountCloneDialog(store, actions, inspector);
 
 window.__fit = {
@@ -573,10 +624,15 @@ window.__fit = {
     return {
       arranged: s.arranged,
       rings: s.arrangement?.rings.length ?? 0,
-      violations: s.arrangement?.violations.length ?? 0,
+      violations: s.lastAlign?.validity?.violations.length ?? 0,
       hidden: [...s.hiddenPieces],
       meshLines: s.showMeshLines,
     };
+  },
+  status: () => {
+    const el = document.querySelector<HTMLElement>("[data-testid=status-strip]");
+    const v = store.get().lastAlign?.validity;
+    return { visible: !!el && !el.hidden, text: el?.textContent ?? "", valid: v?.valid ?? null, className: el?.className ?? "" };
   },
   state: () => {
     const s = store.get();

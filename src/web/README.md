@@ -32,7 +32,8 @@ error. Provided: `male_shirt`, `aldrich_skirt` (the two skirt pieces, female bod
 | `POST /api/jobs/{name}/build` | start (or reuse) the build: `{build_id, status, cached}` |
 | `GET /api/builds/{id}` | status (`queued` / `running` / `done` / `failed`), stage, progress; the result when done |
 | `GET /api/builds/{id}/files/{path}` | avatar and piece OBJ / JSON of that build |
-| `POST /api/align` | `{build, placements, derived_pieces?, stitches?, rings?}` to the `alignment_result` document (derived pieces are cached under `derived/` of the build) |
+| `POST /api/align` | `{build, placements, derived_pieces?, stitches?, rings?, arrange_options?, compact?, known_meshes?}` to the `alignment_result` document: every piece placed size-exact and collision-free, `validity` and per piece `size_check` and `solved` (placements sent with `solved` stay where they are; derived pieces are cached under `derived/`, 5 mm meshes under `refined/`). `compact: true` sends rolled meshes as base64 (`wrapped_mesh`), faces only for ids not in `known_meshes` |
+| `POST /api/arrange` | same body: re-solve every piece that is not locked (Auto-arrange); same answer |
 | `POST /api/clone` | `{build, source, axis, id}`: a linked mirrored copy of a piece (size, named points, files, suggested seam) |
 | `POST /api/pair` | `{build, base, derived_id, mode, derived_pieces}`: the two placements of a pair (`same_anchor` or `mirror_anchor`) |
 | `GET` / `PUT /api/jobs/{name}/placements` | load / save `outputs/<job>/placements.json` (placements and `derived_pieces`) |
@@ -45,7 +46,8 @@ avatar bundle, arrangement points, bounding volumes and the measurement report.
 Errors are always `{"error": {"code", "message", "piece"?, "tool"?}}`, never a stack trace (codes: `job_not_found`,
 `job_file_missing`, `unsupported_tool`, `missing_measurement`, `model_files_not_found`, `fit_did_not_converge`,
 `unknown_piece`, `unknown_point`, `unknown_named_point`, `reference_not_on_axis`, `no_mirrored_point`,
-`derived_of_derived`, `duplicate_piece`, `invalid_document`, `invalid_request`, `not_found`, `internal_error`, ...). **A failed
+`derived_of_derived`, `duplicate_piece`, `ring_not_found`, `size_changed`, `invalid_document`, `invalid_request`,
+`not_found`, `internal_error`, ...). **A failed
 piece does not fail the build**: it is listed with `status: "failed"`, its `reason`, and the `tool` or variable named.
 
 ## Frontend
@@ -60,13 +62,16 @@ TypeScript is `strict`; ESLint and Vitest are configured (`npm run lint`, `npm t
   part (names on hover, or all with the Labels toggle), bounding volumes as wireframe capsules, pieces laid out left to
   right to the right of the avatar.
 * Placement: click a piece (list or 3D) then a point, or the point first then the piece. The frontend sends
-  `/api/align` and animates the piece to the answer.
+  `/api/align` with every placement (earlier pieces carry their `solved` place, so they do not move) and shows the
+  answer. A **status strip** under the view gives the engine's verdict after every placement: green
+  `Size unchanged (max x %) · Body clearance x cm · Smallest gap between pieces x cm` only when `valid`; red with the
+  violating pairs otherwise (click one to frame it).
 * Right panel (per piece): the **piece inspector** (outline with its named points as clickable dots; the dashed line is
-  a mirror axis), **Clone & mirror**, offset in cm, rotation, mirror, flip facing, wrap (new torso placements default to
-  `body_slice`, limb and head placements to `around`), reference point, remove placement, pair buttons, the side
+  a mirror axis), **Clone & mirror**, offset in cm, rotation, mirror, flip facing, wrap (`flat`, `roll`, `around`; new torso, neck,
+  arm and leg placements default to `roll`, head, hand and foot placements to `around`; all keep sizes exact), reference point, remove placement, pair buttons, the side
   indicator (`extends -> wearer's left / right`), non-blocking notices for the engine warnings, and the **scale check**
-  (flat size, the size the backend reports after placement, the 3D extent, the pair total width against the avatar's
-  half loop, and the garment-versus-body table at the chest, waist and hip).
+  (flat size, the size the backend reports after placement, the engine's measured size check of the placed piece, the
+  3D extent, the pair total width against the avatar's half loop); the standoff is shown as display space, not ease.
 * **Half pieces**: Clone & mirror opens a dialog (axis: flip in place, across an edge through two named points, or across
   a vertical line through a point; name; place the pair now; pair mode). The clone is a separate linked piece nested
   under its source (`mirror of ...`, delete with the cross); both are placed independently or as a pair

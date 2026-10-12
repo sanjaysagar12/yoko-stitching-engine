@@ -52,6 +52,39 @@ def shirt_reports() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
+def shirt_pieces(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """The male_shirt pieces (sm2d_engine; needs no body model)."""
+    out = tmp_path_factory.mktemp("shirt") / "pieces"
+    sm2d = (ROOT / "assert/sm2d/male_shirt.sm2d").read_text(encoding="utf-8")
+    smis = (ROOT / "assert/smis/male_shirt.smis").read_text(encoding="utf-8")
+    Engine().run(EngineRequest(sm2d, smis, EngineOptions(output_dir=out), "male_shirt.sm2d", "male_shirt.smis"))
+    return out
+
+
+@pytest.fixture(scope="session")
+def refine_cache(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """One cache of refined piece meshes for the session (keyed by outline content, so sharing is safe)."""
+    return tmp_path_factory.mktemp("refined")
+
+
+@pytest.fixture(scope="session", params=["synthetic", "smplx"])
+def avatar(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
+    """An avatar folder: the synthetic symmetric body (always) or SMPL-X male_173 (when ``models/smplx`` exists)."""
+    base = tmp_path_factory.mktemp(f"avatar_{request.param}")
+    if request.param == "synthetic":
+        from tests.synthetic_avatar import build_avatar
+
+        return {"kind": "synthetic", "dir": build_avatar(base / "avatar")}
+    from avatar_engine import AvatarEngine
+
+    models = ROOT / "models" / "smplx"
+    if not (models / "SMPLX_MALE.npz").is_file():
+        pytest.skip("models/smplx not present")
+    AvatarEngine().build((ROOT / "assert/body/male_173.json").read_text(), models, base / "avatar")
+    return {"kind": "smplx", "dir": base / "avatar"}
+
+
+@pytest.fixture(scope="session")
 def scene(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
     from avatar_engine import AvatarEngine
     from sm2d_engine.engine import Engine, EngineOptions, EngineRequest

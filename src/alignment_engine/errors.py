@@ -102,3 +102,20 @@ class ClearanceBodyViolation(UserWarning):
 
 class GapPiecesViolation(UserWarning):
     """Two pieces are closer than the required gap."""
+
+
+class SizeChangedError(AlignmentError):
+    """A placed piece is not an exact copy of its flat pattern piece (only possible with a distorting wrap)."""
+
+    def __init__(self, piece: str, check: dict[str, float], tolerance_pct: float) -> None:
+        self.piece = piece
+        self.check = check
+        nums = ", ".join(f"{k} {v:.3f}" for k, v in check.items() if k.endswith("_pct"))
+        super().__init__(
+            f"piece {piece!r} would change size ({nums}; the limit is {tolerance_pct} %); the placement is not returned"
+        )
+
+
+class ArrangementInfeasible(UserWarning):
+    """The clearance and gap constraints cannot all be met within ``max_standoff`` and ``max_shift``; the best layout
+    is returned with ``validity.valid = false`` and the violations."""

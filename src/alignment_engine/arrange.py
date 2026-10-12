@@ -1,15 +1,18 @@
-"""Auto-arrange: pieces on offset body shells, spread out so that nothing overlays and seams are visible. Metres.
+"""Collision-free, size-exact placement of all pieces of a spec (used by ``align`` and ``arrange``). Metres.
 
-Each non-locked piece is mapped *row by row* onto the offset curve of the body cross-section of its region (``shells``):
-a point at flat offset ``(x, y)`` from the piece reference goes to axial position ``p0 + y`` and to arc distance ``x``
-from the anchor ray of that row, so arc length along a row and distance along the axis are exact (nothing is scaled).
-The standoff ``h`` (distance of the shell from the body) is a *display* quantity: it makes room for the pieces. It is
-never ease. Ease is reported separately as garment loop minus skin loop (``arrange_report``).
+Every piece is placed by an isometry (``roll.Surface``: plane or cylinder) and then moved rigidly along that surface
+or pushed away from the body (``solver``) until no piece is closer than ``clearance_body`` to the avatar and no two
+pieces are closer than ``gap_piece``. Nothing is ever scaled or bent out of its developable surface.
 
-Order of work: refine (cached) -> rings and layers -> standoff per ring (row sums, then a numeric clearance search
-against
-the avatar) -> relaxation of piece shifts until every pair is at least ``gap_piece`` apart -> check, raise the standoff
-where something is still violated (at most a few rounds) -> meshes and report.
+* ``roll`` pieces of one ring (torso, neck, an arm, a leg) start on one cylinder about the ring axis whose radius is
+  the smallest that fits the ring's pieces side by side with gaps and keeps every vertex of each piece ``clearance``
+  from the body region under it; pieces lying over others start one gap further out. That radius is display space,
+  never ease (ease is reported separately as garment loop minus skin loop).
+* ``align`` is incremental: pieces that carry ``solved`` parameters (from an earlier answer) stay exactly where they
+  are and are obstacles; every other piece is solved in spec order against what is already placed.
+* ``arrange`` re-solves every piece that is not locked, jointly (a ``solved`` block is only a warm start).
+* After solving, ``validity`` measures everything again on the placed meshes: sizes, clearances, all pair gaps. What
+  cannot be met inside ``max_standoff`` and ``max_shift`` is returned with ``valid: false`` and the exact violations.
 """
 
 from __future__ import annotations
@@ -20,43 +23,57 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+import shapely
 from numpy.typing import NDArray
 from scipy.spatial import cKDTree
 from shapely.affinity import translate
 from shapely.geometry import Polygon
 
 from .errors import RingNotFoundError
-from .loaders import PieceInfo, PointRecord
-from .refine import RefineCache, RefinedPiece, _densify
+from .loaders import Avatar, PieceInfo, PointRecord
+from .pairs import counterpart_point
+from .refine import RefineCache, RefinedPiece
+from .roll import (
+    RING_BVS,
+    SYMMETRIC_RINGS,
+    Surface,
+    cylinder_surface,
+    flat_surface,
+    local_coords,
+    ring_axis,
+    ring_of_bv,
+)
 from .shells import Shells
-from .stack import RingSurface, _angle
-from .verify import AvatarSurface, surface_samples
+from .slice_wrap import TORSO_BVS
+from .solver import Piece, Requirements, Solver, iteration_samples
+from .validity import TOLERANCE, LayoutCheck, Placed, layout_check, unique_edges
+from .verify import AvatarSurface, vertex_faces
 from .widths import row_width
 
 log = logging.getLogger(__name__)
 F64 = NDArray[np.float64]
 I64 = NDArray[np.int64]
-TOL = 1e-4  # a pair may be this far below its target before it counts as a deficit
-MAX_ROUNDS = 4
-RELAX_ITERATIONS = 30
-RELAX_DAMPING = 0.8  # fraction of the computed push applied per iteration (the nearest points move as pieces move)
-RELAX_MAX_STEP = 0.02  # metres per iteration
-RANGE_MARGIN = 0.005  # rows this close to the end of a body region still count as inside it
-PRIORITY = {"torso": 0, "neck": 1, "leg_L": 1, "leg_R": 1, "arm_L": 2, "arm_R": 2}  # who yields across rings
-STEEP_PERIMETER_SLOPE = 1.5  # |d perimeter / d axis| above this marks shoulder-like rows (reported separately)
+ROW_STEP = 0.005
+COVER = 0.4  # a piece whose footprint is covered this much by a larger piece of its ring starts one layer out
+STAGE1_SHIFT = 0.05  # first stage: small slides only; later stages widen to max_shift and then the radius
+STAGE1_ITER, STAGE2_ITER, FINE_ITER = 30, 80, 15
+CENTRE_SLIDE_WEIGHT = 1.0e4  # a slide is used only when nothing else can meet a constraint
+RADIUS_STEP, RADIUS_ROUNDS, RADIUS_ITER = 0.02, 6, 20
 
 
 @dataclass(frozen=True)
 class ArrangeOptions:
-    """Options of ``arrange`` (defaults from the specification)."""
+    """Options (``arrange_options`` of a placement spec). ``gap_layer`` None means equal to ``gap_piece``."""
 
     clearance_body: float = 0.03
     gap_piece: float = 0.03
-    gap_layer: float = 0.015
-    max_standoff: float = 0.15
-    max_shift: float = 0.06
-    refine_max_edge: float = 0.01
-    standoff_mode: str = "uniform"
+    gap_layer: float | None = None
+    max_standoff: float = 0.30
+    max_shift: float = 0.25
+    refine_max_edge: float = 0.005
+    incremental: bool = True
+    allow_distortion: bool = False
+    standoff_mode: str = "uniform"  # accepted for old specs; display only (the roll radius is the standoff)
 
     @classmethod
     def from_doc(cls, d: dict[str, Any] | None) -> ArrangeOptions:
@@ -64,44 +81,45 @@ class ArrangeOptions:
         return cls(**(d or {}))
 
     def as_dict(self) -> dict[str, Any]:
-        """The options as a JSON-ready dict."""
-        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+        """The options as a JSON-ready dict (``gap_layer`` resolved)."""
+        out = {k: getattr(self, k) for k in self.__dataclass_fields__}
+        out["gap_layer"] = self.gap_layer if self.gap_layer is not None else self.gap_piece
+        return out
+
+    def requirements(self) -> Requirements:
+        """The solver's requirements."""
+        gl = self.gap_layer if self.gap_layer is not None and self.gap_layer != self.gap_piece else None
+        return Requirements(self.clearance_body, self.gap_piece, gl, self.max_shift)
 
 
 @dataclass
 class Item:
-    """One placement being arranged."""
+    """One placement."""
 
     index: int
     pl: dict[str, Any]
     info: PieceInfo
     point: PointRecord
     source: str
+    mode: str
+    ring: str = ""
     locked: bool = False
-    placed: Any = None  # PlacedPiece of a locked piece
-    region: str = ""
-    layer: int = 0
-    user_layer: bool = False
+    solve: bool = False
+    warnings: list[str] = field(default_factory=list)
     refined: RefinedPiece | None = None
+    ref: F64 = field(default_factory=lambda: np.zeros(3))
     mirror: bool = False
-    ref: F64 = field(default_factory=lambda: np.zeros(2))
-    theta: float = 0.0
-    p0: float = 0.0
-    psi: float = 0.0
-    uv: F64 = field(
-        default_factory=lambda: np.zeros((0, 2))
-    )  # unrolled vertices (X around, P along), from the reference
-    uo: F64 = field(default_factory=lambda: np.zeros((0, 2)))  # unrolled refined outline
-    ub: F64 = field(default_factory=lambda: np.zeros((0, 2)))  # unrolled outline sampled every 5 mm
-    clear_idx: I64 = field(default_factory=lambda: np.zeros(0, dtype=np.int64))
-    shift0: F64 = field(default_factory=lambda: np.zeros(2))
-    delta: F64 = field(default_factory=lambda: np.zeros(2))
-    widths: F64 = field(default_factory=lambda: np.zeros(0))  # flat row width every 5 mm from P = pmin
-    pmin: float = 0.0
-    sec: F64 = field(
-        default_factory=lambda: np.ones(0)
-    )  # 1 / cos(tilt of the shell) on every row, over the item's span
-    clear_uv: F64 = field(default_factory=lambda: np.zeros((0, 2)))  # unrolled sample points of the clearance search
+    rotation: float = 0.0
+    surface: Surface | None = None
+    piece: Piece | None = None
+    placed: Any = None  # PlacedPiece of a distorting wrap (body_slice)
+    user_layer: int | None = None
+    layer: int = 0
+    axial0: float = 0.0  # axial position of the anchor along the ring axis
+    needed_radius: float = 0.0
+    edges: I64 = field(default_factory=lambda: np.zeros((0, 2), dtype=np.int64))
+    outline: F64 = field(default_factory=lambda: np.zeros((0, 2)))  # pattern outline in local coordinates
+    geom_key: tuple[Any, ...] = ()
 
     @property
     def name(self) -> str:
@@ -109,669 +127,559 @@ class Item:
         return self.info.name
 
 
-@dataclass
-class RingState:
-    """Standoff state of one region (layer 0): required (uncapped) and used standoff rows."""
-
-    region: str
-    required: float = 0.0
-    used: F64 = field(default_factory=lambda: np.zeros(0))
-    exceeded: bool = False
-    proxy_rows_m: F64 = field(default_factory=lambda: np.zeros(0))
-    proxy_need: F64 = field(default_factory=lambda: np.zeros(0))
-    proxy_h: float = 0.0  # standoff of the row-sum estimate
-    clear_h: float = 0.0  # standoff after the clearance search
-
-
-def _wrap(x: F64 | float, length: F64 | float) -> F64 | float:
-    return (x + 0.5 * length) % length - 0.5 * length
-
-
-class Arranger:
-    """One run of ``arrange`` (all state lives here; nothing is global)."""
+class Layout:
+    """One solve of a spec (all state lives here)."""
 
     def __init__(
         self,
-        avatar: Any,
+        avatar: Avatar,
         pieces: dict[str, PieceInfo],
         spec: dict[str, Any],
         options: ArrangeOptions,
-        place_locked: Callable[[dict[str, Any], PieceInfo, str], Any],
         refine_cache: RefineCache,
         derived_sources: dict[str, str],
+        place_distorting: Callable[[dict[str, Any], PieceInfo, str], Any],
+        check_cache: dict[Any, Any] | None = None,
+        geom_cache: dict[Any, Any] | None = None,
     ) -> None:
         self.avatar, self.pieces, self.spec, self.o = avatar, pieces, spec, options
-        self.refine_cache = refine_cache
-        self.window = options.clearance_body + 0.01
-        if "shells" not in avatar.cache:
-            avatar.cache["shells"] = Shells.from_avatar(avatar)
-        self.shells: Shells = avatar.cache["shells"]
+        self.cache, self.sources, self.place_distorting = refine_cache, derived_sources, place_distorting
+        self.check_cache = check_cache if check_cache is not None else {}
+        self.geom_cache = geom_cache if geom_cache is not None else {}
         if "surface" not in avatar.cache:
-            avatar.cache["surface"] = AvatarSurface(avatar.vertices, avatar.faces, 0.008)
+            avatar.cache["surface"] = AvatarSurface(avatar.vertices, avatar.faces, 0.006)
         self.body: AvatarSurface = avatar.cache["surface"]
         self.items: list[Item] = []
-        self.surf: dict[str, RingSurface] = {}
-        self.rings: dict[str, RingState] = {}
-        self._stab: dict[tuple[int, int], F64] = {}
-        self._ell: dict[int, F64] = {}
-        self._locked: dict[int, cKDTree] | None = None
-        self.notes: list[str] = []
         self.warnings: list[str] = []
-        self.place_locked = place_locked
-        self.derived_sources = derived_sources
+        self.notes: list[str] = []
+        self.groups: dict[int, list[Item]] = {}
+        self.ring_radius: dict[str, float] = {}
+        self.check: LayoutCheck | None = None
+        self.iterations = 0
 
-    # -- preparation ----------------------------------------------------------------------------------------------
-    def prepare(self) -> None:
-        """Create the items: refined meshes, anchors, unrolled coordinates, layers."""
-        from .placement import target_frame
+    # -- preparation -----------------------------------------------------------------------------------------------
+    def shells(self) -> Shells:
+        """Body regions (for the clearance radius and the skin loops); cached on the avatar."""
+        if "shells" not in self.avatar.cache:
+            self.avatar.cache["shells"] = Shells.from_avatar(self.avatar)
+        shells: Shells = self.avatar.cache["shells"]
+        return shells
 
+    def prepare(self, incremental: bool) -> None:
+        """Items, surfaces, start parameters, groups."""
+        o = self.o
         for k, pl in enumerate(self.spec["placements"]):
             info = self.pieces[pl["piece"]]
             point = self.avatar.points[pl["point"]]
-            it = Item(k, pl, info, point, self.derived_sources.get(pl["piece"], ""))
+            it = Item(k, pl, info, point, self.sources.get(pl["piece"], ""), str(pl.get("wrap", "flat")))
             it.locked = bool(pl.get("locked", False))
-            it.user_layer = "layer" in pl
-            it.layer = int(pl.get("layer", 0))
-            ring = pl.get("ring")
-            if ring is not None and ring not in self.shells.regions:
-                raise RingNotFoundError(f"unknown ring {ring!r}; rings: {sorted(self.shells.regions)}")
-            if it.locked:
-                it.placed = self.place_locked(pl, info, it.source)
-                try:
-                    it.region = ring or self.shells.ring_of_bv(point.bv)
-                except RingNotFoundError:
-                    it.region = ""
-                self.items.append(it)
-                continue
-            it.region = ring or self.shells.ring_of_bv(point.bv)
-            region = self.shells.regions[it.region]
-            it.refined = self.refine_cache.get(info.bundle, self.o.refine_max_edge, info.mesh())
-            it.mirror = bool(pl.get("mirror", False))
-            it.ref = info.reference(str(pl.get("reference", "bbox_centre")))[:2]
-            it.shift0 = np.array(pl.get("shift_m", [0.0, 0.0]), dtype=np.float64)
-            it.delta = it.shift0.copy()
-            # anchor: axial position and ray angle of the arrangement point in the region frame
-            p0, xy0 = region.coords(point.position)
-            it.p0 = float(p0[0])
-            hull = region.hull_at(float(np.clip(it.p0, *region.p_range)), self.window)[0]
-            c = hull.centroid
-            it.psi = float(np.arctan2(xy0[0, 1] - c[1], xy0[0, 0] - c[0]))
-            if region.symmetric and abs(float(point.position[0])) < 0.002:  # on the centre line: exactly front or back
-                it.psi = 0.0 if xy0[0, 0] > c[0] else float(np.pi)
-            frame = target_frame(point.normal, point.up, False)
-            e_phi = np.cross(region.axis, region.vector_of(np.array([it.psi]))[0])
-            it.theta = float(np.arctan2(frame.t @ region.axis, frame.t @ e_phi)) + np.radians(
-                float(pl.get("rotation_deg", 0.0))
-            )
-            r = it.refined
-            it.uv = self._unroll(it, r.vertices[:, :2])
-            it.uo = self._unroll(it, r.vertices[r.boundary, :2])
-            it.ub = _densify(it.uo, 0.0075)[0]
-            nb = len(r.boundary)
-            interior = np.arange(len(r.vertices))
-            interior = interior[~np.isin(interior, r.boundary)]
-            it.clear_idx = np.concatenate([r.boundary[::3], interior[::14]]).astype(np.int64)
-            it.clear_uv = it.uv[it.clear_idx]
-            it.pmin = float(it.uo[:, 1].min())
-            ps = np.arange(it.pmin, float(it.uo[:, 1].max()) + 0.005, 0.005)
-            it.widths = np.array([row_width(it.uo, float(y)) for y in ps])
-            del nb
+            it.user_layer = int(pl["layer"]) if "layer" in pl else None
             self.items.append(it)
+            if it.mode == "body_slice":
+                if point.bv in TORSO_BVS:
+                    it.placed = self.place_distorting(pl, info, it.source)
+                    continue
+                it.warnings.append(
+                    f"WRAP_FALLBACK: body_slice needs a torso point (Hip, Waist, Chest, Neck), {point.name} is on "
+                    f"{point.bv}; rolled around the body part instead"
+                )
+                it.mode = "around"
+            if it.mode == "roll":
+                try:
+                    it.ring = str(pl.get("ring") or ring_of_bv(point.bv))
+                    if it.ring not in RING_BVS:
+                        raise RingNotFoundError(f"unknown ring {it.ring!r}; rings: {sorted(RING_BVS)}")
+                except RingNotFoundError:
+                    if pl.get("ring"):
+                        raise
+                    it.warnings.append(
+                        f"WRAP_FALLBACK: roll needs a torso, neck, arm or leg point; {point.name} is on {point.bv}, "
+                        "rolled around its body part instead"
+                    )
+                    it.mode = "around"
+            self._surface(it)
+            has_solved = isinstance(pl.get("solved"), dict)
+            it.solve = not it.locked and (not incremental or not has_solved or not o.incremental)
+        self._groups()
+        self._start_radii(incremental)
+
+    def _surface(self, it: Item) -> None:
+        o, pl, point = self.o, it.pl, it.point
+        it.refined = self.cache.get(it.info.bundle, o.refine_max_edge, it.info.mesh())
+        r = it.refined
+        it.ref = it.info.reference(str(pl.get("reference", "bbox_centre")))
+        it.mirror = bool(pl.get("mirror", False))
+        it.rotation = float(pl.get("rotation_deg", 0.0))
+        flip = bool(pl.get("flip_facing", False))
+        g = self._geometry(it, r)
+        local, faces = g["local"], g["faces"]
+        eff = point.offset_m if pl.get("offset_m") is None else float(pl["offset_m"])
+        if it.mode == "flat":
+            surf, r0 = flat_surface(point, flip)
+            r0 = eff
+            r_min, r_max = 0.0, o.max_standoff
+        else:
+            if it.mode == "roll":
+                c, a = ring_axis(self.avatar, it.ring)
+                centre = it.ring in SYMMETRIC_RINGS and abs(float(point.position[0])) < 0.002
+            else:
+                vol = self.avatar.volumes[point.bv]
+                c, a = vol.start, vol.end - vol.start
+                centre = False
+            surf, radius = cylinder_surface(point, c, a, flip, centre)
+            r0 = radius + (eff - point.offset_m)
+            it.axial0 = float((surf.origin - c) @ surf.e_y)
+            gap = max(o.gap_piece, o.gap_layer or 0.0)
+            r_min = (float(np.ptp(local[:, 0])) + gap) / (2.0 * np.pi)  # never wide enough to overlap itself
+            r_max = surf.r_skin + o.max_standoff
+            r0 = max(r0, r_min)
+        it.surface = surf
+        shift = np.array(pl.get("shift_m", [0.0, 0.0]), dtype=np.float64)
+        theta0 = np.array([r0, shift[0], shift[1]])
+        theta = theta0.copy()
+        if isinstance(pl.get("solved"), dict):
+            sv = pl["solved"]
+            theta = np.array([float(sv["radius_m"]), float(sv["shift_m"][0]), float(sv["shift_m"][1])])
+        it.piece = Piece(
+            it.name,
+            it.index,
+            surf,
+            local,
+            faces,
+            g["adjacency"],
+            g["area"],
+            theta,
+            theta0,
+            r_min,
+            r_max,
+            False,
+            g["iter_idx"],
+            x_mid=g["x_mid"],
+            tree2d=g["tree2d"],
+        )
+        it.edges, it.outline = g["edges"], g["outline"]
+        it.piece.update()
+
+    def _geometry(self, it: Item, r: RefinedPiece) -> dict[str, Any]:
+        """Static data of a piece in local coordinates (cached by content: outline, refinement, reference, rotation,
+        mirror), so that an incremental call does not rebuild it for the pieces that did not change."""
+        key = (
+            RefineCache.key(it.info.bundle, self.o.refine_max_edge),
+            tuple(np.round(it.ref, 12)),
+            round(it.rotation, 12),
+            it.mirror,
+        )
+        it.geom_key = key
+        g = self.geom_cache.get(key)
+        if g is None:
+            local = local_coords(r.vertices[:, :2], it.ref, it.rotation, it.mirror)
+            faces = np.ascontiguousarray(r.faces[:, [0, 2, 1]]) if it.mirror else r.faces
+            u, w = local[faces[:, 1]] - local[faces[:, 0]], local[faces[:, 2]] - local[faces[:, 0]]
+            tri_area = u[:, 0] * w[:, 1] - u[:, 1] * w[:, 0]
+            outline = np.asarray(it.info.bundle["outline_m"], dtype=np.float64)
+            g = {
+                "local": local,
+                "faces": faces,
+                "adjacency": vertex_faces(faces, len(local)),
+                "area": float(0.5 * np.abs(tri_area).sum()),
+                "iter_idx": iteration_samples(local, r.boundary),
+                "x_mid": float(0.5 * (local[:, 0].min() + local[:, 0].max())),
+                "tree2d": cKDTree(local),
+                "edges": unique_edges(faces),
+                "outline": local_coords(outline, it.ref, it.rotation, it.mirror),
+            }
+            if len(self.geom_cache) > 200:
+                self.geom_cache.clear()
+            self.geom_cache[key] = g
+        return g
+
+    def _groups(self) -> None:
+        """Centre-line and side pairs (a piece and its mirrored clone solved together) move as one, ``s`` mirrored."""
+        gid = 0
+        for it in self.items:
+            if not it.solve or it.name not in self.sources.values():
+                continue
+            for clone in self.items:
+                if clone.source != it.name or not clone.solve or clone.piece is None or it.piece is None:
+                    continue
+                if clone.piece.group >= 0 or it.piece.group >= 0 or clone.mode != it.mode:
+                    continue
+                if clone.pl.get("reference", "bbox_centre") != it.pl.get("reference", "bbox_centre"):
+                    continue
+                same = clone.point.name == it.point.name and abs(float(it.point.position[0])) < 0.002
+                try:
+                    side = clone.point.name == counterpart_point(it.point.name, self.avatar.points) != it.point.name
+                except Exception:  # noqa: BLE001 - no counterpart: not a side pair
+                    side = False
+                if not (same and abs(clone.rotation - it.rotation) < 1e-9) and not (
+                    side and abs(clone.rotation + it.rotation) < 1e-9
+                ):
+                    continue
+                it.piece.group = clone.piece.group = gid
+                if same:  # the gap across the centre line stays the gap: the pair moves out rather than apart
+                    it.piece.slide_weight = clone.piece.slide_weight = CENTRE_SLIDE_WEIGHT
+                clone.piece.sign = np.array([1.0, -1.0, 1.0])
+                if same:  # the two copies start half a gap away from the centre line each
+                    direction = 1.0 if float(np.mean(it.piece.local[:, 0])) >= 0 else -1.0
+                    it.piece.theta0[1] += direction * (0.5 * self.o.gap_piece + self.o.requirements().margin)
+                    if not isinstance(it.pl.get("solved"), dict):  # a solved place already has it
+                        it.piece.theta[1] = it.piece.theta0[1]
+                clone.piece.theta = it.piece.theta * clone.piece.sign  # the clone follows its source exactly
+                clone.piece.theta0 = it.piece.theta0 * clone.piece.sign
+                clone.piece.update()
+                it.piece.update()
+                self.groups[gid] = [it, clone]
+                gid += 1
+                break
+
+    # -- start radii (D2) ------------------------------------------------------------------------------------------
+    def clear_radius(self, it: Item) -> float:
+        """Smallest radius at which every avatar vertex under the piece's footprint (outline buffered by the clearance)
+        is ``clearance`` inside the cylinder. A larger radius shrinks the angular footprint, so this clears a T-pose arm
+        beside a torso panel; vertices still under the footprint at ``max_standoff`` (the torso under a sleeve cap)
+        cannot be cleared by a radius and are left to the slides of the solver. Bisection."""
+        p, surf = it.piece, it.surface
+        assert p is not None and surf is not None and it.refined is not None
+        verts = self.avatar.vertices
+        c = self.o.clearance_body
+        poly = _polygon(it.outline).buffer(c)
+
+        def blocking(radius: float) -> NDArray[np.bool_]:
+            dev = surf.develop(verts, np.array([radius, p.theta[1], p.theta[2]]), p.x_mid)
+            inside = shapely.contains_xy(poly, dev[:, 0], dev[:, 1])
+            return np.asarray(inside & (dev[:, 2] > -c))
+
+        lo, hi = p.r_min, p.r_max
+        stuck = blocking(hi)  # not clearable by any allowed radius
+        if not (blocking(lo) & ~stuck).any():
+            return lo
+        for _ in range(24):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (lo, mid) if not (blocking(mid) & ~stuck).any() else (mid, hi)
+        return hi
+
+    def _footprint(self, it: Item, scale: float) -> Polygon:
+        """Developed footprint of a roll piece in ring coordinates (arc at radius ``scale`` from the ring's front)."""
+        p, surf = it.piece, it.surface
+        assert p is not None and surf is not None and it.refined is not None
+        c, a = ring_axis(self.avatar, it.ring)
+        front = np.array([0.0, 0.0, 1.0]) - a[2] * a
+        if np.linalg.norm(front) < 1e-6:
+            front = np.array([0.0, 1.0, 0.0]) - a[1] * a
+        front /= np.linalg.norm(front)
+        side = np.cross(a, front)
+        psi = float(np.arctan2(surf.e_n @ side, surf.e_n @ front))
+        sgn = 1.0 if surf.e_x @ np.cross(a, surf.e_n) > 0 else -1.0
+        b = it.outline
+        pts = np.column_stack([scale * psi + sgn * (b[:, 0] + p.theta[1]), it.axial0 + b[:, 1] + p.theta[2]])
+        return _polygon(pts)
+
+    def _layers(self, its: list[Item], scale: float) -> None:
+        """Start layers: a piece mostly covered by a larger piece of its ring starts one layer further out."""
+        length = 2.0 * np.pi * scale
+        polys = {it.index: self._footprint(it, scale) for it in its}
+        done: list[Item] = []
+        for it in sorted(its, key=lambda i: (-polys[i.index].area, i.index)):
+            if it.user_layer is not None:
+                it.layer = it.user_layer
+            else:
+                best = 0
+                pi = polys[it.index]
+                for jt in done:
+                    cover = max(pi.intersection(translate(polys[jt.index], k * length, 0.0)).area for k in (-1, 0, 1))
+                    if cover / max(pi.area, 1e-12) >= COVER:
+                        best = max(best, jt.layer + 1)
+                it.layer = best
+            done.append(it)
+
+    def fit_radius(self, its: list[Item]) -> float:
+        """Row sums: the pieces of layer 0 side by side with a gap each need ``sum(w) + n gap <= 2 pi R``."""
+        base = [it for it in its if it.layer == 0]
+        if not base:
+            return 0.0
+        rows: dict[int, list[float]] = {}
+        for it in base:
+            p = it.piece
+            assert p is not None
+            b = it.outline
+            ys = np.arange(float(b[:, 1].min()), float(b[:, 1].max()) + ROW_STEP, ROW_STEP)
+            for y in ys:
+                w = row_width(b, float(y))
+                if w > 1e-4:
+                    rows.setdefault(int(round((it.axial0 + y + p.theta[2]) / ROW_STEP)), []).append(w)
+        need = max((sum(ws) + len(ws) * self.o.gap_piece for ws in rows.values()), default=0.0)
+        return need / (2.0 * np.pi)
+
+    def _start_radii(self, incremental: bool) -> None:
+        """Start radius of the rolled pieces to be solved (``solved`` ones keep theirs). ``around`` pieces start at the
+        smallest radius from their point's own that clears the body under them; ``roll`` pieces share their ring's."""
+        o = self.o
+        gl = o.gap_layer if o.gap_layer is not None else o.gap_piece
+        for it in self.items:
+            if it.mode == "around" and it.solve and it.piece is not None and not isinstance(it.pl.get("solved"), dict):
+                self._set_radius(it, max(it.piece.theta0[0], self.clear_radius(it)))
+        rings = sorted({it.ring for it in self.items if it.mode == "roll"})
+        for ring in rings:
+            ring_items = [it for it in self.items if it.mode == "roll" and it.ring == ring]
+            todo = [it for it in ring_items if it.solve and not isinstance(it.pl.get("solved"), dict)]
+            if not todo:
+                continue
+            if incremental:
+                fixed_r = [it.piece.theta[0] for it in ring_items if not it.solve and it.piece is not None]
+                for it in todo:
+                    assert it.piece is not None
+                    it.layer = it.user_layer or 0
+                    need = max(
+                        self.clear_radius(it), self.fit_radius([it]), it.piece.theta0[0], min(fixed_r, default=0.0)
+                    )
+                    self._set_radius(it, need + it.layer * gl)
+                continue
+            for it in todo:  # layers are judged where the pieces will sit: all side by side
+                it.layer = 0
+            scale = max([self.fit_radius(todo)] + [it.piece.theta0[0] for it in todo if it.piece is not None])
+            self._layers(todo, scale)
+            radius = max(
+                [self.fit_radius(todo)] + [max(self.clear_radius(it), it.piece.theta0[0]) for it in todo if it.piece]
+            )
+            self.ring_radius[ring] = radius
+            for it in todo:
+                self._set_radius(it, radius + it.layer * gl)
+        for g in self.groups.values():  # a group shares the radius of its lead
+            lead, clone = g
+            assert lead.piece is not None and clone.piece is not None
+            r = max(lead.piece.theta[0], clone.piece.theta[0])
+            for it in g:
+                assert it.piece is not None
+                it.piece.theta[0] = it.piece.theta0[0] = r
+                it.piece.update()
+
+    def _set_radius(self, it: Item, radius: float) -> None:
+        p = it.piece
+        assert p is not None
+        it.needed_radius = radius
+        if radius > p.r_max + 1e-9:
+            it.warnings.append(
+                f"STANDOFF_EXCEEDED: {it.name} needs a radius of {radius * 100:.1f} cm, but max_standoff allows "
+                f"{p.r_max * 100:.1f} cm; it starts at the limit"
+            )
+            p.limits_hit.add("max_standoff")
+        p.theta[0] = p.theta0[0] = float(np.clip(radius, p.r_min, max(p.r_max, p.r_min)))
+        p.update()
+
+    # -- solving ---------------------------------------------------------------------------------------------------
+    def solve(self, incremental: bool) -> None:
+        """Solve the pieces marked ``solve``: one block at a time in spec order (incremental) or all together."""
+        req = self.o.requirements()
+        placed = [it for it in self.items if it.piece is not None and not it.solve]
+        obstacles = [it.piece for it in placed if it.piece is not None] + self._distorting()
+        if incremental:
+            blocks: list[list[Item]] = []
+            seen: set[int] = set()
+            for it in self.items:
+                if not it.solve or it.index in seen:
+                    continue
+                assert it.piece is not None
+                block = self.groups[it.piece.group] if it.piece.group >= 0 else [it]
+                seen.update(b.index for b in block)
+                blocks.append(block)
+            for block in blocks:
+                for b in block:
+                    assert b.piece is not None
+                    b.piece.moving = True
+                moving = [b.piece for b in block if b.piece is not None]
+                self._run(obstacles + moving, req)
+                for p in moving:
+                    p.moving = False
+                obstacles += moving
+        else:
+            moving = []
+            for it in self.items:
+                if it.solve and it.piece is not None:
+                    it.piece.moving = True
+                    moving.append(it.piece)
+            if moving:
+                self._run(obstacles + moving, req)
+            for p in moving:
+                p.moving = False
+        for it in self.items:  # the parameters are returned rounded: the layout is the one a later call rebuilds
+            if it.solve and it.piece is not None:
+                it.piece.theta = np.round(it.piece.theta, 9)
+                it.piece.update()
+
+    def _distorting(self) -> list[Piece]:
+        """Pieces placed by a distorting wrap (body_slice): fixed obstacles without a surface."""
+        out = []
+        for it in self.items:
+            if it.placed is not None:
+                v, f = it.placed.vertices, it.placed.faces
+                out.append(
+                    Piece(
+                        it.name,
+                        it.index,
+                        None,
+                        np.zeros((len(v), 2)),
+                        f,
+                        vertex_faces(f, len(v)),
+                        0.0,
+                        np.zeros(3),
+                        np.zeros(3),
+                        0.0,
+                        0.0,
+                        False,
+                        np.zeros(0, dtype=np.int64),
+                        world=v,
+                    )
+                )
+        return out
+
+    def _run(self, pieces: list[Piece], req: Requirements) -> None:
+        """Widening stages until nothing is violated:
+
+        1. slides within ``STAGE1_SHIFT`` (pieces stay near their anchors);
+        2. pieces of one ring that still collide are layered (one rolls ``gap`` further out than the other, which on
+           coaxial cylinders is an exact separation) and the moving ones restart from their anchors, slides up to
+           ``max_shift``;
+        3. larger radii, step by step up to ``max_standoff``;
+        4. a pass with every vertex.
+        Whatever still remains is reported by the layout check, with the limit that stopped the solver.
+        """
+        solver = Solver(pieces, self.body, req)
+        st = solver.run(STAGE1_ITER, min(STAGE1_SHIFT, self.o.max_shift))
+        self.iterations += st.iterations
+        if not st.converged:
+            if solver.layer_colliding():
+                st = solver.run(STAGE2_ITER, self.o.max_shift)
+                self.iterations += st.iterations
+            else:
+                st = solver.run(STAGE2_ITER, self.o.max_shift)
+                self.iterations += st.iterations
+        rounds = 0
+        while not st.converged and rounds < RADIUS_ROUNDS:
+            grown = False
+            for p in pieces:
+                if p.moving and p.surface is not None and (p.group < 0 or np.all(p.sign > 0)) and p.theta[0] < p.r_max:
+                    p.theta[0] = min(p.theta[0] + RADIUS_STEP, p.r_max)
+                    grown = True
+            if not grown:
+                break
+            solver._sync_groups()
+            for p in pieces:
+                p.update()
+            st = solver.run(RADIUS_ITER, self.o.max_shift)
+            self.iterations += st.iterations
+            rounds += 1
+        st = solver.run(FINE_ITER, self.o.max_shift, fine=True)
+        self.iterations += st.iterations
+        if not st.converged:
+            for p in pieces:
+                if p.moving and not p.limits_hit:
+                    p.limits_hit.add("iterations")
+
+    # -- checks ----------------------------------------------------------------------------------------------------
+    def placed_views(self) -> list[Placed]:
+        """Every placed mesh for the layout check (spec order)."""
+        out = []
+        for it in self.items:
+            if it.piece is not None:
+                p = it.piece
+                cyl = None
+                if p.surface is not None and p.surface.kind == "cylinder":
+                    longest = float(np.linalg.norm(p.local[it.edges[:, 0]] - p.local[it.edges[:, 1]], axis=1).max())
+                    cyl = (p.surface.origin, p.surface.e_y, float(p.theta[0]), longest**2 / (8.0 * float(p.theta[0])))
+                out.append(Placed(it.name, p.world, p.faces, it.edges, p.surface.normal if p.surface else None, cyl))
+            else:
+                v, f = it.placed.vertices, it.placed.faces
+                out.append(Placed(it.name, v, f, unique_edges(f), None))
+        return out
+
+    def run_check(self) -> LayoutCheck:
+        """Exact distances of the final layout (cached by content between calls of one engine)."""
+        views = self.placed_views()
+        adj = [
+            it.piece.adjacency if it.piece is not None else vertex_faces(v.faces, len(v.world))
+            for it, v in zip(self.items, views, strict=True)
+        ]
+        keys = [_digest(v.world, v.faces, self.o.clearance_body) for v in views]
+        need = max(self.o.gap_piece, self.o.gap_layer or 0.0)
+        self.check = layout_check(views, self.body, self.o.clearance_body, adj, self.check_cache, keys, need)
+        return self.check
+
+    def piece_key(self, it: Item) -> bytes | None:
+        """Content key of a placed piece (geometry, surface, parameters): equal keys mean identical placed meshes."""
+        if it.piece is None or it.piece.surface is None:
+            return None
+        import hashlib
+
+        sf, th = it.piece.surface, it.piece.theta
+        h = hashlib.sha1(repr((it.geom_key, sf.kind, it.mode, it.ring, self.o.allow_distortion)).encode())
+        for arr in (sf.origin, sf.e_n, sf.e_x, sf.e_y, th, np.array([sf.r_skin])):
+            h.update(np.ascontiguousarray(arr, dtype=np.float64).tobytes())
+        return h.digest()
+
+    def required(self, facing: bool) -> float:
+        """Required distance of a pair (``gap_layer`` only for facing pairs, and only if set lower)."""
+        return self.o.requirements().gap_for(facing)
+
+    def violations(self) -> list[dict[str, Any]]:
+        """Clearance and gap violations of the final layout (with the limit that stopped the solver)."""
+        assert self.check is not None
+        o = self.o
+        out: list[dict[str, Any]] = []
+        for i, (d, at) in sorted(self.check.body.items()):
+            if d < o.clearance_body - TOLERANCE:
+                it = self.items[i]
+                out.append(
+                    {
+                        "kind": "CLEARANCE_BODY",
+                        "pieces": [it.name],
+                        "value_m": round(d, 6),
+                        "required_m": o.clearance_body,
+                        "at_m": [round(float(x), 6) for x in at],
+                        "limit": self._limit([it]),
+                    }
+                )
+        for (i, j), (d, at, facing) in sorted(self.check.pairs.items()):
+            need = self.required(facing)
+            if d < need - TOLERANCE:
+                a, b = self.items[i], self.items[j]
+                out.append(
+                    {
+                        "kind": "GAP_PIECES",
+                        "pieces": [a.name, b.name],
+                        "value_m": round(d, 6),
+                        "required_m": need,
+                        "at_m": [round(float(x), 6) for x in at],
+                        "limit": self._limit([a, b]),
+                    }
+                )
+        return out
 
     @staticmethod
-    def _unroll(it: Item, q: F64) -> F64:
-        x = (2.0 * it.ref[0] - q[:, 0]) if it.mirror else q[:, 0]
-        d = np.column_stack([x - it.ref[0], q[:, 1] - it.ref[1]])
-        c, s = np.cos(it.theta), np.sin(it.theta)
-        return np.column_stack([c * d[:, 0] - s * d[:, 1], s * d[:, 0] + c * d[:, 1]])
-
-    def free(self, region: str | None = None, layer: int | None = None) -> list[Item]:
-        """Non-locked items, optionally of one region and layer."""
-        return [
-            i
-            for i in self.items
-            if not i.locked and (region is None or i.region == region) and (layer is None or i.layer == layer)
-        ]
-
-    def build_surfaces(self) -> None:
-        """One ``RingSurface`` per region in use, covering all rows the pieces (and their shifts) can reach."""
-        margin = self.o.max_shift + 0.03
-        for region in sorted({i.region for i in self.free()}):
-            its = self.free(region)
-            lo = min(i.p0 + i.shift0[1] + float(i.uo[:, 1].min()) for i in its) - margin
-            hi = max(i.p0 + i.shift0[1] + float(i.uo[:, 1].max()) for i in its) + margin
-            self.surf[region] = RingSurface(self.shells.regions[region], lo, hi, self.window)
-
-    def assign_layers(self) -> None:
-        """Layer 0 for the big pieces; a piece lying mostly on top of a lower piece gets that piece's layer + 1."""
-        for region in sorted(self.surf):
-            its = self.free(region)
-            if len(its) < 2:
-                continue
-            surf = self.surf[region]
-            h = np.full(1, 0.05)
-            r0 = surf.row_of(np.array([its[0].p0]))
-            length = float(surf.stack.length(r0, h)[0])
-            s_ref = float(surf.stack.arc_of_ray(r0, np.array([its[0].psi]), h)[0])
-            polys: dict[int, Polygon] = {}
-            for it in its:
-                s = float(surf.stack.arc_of_ray(r0, np.array([it.psi]), h)[0])
-                rel = float(_wrap(s - s_ref, length))
-                pts = it.uo + np.array([rel, it.p0 + it.shift0[1]])
-                poly = Polygon(pts)
-                polys[it.index] = (
-                    poly if poly.is_valid else poly.convex_hull
-                )  # (the placket slit of a sleeve; make_valid is slow)
-            order = sorted(its, key=lambda i: (-polys[i.index].area, i.index))
-            done: list[Item] = []
-            for it in order:
-                if not it.user_layer:
-                    best = 0
-                    pi = polys[it.index]
-                    for jt in done:
-                        cover = max(
-                            pi.intersection(translate(polys[jt.index], k * length, 0.0)).area for k in (-1, 0, 1)
-                        ) / max(pi.area, 1e-12)
-                        if cover >= 0.4:
-                            best = max(best, jt.layer + 1)
-                    it.layer = best
-                done.append(it)
-
-    # -- surfaces and mapping -------------------------------------------------------------------------------------
-    def hrows(self, it: Item) -> F64:
-        """Standoff of an item on every row: the ring standoff plus ``layer * gap_layer`` measured along the 3D normal.
-
-        The rows are horizontal (cross-section) offsets, so on a tilted shell (shoulders) the 3D distance is the
-        row offset times ``cos(tilt)``; ``it.sec`` undoes that, so the layers are ``gap_layer`` apart in 3D.
-        """
-        used = self.rings[it.region].used
-        if it.layer == 0 or len(it.sec) != len(used):
-            return np.asarray(used)
-        return np.asarray(used + it.layer * self.o.gap_layer * it.sec)
-
-    def tilt_secant(self, it: Item) -> F64:
-        """``sec`` of the shell tilt on every row, for the normal directions the item covers around the ring."""
-        surf = self.surf[it.region]
-        st = surf.stack
-        r = surf.row_of(np.array([it.p0 + it.shift0[1]]))
-        h = self.rings[it.region].used[r]
-        s_anchor = surf.ray_table(it.psi, self.rings[it.region].used)[r[0]]
-        xs = np.linspace(float(it.uo[:, 0].min()), float(it.uo[:, 0].max()), 32)
-        _, nu = _angle(st, np.full(32, r[0]), s_anchor + xs, np.full(32, h[0]))
-        dirs = np.radians(np.arange(0.0, 360.0, 5.0))
-        diff = np.abs(_wrap(dirs[:, None] - nu[None, :], 2.0 * np.pi)).min(axis=1)
-        sel = diff < np.radians(6.0) if np.ptp(nu) < 2.0 * np.pi - 0.2 else np.ones(len(dirs), dtype=bool)
-        sup = st.support(np.column_stack([np.cos(dirs), np.sin(dirs)]))[:, sel]
-        step = 5
-        slope = np.zeros(sup.shape)
-        slope[step:-step] = (sup[2 * step :] - sup[: -2 * step]) / (2 * step * 0.001)
-        slope[:step], slope[-step:] = slope[step], slope[-step - 1]
-        return np.asarray(np.sqrt(1.0 + (np.abs(slope).max(axis=1)) ** 2))
-
-    def stab(self, it: Item) -> F64:
-        """Arc coordinate of the anchor ray of the item on every row (cached until the standoff changes)."""
-        key = (it.index, 0)
-        if key not in self._stab:
-            self._stab[key] = self.surf[it.region].ray_table(it.psi, self.hrows(it))
-        return self._stab[key]
-
-    def ell(self, it: Item) -> F64:
-        """Surface length along the axis up to every row, averaged over the arc positions the piece covers.
-
-        Rows are 1 mm apart in axial position. On a tilted shell (hips, bust, shoulders) the distance along
-        the surface is
-        longer than the axial one, so ``P`` of the piece is converted to an axial position through this
-        length: a vertical
-        piece edge keeps its length instead of stretching by ``1 / cos(tilt)``. Rows stay horizontal.
-        """
-        if it.index not in self._ell:
-            surf = self.surf[it.region]
-            h = self.hrows(it)
-            step = 5
-            sub = np.unique(np.r_[np.flatnonzero((surf.k0 + np.arange(surf.rows)) % step == 0), 0, surf.rows - 1])
-            pc = surf.p_of_row[sub]
-            xs = np.linspace(float(it.uo[:, 0].min()), float(it.uo[:, 0].max()), 13)
-            w = np.zeros(len(sub) - 1)
-            for x in xs:
-                pts = surf.world(pc, self.stab(it), np.full(len(pc), x), h, False)
-                w += np.linalg.norm(np.diff(pts, axis=0), axis=1) / np.diff(pc)
-            cum = np.concatenate([[0.0], np.cumsum(w / len(xs) * np.diff(pc))])
-            self._ell[it.index] = np.interp(surf.p_of_row, pc, cum)
-        return self._ell[it.index]
-
-    def p_of(self, it: Item, big_p: F64) -> F64:
-        """Axial positions of unrolled ``P`` values (from the reference) at the current shift of the item."""
-        surf = self.surf[it.region]
-        ell, rows = self.ell(it), surf.p_of_row
-        q = float(np.interp(it.p0 + it.delta[1], rows, ell)) + big_p
-        p = np.interp(q, ell, rows)
-        p = np.where(q < ell[0], rows[0] + (q - ell[0]), p)
-        return np.asarray(np.where(q > ell[-1], rows[-1] + (q - ell[-1]), p))
-
-    def map_unrolled(self, it: Item, uv: F64, interpolate: bool) -> F64:
-        """World points of unrolled coordinates ``uv`` (N,2) of an item at its current shift."""
-        surf = self.surf[it.region]
-        return surf.world(self.p_of(it, uv[:, 1]), self.stab(it), uv[:, 0] + it.delta[0], self.hrows(it), interpolate)
-
-    def _drop(self, region: str) -> None:
-        """Forget the cached anchor tables of a region (its standoff changed)."""
-        self._stab = {k: v for k, v in self._stab.items() if self.items[k[0]].region != region}
-        self._ell = {k: v for k, v in self._ell.items() if self.items[k].region != region}
-
-    def set_standoff(self, region: str, rows: F64) -> None:
-        """Set the (uncapped is kept elsewhere) used standoff rows of a region and drop the cached anchor tables."""
-        self.rings[region].used = rows
-        self._drop(region)
-
-    # -- standoff -------------------------------------------------------------------------------------------------
-    def row_sums(self, region: str, initial: bool = False) -> tuple[F64, F64, F64]:
-        """Axial rows (every 5 mm), the sum of the flat widths of the layer-0 pieces of the ring on each, and
-        how many."""
-        its = self.free(region, 0)
-        shift = {i.index: (i.shift0 if initial else i.delta)[1] for i in its}
-        lo = min(i.p0 + shift[i.index] + i.pmin for i in its)
-        hi = max(i.p0 + shift[i.index] + float(i.uo[:, 1].max()) for i in its)
-        ps = np.arange(lo, hi, 0.005)
-        total = np.zeros(len(ps))
-        count = np.zeros(len(ps))
+    def _limit(its: list[Item]) -> str:
+        hits: set[str] = set()
         for it in its:
-            idx = np.rint((ps - it.p0 - shift[it.index] - it.pmin) / 0.005).astype(int)
-            ok = (idx >= 0) & (idx < len(it.widths))
-            w = np.where(ok, it.widths[np.clip(idx, 0, len(it.widths) - 1)], 0.0)
-            total += w
-            count += w > 1e-4
-        return ps, total, count
+            if it.piece is not None and (it.solve or it.piece.limits_hit):
+                hits |= it.piece.limits_hit
+            elif it.piece is None or not it.solve:
+                hits.add("fixed")
+        order = ("max_standoff", "max_shift", "iterations", "fixed")
+        return ",".join(h for h in order if h in hits) or "none"
 
-    def proxy(self, region: str) -> None:
-        """Row-sum estimate of the standoff: all pieces of the ring side by side need ``sum(w) + n gap <=
-        perimeter + 2 pi h``."""
-        ps, total, count = self.row_sums(region)
-        per = self.surf[region].perimeter(ps)
-        need = np.where(count > 0, (total + count * self.o.gap_piece - per) / (2.0 * np.pi), -np.inf)
-        st = self.rings[region]
-        st.proxy_rows_m, st.proxy_need = ps, need
 
-    def min_clearance(self, region: str, h: F64) -> float:
-        """Smallest signed distance to the avatar over sample points of the layer-0 pieces (rows inside the region)."""
-        surf = self.surf[region]
-        reg = self.shells.regions[region]
-        lo, hi = reg.p_range
-        old = self.rings[region].used
-        self.rings[region].used = h
-        self._drop(region)
-        worst = np.inf
-        try:
-            for it in self.free(region, 0):
-                uv = it.clear_uv
-                p = self.p_of(it, uv[:, 1])
-                keep = (p >= lo - RANGE_MARGIN) & (p <= hi + RANGE_MARGIN)
-                if not keep.any():
-                    continue
-                w = surf.world(p[keep], self.stab(it), uv[keep, 0] + it.delta[0], h, False)
-                worst = min(worst, float(self.body.signed_distance(w).min()))
-        finally:
-            self.rings[region].used = old
-            self._drop(region)
-        return worst
+def _polygon(pts: F64) -> Polygon:
+    """A valid polygon of an outline (a self-touching outline, like a placket slit, is repaired by ``buffer(0)``)."""
+    poly = Polygon(pts)
+    if not poly.is_valid:
+        poly = poly.buffer(0)
+        if poly.is_empty or not poly.is_valid or poly.geom_type != "Polygon":
+            poly = Polygon(pts).convex_hull
+    return poly
 
-    def solve_standoff(self, region: str, extra: float = 0.0) -> None:
-        """Standoff of a region at the current positions: the larger of the row-sum need and the standoff that clears
-        the body, plus ``extra`` (what the gaps of slanted edges needed in earlier rounds)."""
-        o = self.o
-        surf = self.surf[region]
-        st = self.rings[region]
-        self.proxy(region)
-        need = st.proxy_need[np.isfinite(st.proxy_need)]
-        h_gap = max(float(need.max()) if len(need) else 0.0, o.clearance_body)
-        target = o.clearance_body + 0.0005
-        h = max(h_gap, st.clear_h if st.clear_h > 0 else h_gap)  # start where the last round ended
-        f = self.min_clearance(region, np.full(surf.rows, h)) - target
-        slope, last = 1.3, None  # distance to the body per unit standoff (about 1 to 1.5), refined by the secant
-        for _ in range(10):
-            if abs(f) < 3e-5 or (f > 0 and h <= h_gap + 1e-12) or h >= 0.6:
-                break
-            if last is not None and abs(h - last[0]) > 1e-9:
-                slope = float(np.clip((f - last[1]) / (h - last[0]), 0.5, 3.0))
-            last = (h, f)
-            h = float(np.clip(h - f / slope, h_gap, 0.6))
-            f = self.min_clearance(region, np.full(surf.rows, h)) - target
-        st.proxy_h, st.clear_h = h_gap, h
-        st.required = h + extra
-        self.cap(region)
 
-    def cap(self, region: str) -> None:
-        """Use the required standoff, but never more than ``max_standoff`` (the shortfall is reported, not hidden)."""
-        st = self.rings[region]
-        surf = self.surf[region]
-        st.exceeded = st.required > self.o.max_standoff + 1e-9
-        self.set_standoff(region, np.full(surf.rows, min(st.required, self.o.max_standoff)))
+def _digest(world: F64, faces: I64, clearance: float) -> bytes:
+    import hashlib
 
-    # -- relaxation -----------------------------------------------------------------------------------------------
-    def boundary_world(self, it: Item) -> F64:
-        """World points of the outline of a free item (every 5 mm)."""
-        return self.map_unrolled(it, it.ub, False)
-
-    def locked_samples(self) -> dict[int, cKDTree]:
-        """KD-trees of the surface of locked pieces (obstacles); built once, locked pieces never move."""
-        if self._locked is None:
-            self._locked = {
-                it.index: cKDTree(surface_samples(it.placed.vertices, it.placed.faces, 0.006))
-                for it in self.items
-                if it.locked
-            }
-        return self._locked
-
-    def relax(self, warm: bool = False) -> tuple[int, dict[tuple[int, int], float]]:
-        """Push pieces of the same layer apart (along their own surfaces) until every pair is ``gap_piece`` apart.
-
-        Starts from the initial shifts, at most ``RELAX_ITERATIONS`` rounds, each piece stays within
-        ``max_shift`` of its
-        initial shift, locked pieces stay. Returns the number of rounds used and the shortfall of every pair that
-        still is below the gap (empty when converged).
-        """
-        gap = self.o.gap_piece
-        free = self.free()
-        if not warm:
-            for it in free:
-                it.delta = it.shift0.copy()
-        locked = self.locked_samples()
-        pairs = [
-            (a, b)
-            for a in self.items
-            for b in self.items
-            if a.index < b.index and a.layer == b.layer and not (a.locked and b.locked)
-        ]
-        rounds = 0
-        short: dict[tuple[int, int], float] = {}
-        cache: dict[int, tuple[F64, F64]] = {}
-        for rounds in range(1, RELAX_ITERATIONS + 1):  # noqa: B007 - the last value is returned
-            for it in free:  # only pieces that moved are mapped again
-                c = cache.get(it.index)
-                if c is None or not np.array_equal(c[0], it.delta):
-                    cache[it.index] = (it.delta.copy(), self.boundary_world(it))
-            bw = {k: v[1] for k, v in cache.items()}
-            lo = {k: v.min(axis=0) for k, v in bw.items()}
-            hi = {k: v.max(axis=0) for k, v in bw.items()}
-            for k, tr in locked.items():
-                lo[k], hi[k] = tr.mins, tr.maxes
-            ids = list(lo)
-            pos = {k: i for i, k in enumerate(ids)}
-            lo_a, hi_a = np.array([lo[k] for k in ids]), np.array([hi[k] for k in ids])
-            sep = np.linalg.norm(
-                np.maximum(0.0, np.maximum(lo_a[:, None, :] - hi_a[None, :, :], lo_a[None, :, :] - hi_a[:, None, :])),
-                axis=2,
-            )  # distance between the bounding boxes of every two pieces
-            trees: dict[int, cKDTree] = dict(locked)
-            push = {it.index: np.zeros(2) for it in free}
-            events: dict[int, list[tuple[int, F64, float]]] = {}
-            worst = 0.0
-            short = {}
-            for a, b in pairs:
-                if a.locked:
-                    a, b = b, a  # the free one first
-                if sep[pos[a.index], pos[b.index]] > gap:
-                    continue  # the bounding boxes are farther apart than the gap
-                if b.index not in trees:
-                    trees[b.index] = cKDTree(bw[b.index])
-                tb = trees[b.index]
-                ba = bw[a.index]
-                d, j = tb.query(ba)
-                k = int(np.argmin(d))
-                deficit = gap + TOL - float(d[k])
-                if deficit <= TOL:
-                    continue
-                worst = max(worst, deficit)
-                short[(min(a.index, b.index), max(a.index, b.index))] = gap - float(d[k])
-                n3 = ba[k] - tb.data[j[k]]
-                nn = float(np.linalg.norm(n3))
-                if nn < 1e-6:  # touching or overlapping: push along the line between the piece centres
-                    n3 = ba.mean(axis=0) - (tb.data.mean(axis=0) if b.index in locked else bw[b.index].mean(axis=0))
-                    nn = float(np.linalg.norm(n3))
-                if nn < 1e-9:
-                    continue
-                n3 = n3 / nn
-                # across rings the piece of the lower-priority region (arm, neck) gives way, the
-                # torso does not move for it
-                pa, pb = (0, 0) if a.locked or b.locked else (PRIORITY.get(a.region, 1), PRIORITY.get(b.region, 1))
-                a_moves = not a.locked and pa >= pb
-                b_moves = not b.locked and pb >= pa
-                share = deficit * (1.0 if not (a_moves and b_moves) else 0.5)
-                if a_moves:
-                    events.setdefault(a.index, []).append((k, n3, share))
-                if b_moves:
-                    events.setdefault(b.index, []).append((int(j[k]), -n3, share))
-            if worst <= TOL:
-                short = {}
-                break
-            for idx, ev in events.items():
-                push[idx] += self._push(self.items[idx], ev)
-            for it in free:
-                step = it.delta + push[it.index] - it.shift0
-                n = float(np.linalg.norm(step))
-                if n > self.o.max_shift:
-                    step *= self.o.max_shift / n
-                it.delta = it.shift0 + step
-        return rounds, short
-
-    def _alone(self, it: Item) -> bool:
-        """Whether the item is the only free piece of its ring and layer."""
-        return len(self.free(it.region, it.layer)) == 1
-
-    def _push(self, it: Item, events: list[tuple[int, F64, float]]) -> F64:
-        """The shift of ``it`` that moves its boundary points by the wanted amounts along the wanted directions.
-
-        Each event is (boundary sample, unit direction, distance); the shift is taken along the surface of the piece:
-        the arc direction and the axis of its shell at that sample.
-        """
-        surf = self.surf[it.region]
-        k = np.array([e[0] for e in events])
-        n3 = np.array([e[1] for e in events])
-        share = np.array([e[2] for e in events])
-        ub = it.ub
-        e_arc, axis = surf.frame_at(self.p_of(it, ub[k, 1]), self.stab(it), ub[k, 0] + it.delta[0], self.hrows(it))
-        v = np.column_stack([np.einsum("ij,ij->i", n3, e_arc), n3 @ axis])
-        if self._alone(
-            it
-        ):  # the only piece of its ring (a sleeve on its arm): it slides along the axis, never around it
-            v[:, 0] = 0.0
-        nv2 = (v * v).sum(axis=1)
-        ok = (
-            nv2 >= 0.15**2
-        )  # pieces facing each other across the surface normal cannot be moved apart along the surface
-        step = np.asarray((share[ok, None] * v[ok] / nv2[ok, None]).sum(axis=0)) * RELAX_DAMPING
-        n = float(np.linalg.norm(step))
-        return step * (RELAX_MAX_STEP / n) if n > RELAX_MAX_STEP else step
-
-    # -- checks and rounds ----------------------------------------------------------------------------------------
-    def pair_distances(self) -> dict[tuple[int, int], float]:
-        """Smallest distance between the outlines of every pair of pieces of the same layer (locked ones:
-        their surface)."""
-        locked = self.locked_samples()
-        bw = {it.index: self.boundary_world(it) for it in self.free()}
-        trees = {k: cKDTree(v) for k, v in bw.items()}
-        out: dict[tuple[int, int], float] = {}
-        for a in self.items:
-            for b in self.items:
-                if a.index >= b.index or a.layer != b.layer or (a.locked and b.locked):
-                    continue
-                if a.locked:
-                    d = (
-                        float(trees[b.index].query(locked[a.index].data)[0].min())
-                        if False
-                        else float(locked[a.index].query(bw[b.index])[0].min())
-                    )
-                elif b.locked:
-                    d = float(locked[b.index].query(bw[a.index])[0].min())
-                else:
-                    d = min(
-                        float(trees[b.index].query(bw[a.index])[0].min()),
-                        float(trees[a.index].query(bw[b.index])[0].min()),
-                    )
-                out[(a.index, b.index)] = d
-        return out
-
-    def gap_deficits(self, short: dict[tuple[int, int], float]) -> dict[str, float]:
-        """Sum of the gap shortfalls of the pairs of each ring (layer 0) that relaxation could not close."""
-        out: dict[str, float] = {}
-        for region in sorted(self.surf):
-            ids = {i.index for i in self.free(region, 0)}
-            out[region] = sum(v for (a, b), v in short.items() if a in ids and b in ids and v > TOL)
-        return out
-
-    def solve(self) -> None:
-        """The whole solver: surfaces, layers, rounds of (standoff -> relaxation).
-
-        The standoff depends on where the pieces are (rows, clearance) and the positions depend on the standoff, so the
-        rounds iterate to a fixed point: the final positions are the ones the final standoff was computed for. Gap
-        shortfalls of slanted edges that the row sums cannot see are added to the standoff of their ring (``extra``) by
-        a secant iteration, so the standoff is the smallest one that works (not the first one that did).
-        """
-        self.build_surfaces()
-        self.assign_layers()
-        regions = sorted(self.surf)
-        extra = {r: 0.0 for r in regions}
-        for region in regions:
-            self.rings[region] = RingState(region)
-        self._rounds(MAX_ROUNDS, extra)
-        # settle: start again from the shifts just found, as a rerun with them would. The standoff then no
-        # longer carries
-        # the history of the first rounds (the extra for gaps), so a rerun from the result changes nothing.
-        for it in self.free():
-            it.shift0 = it.delta.copy()
-        self._rounds(2, {r: 0.0 for r in regions})
-        self.refine_layers()
-
-    def _rounds(self, limit: int, extra: dict[str, float]) -> None:
-        """Rounds of (standoff at the current positions -> relaxation) until the standoff and the positions
-        are stable."""
-        regions = sorted(self.surf)
-        last: dict[str, tuple[float, float]] = {}
-        for rnd in range(limit + 1):
-            before = {it.index: it.delta.copy() for it in self.free()}
-            h_before = {r: float(self.rings[r].used[0]) if len(self.rings[r].used) else 0.0 for r in regions}
-            for region in regions:
-                if self.free(region, 0):
-                    self.solve_standoff(region, extra[region])
-                else:
-                    self.rings[region].required = self.o.clearance_body
-                    self.cap(region)
-            for it in self.free():
-                if (
-                    len(it.sec) != self.surf[it.region].rows
-                ):  # once: the tilt of the shell does not depend on the standoff
-                    it.sec = self.tilt_secant(it) if it.layer > 0 else np.ones(self.surf[it.region].rows)
-            self._stab.clear()
-            self._ell.clear()
-            dh = max((abs(float(self.rings[r].used[0]) - h_before[r]) for r in regions), default=0.0)
-            if rnd > 0 and dh < 3e-5:
-                break  # the standoff did not change: the last relaxation is still valid
-            _, short = self.relax()
-            deficit = self.gap_deficits(short)
-            moved = max((float(np.abs(it.delta - before[it.index]).max()) for it in self.free()), default=0.0)
-            open_rings = [r for r in regions if deficit[r] > 2 * TOL and not self.rings[r].exceeded]
-            log.debug(
-                "round %d: h %s extra %s deficit %s moved %.5f dh %.5f",
-                rnd,
-                {r: round(float(self.rings[r].used[0]), 5) for r in regions},
-                {r: round(v, 5) for r, v in extra.items()},
-                {r: round(v, 5) for r, v in deficit.items()},
-                moved,
-                dh,
-            )
-            if rnd == limit or (not open_rings and moved < 1e-3 and (rnd == 0 or dh < 3e-4)):
-                break
-            for r in open_rings:  # the ring is (2 pi dh) longer per standoff dh: first order, then secant
-                slope = 2.0 * np.pi
-                if r in last and last[r][0] - deficit[r] > 1e-9 and extra[r] - last[r][1] > 1e-9:
-                    slope = float(
-                        np.clip((last[r][0] - deficit[r]) / (extra[r] - last[r][1]), 0.5 * np.pi, 2.0 * np.pi)
-                    )
-                last[r] = (deficit[r], extra[r])
-                extra[r] += deficit[r] / slope
-
-    def refine_layers(self) -> None:
-        """Closed loop on the layer offsets: measure the 3D distance to the lower layers per row and scale the
-        row offset.
-
-        The first guess ``tilt_secant`` is analytic; this makes the distance ``gap_layer`` where the pieces really are.
-        """
-        gap = self.o.gap_layer
-        for it in sorted((i for i in self.free() if i.layer > 0), key=lambda i: (i.layer, i.index)):
-            below = [j for j in self.items if j.layer < it.layer]
-            if not below:
-                continue
-            base = np.vstack([self._surface_points(j) for j in below])
-            tree = cKDTree(base)
-            surf = self.surf[it.region]
-            for _ in range(4):
-                world = self.map_unrolled(it, it.uv, False)
-                d = tree.query(world)[0]
-                rows = surf.row_of(self.p_of(it, it.uv[:, 1]))
-                worst = np.full(surf.rows, np.inf)
-                np.minimum.at(worst, rows, d)
-                bad = worst < gap - TOL
-                if not bad.any():
-                    break
-                f = np.ones(surf.rows)
-                f[bad] = (gap + 0.0003) / np.maximum(worst[bad], 0.002)
-                k = 5
-                padded = np.pad(f, k, mode="edge")
-                f = np.max([padded[i : i + len(f)] for i in range(2 * k + 1)], axis=0)
-                it.sec = it.sec * np.minimum(f, 3.0)
-                self._stab.pop((it.index, 0), None)
-                self._ell.pop(it.index, None)
-
-    def _surface_points(self, it: Item) -> F64:
-        if it.locked:
-            return surface_samples(it.placed.vertices, it.placed.faces, 0.006)
-        return self.map_unrolled(it, it.uv, False)
-
-    # -- results --------------------------------------------------------------------------------------------------
-    def build_placed(self) -> list[Any]:
-        """PlacedPiece objects in spec order (locked pieces as placed by their own wrap)."""
-        from .engine import PlacedPiece
-        from .placement import mirror_matrix, rigid_matrix, target_frame
-        from .sides import extends, lateral_offset, side_warnings
-
-        out: list[Any] = []
-        for it in self.items:
-            if it.locked:
-                out.append(it.placed)
-                continue
-            r = it.refined
-            assert r is not None
-            world = self.map_unrolled(it, it.uv, True)
-            faces = np.ascontiguousarray(r.faces[:, [0, 2, 1]]) if it.mirror else r.faces
-
-            def transform(p2: F64, it: Item = it) -> F64:
-                return self.map_unrolled(it, self._unroll(it, np.asarray(p2, dtype=np.float64)), True)
-
-            ref_world = self.map_unrolled(it, np.zeros((1, 2)), True)[0]
-            frame = target_frame(it.point.normal, it.point.up, False)
-            ref3 = np.array([it.ref[0], it.ref[1], 0.0])
-            m = rigid_matrix(frame, float(it.pl.get("rotation_deg", 0.0)), ref3, it.point.position)
-            total = m @ mirror_matrix(float(it.ref[0])) if it.mirror else m
-            bb = it.info.bundle["bbox_m"]
-            lateral = lateral_offset(world, faces, ref_world)
-            ext = extends(lateral, float(bb["max"][0] - bb["min"][0]))
-            warns = side_warnings(it.name, it.source, it.point.name, ext)
-            fit = {"mode": "arrange", "ring": it.region, "layer": it.layer}
-            out.append(
-                PlacedPiece(
-                    it.name,
-                    it.point.name,
-                    total,
-                    it.mirror,
-                    world,
-                    faces,
-                    True,
-                    ref_world,
-                    warns,
-                    fit,
-                    transform,
-                    it.info.stem,
-                    ext,
-                    it.source,
-                )
-            )
-        return out
+    h = hashlib.sha1(np.ascontiguousarray(np.round(world, 9)).tobytes())
+    h.update(np.ascontiguousarray(faces).tobytes())
+    h.update(f"{clearance:.6f}".encode())
+    return h.digest()
