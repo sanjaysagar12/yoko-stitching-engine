@@ -1,0 +1,82 @@
+{
+ "BackPanel": {
+  "radius_m": 0.262718,
+  "registration_offset_m": null
+ },
+ "BackPanel_L": {
+  "radius_m": 0.262718,
+  "registration_offset_m": null
+ },
+ "CollarBase": {
+  "radius_m": 0.142633,
+  "registration_offset_m": null
+ },
+ "CollarBase_L": {
+  "radius_m": 0.142633,
+  "registration_offset_m": null
+ },
+ "CollarTop": {
+  "radius_m": 0.112273,
+  "registration_offset_m": null
+ },
+ "CollarTop_L": {
+  "radius_m": 0.112273,
+  "registration_offset_m": null
+ },
+ "Cuff": {
+  "radius_m": 0.131241,
+  "registration_offset_m": null
+ },
+ "Cuff_L": {
+  "radius_m": 0.131241,
+  "registration_offset_m": null
+ },
+ "FrontPanel": {
+  "radius_m": 0.248081,
+  "registration_offset_m": -0.005054
+ },
+ "FrontPanel_L": {
+  "radius_m": 0.248081,
+  "registration_offset_m": -0.005054
+ },
+ "FullSleeve": {
+  "radius_m": 0.088009,
+  "registration_offset_m": null
+ },
+ "FullSleeve_L": {
+  "radius_m": 0.088009,
+  "registration_offset_m": null
+ },
+ "PlacketTop": {
+  "radius_m": 0.133458,
+  "registration_offset_m": null
+ },
+ "PlacketTop_L": {
+  "radius_m": 0.133458,
+  "registration_offset_m": null
+ },
+ "PlacketUnder": {
+  "radius_m": 0.133316,
+  "registration_offset_m": null
+ },
+ "PlacketUnder_L": {
+  "radius_m": 0.133316,
+  "registration_offset_m": null
+ },
+ "Pocket": {
+  "radius_m": 0.278386,
+  "registration_offset_m": null
+ },
+ "PocketFlap": {
+  "radius_m": 0.308692,
+  "registration_offset_m": null
+ },
+ "Yoke": {
+  "radius_m": 0.293027,
+  "registration_offset_m": 0.0
+ },
+ "Yoke_L": {
+  "radius_m": 0.293027,
+  "registration_offset_m": 0.0
+ }
+}

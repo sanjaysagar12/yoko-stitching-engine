@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "garment": "aldrich_skirt",
+  "job": "aldrich_skirt",
+  "notes": "iter 1: front and back are half pieces on the centre fold; each gets a mirror clone across its fold edge (CF A2-A4, CB A1-A3). Waist at the body waist.",
+  "mode": "arrange",
+  "derived_pieces": [
+    {"id": "Skirt_Front_R", "source": "A - Skirt Front", "op": "mirror", "axis": {"type": "edge", "from_point": "A2", "to_point": "A4"}},
+    {"id": "Skirt_Back_R", "source": "A - Skirt Back", "op": "mirror", "axis": {"type": "edge", "from_point": "A1", "to_point": "A3"}}
+  ],
+  "placements": [
+    {"piece": "A - Skirt Front", "point": "Waist_Front", "wrap": "roll", "reference": "A2", "anchor": {"level": "Waist", "piece_point": "A2"}},
+    {"piece": "Skirt_Front_R", "point": "Waist_Front", "wrap": "roll", "reference": "A2", "anchor": {"level": "Waist", "piece_point": "A2"}},
+    {"piece": "A - Skirt Back", "point": "Waist_Back", "wrap": "roll", "reference": "A1", "anchor": {"level": "Waist", "piece_point": "A1"}},
+    {"piece": "Skirt_Back_R", "point": "Waist_Back", "wrap": "roll", "reference": "A1", "anchor": {"level": "Waist", "piece_point": "A1"}}
+  ],
+  "expect": {
+    "required_pieces": ["A - Skirt Front", "Skirt_Front_R", "A - Skirt Back", "Skirt_Back_R"],
+    "registration": [
+      {"piece": "A - Skirt Front", "level": "Waist", "piece_point": "A2"},
+      {"piece": "Skirt_Front_R", "level": "Waist", "piece_point": "A2"},
+      {"piece": "A - Skirt Back", "level": "Waist", "piece_point": "A1"},
+      {"piece": "Skirt_Back_R", "level": "Waist", "piece_point": "A1"}
+    ],
+    "rings": [{"name": "skirt", "pieces": ["A - Skirt Front", "Skirt_Front_R", "A - Skirt Back", "Skirt_Back_R"], "levels": ["Waist", "Hip"], "dy_m": -0.01}],
+    "sections": ["Waist", "Hip", "Crotch", "Knee"]
+  }
+}

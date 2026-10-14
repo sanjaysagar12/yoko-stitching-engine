@@ -1,0 +1,5867 @@
+{
+ "garment": "trousers",
+ "iteration": "iter_09",
+ "pass": true,
+ "levels_m": {
+  "Neck": 1.4306,
+  "Shoulder": 1.4025,
+  "Crotch": 0.7515,
+  "Waist": 1.0911,
+  "Hip": 0.7982,
+  "Chest": 1.3309,
+  "Knee": 0.488,
+  "Ankle": 0.0744
+ },
+ "inputs": {
+  "pieces": "C:\\yoko\\yoko-stitching-engine\\build\\_cache\\pieces-trousers-a15a6c04db662421",
+  "avatar": "C:\\yoko\\yoko-stitching-engine\\build\\_cache\\avatar-male_173-1eef802b3a484aa8",
+  "cached": {
+   "pieces": true,
+   "avatar": false
+  },
+  "synthetic": false
+ },
+ "global": [
+  {
+   "id": "carry.moves",
+   "ok": true,
+   "value": 0.0,
+   "limit": 0.001
+  },
+  {
+   "id": "determinism",
+   "ok": true,
+   "value": "babc161b7d15b5d4",
+   "limit": "babc161b7d15b5d4"
+  }
+ ],
+ "runs": {
+  "primary": {
+   "rows": [
+    {
+     "id": "size.avatar_mesh",
+     "status": "pass",
+     "value": "5d3c6534eaa675e5",
+     "limit": "5d3c6534eaa675e5",
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.avatar_height",
+     "status": "pass",
+     "value": 0.0005,
+     "limit": 0.5,
+     "piece": "",
+     "hint": "cm from the body JSON height"
+    },
+    {
+     "id": "size.avatar_floor",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 6e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.6e-05,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 6e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.1e-05,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 5e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 7e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.1e-05,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 5e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 7e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 4e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 4e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.2e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.048199,
+     "limit": 0.03,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.031178,
+     "limit": 0.03,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.048199,
+     "limit": 0.3,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148197,
+     "limit": 0.168199,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.048203,
+     "limit": 0.03,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.03118,
+     "limit": 0.03,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.048203,
+     "limit": 0.3,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148175,
+     "limit": 0.168203,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.1169,
+     "limit": 0.03,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.039823,
+     "limit": 0.03,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.1169,
+     "limit": 0.3,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.180838,
+     "limit": 0.2369,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.116915,
+     "limit": 0.03,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.039815,
+     "limit": 0.03,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.116915,
+     "limit": 0.3,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.180827,
+     "limit": 0.236915,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.157378,
+     "limit": 0.03,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.80588,
+     "limit": 0.03,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.157378,
+     "limit": 0.3,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.030347,
+     "limit": 0.12,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.157373,
+     "limit": 0.03,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.805882,
+     "limit": 0.03,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.157373,
+     "limit": 0.3,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.030347,
+     "limit": 0.12,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.18832,
+     "limit": 0.03,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.803758,
+     "limit": 0.03,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.18832,
+     "limit": 0.3,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.060689,
+     "limit": 0.12,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.188315,
+     "limit": 0.03,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.80376,
+     "limit": 0.03,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.188315,
+     "limit": 0.3,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.060689,
+     "limit": 0.12,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.041556,
+     "limit": 0.03,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 1.140712,
+     "limit": 0.03,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.041556,
+     "limit": 0.3,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.055868,
+     "limit": 0.161556,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030316,
+     "limit": 0.03,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 1.166521,
+     "limit": 0.03,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030316,
+     "limit": 0.3,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.065027,
+     "limit": 0.150316,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.048365,
+     "limit": 0.03,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.856919,
+     "limit": 0.03,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.048365,
+     "limit": 0.3,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.054453,
+     "limit": 0.168365,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030316,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030338,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.060683,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.040821,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030338,
+     "limit": 0.03,
+     "piece": "Front_L | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.060681,
+     "limit": 0.03,
+     "piece": "Front_L | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.097271,
+     "limit": 0.03,
+     "piece": "Front_L | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.039681,
+     "limit": 0.03,
+     "piece": "Front_L | Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030297,
+     "limit": 0.03,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.042597,
+     "limit": 0.03,
+     "piece": "Back | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.04767,
+     "limit": 0.03,
+     "piece": "Back_R | Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030334,
+     "limit": 0.03,
+     "piece": "PocketFront | PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030334,
+     "limit": 0.03,
+     "piece": "PocketFront_L | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.130624,
+     "limit": 0.03,
+     "piece": "PocketFront_L | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.177639,
+     "limit": 0.03,
+     "piece": "PocketBack | Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.165206,
+     "limit": 0.03,
+     "piece": "PocketBack_L | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.064451,
+     "limit": 0.03,
+     "piece": "WaistBand1 | Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000454,
+     "limit": 5.0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000454,
+     "limit": 5.0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000454,
+     "limit": 5.0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000454,
+     "limit": 5.0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000224,
+     "limit": 5.0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000224,
+     "limit": 5.0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000224,
+     "limit": 5.0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000224,
+     "limit": 5.0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.591592,
+     "limit": 5.0,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.591592,
+     "limit": 5.0,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.592424,
+     "limit": 5.0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 4.592424,
+     "limit": 5.0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.003047,
+     "limit": 0.015,
+     "piece": "Front_with_pocket",
+     "hint": "WaistLIne at 1.113 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.003045,
+     "limit": 0.015,
+     "piece": "Front_L",
+     "hint": "WaistLIne at 1.113 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.003756,
+     "limit": 0.015,
+     "piece": "Back",
+     "hint": "WaistLIne at 1.120 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.003747,
+     "limit": 0.015,
+     "piece": "Back_R",
+     "hint": "WaistLIne at 1.120 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.015,
+     "piece": "WaistBand1",
+     "hint": "bottom at 1.166 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.00041,
+     "limit": 0.015,
+     "piece": "Waistband2",
+     "hint": "bottom at 1.167 m, Waist at 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.028141,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "HeelLine at 0.046 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.021953,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "WaistLIne at 1.113 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.122335,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "CrotchLine at 0.874 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.155355,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "HipLine at 0.954 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.056836,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "KneeLine at 0.545 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.028139,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "HeelLine at 0.046 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.021955,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "WaistLIne at 1.113 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.122337,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "CrotchLine at 0.874 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.155358,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "HipLine at 0.954 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.056838,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "KneeLine at 0.545 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.021339,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "HeelLine at 0.053 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.028756,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "WaistLIne at 1.120 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.129138,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "CrotchLine at 0.881 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.162158,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "HipLine at 0.960 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.063638,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "KneeLine at 0.552 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.021347,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "HeelLine at 0.053 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.028747,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "WaistLIne at 1.120 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.129129,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "CrotchLine at 0.881 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.162149,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "HipLine at 0.960 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.06363,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "KneeLine at 0.552 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.020299,
+     "limit": 0.08,
+     "piece": "PocketFront",
+     "hint": "WaistLIne at 1.111 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.153701,
+     "limit": 0.08,
+     "piece": "PocketFront",
+     "hint": "HipLine at 0.952 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.020302,
+     "limit": 0.08,
+     "piece": "PocketFront_L",
+     "hint": "WaistLIne at 1.111 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.153704,
+     "limit": 0.08,
+     "piece": "PocketFront_L",
+     "hint": "HipLine at 0.952 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.0015,
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": 0.1153,
+     "limit": "own side",
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.0015,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": 0.2149,
+     "limit": "own side",
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.7e-05,
+     "limit": 0.0015,
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.2269,
+     "limit": "own side",
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.9e-05,
+     "limit": 0.0015,
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.2759,
+     "limit": "own side",
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.engine_flags",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "engine.honesty",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "",
+     "hint": ""
+    }
+   ],
+   "engine_valid": true,
+   "fit": [
+    {
+     "piece": "Front_with_pocket",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0463,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0281
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1131,
+     "body_y_m": 1.0911,
+     "offset_m": 0.022
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8738,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1223
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9535,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1554
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5448,
+     "body_y_m": 0.488,
+     "offset_m": 0.0568
+    },
+    {
+     "piece": "Front_L",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0463,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0281
+    },
+    {
+     "piece": "Front_L",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1131,
+     "body_y_m": 1.0911,
+     "offset_m": 0.022
+    },
+    {
+     "piece": "Front_L",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8738,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1223
+    },
+    {
+     "piece": "Front_L",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9536,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1554
+    },
+    {
+     "piece": "Front_L",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5448,
+     "body_y_m": 0.488,
+     "offset_m": 0.0568
+    },
+    {
+     "piece": "Back",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0531,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0213
+    },
+    {
+     "piece": "Back",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1199,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0288
+    },
+    {
+     "piece": "Back",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8806,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1291
+    },
+    {
+     "piece": "Back",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9604,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1622
+    },
+    {
+     "piece": "Back",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5516,
+     "body_y_m": 0.488,
+     "offset_m": 0.0636
+    },
+    {
+     "piece": "Back_R",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0531,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0213
+    },
+    {
+     "piece": "Back_R",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1199,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0287
+    },
+    {
+     "piece": "Back_R",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8806,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1291
+    },
+    {
+     "piece": "Back_R",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9603,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1621
+    },
+    {
+     "piece": "Back_R",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5516,
+     "body_y_m": 0.488,
+     "offset_m": 0.0636
+    },
+    {
+     "piece": "PocketFront",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1114,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0203
+    },
+    {
+     "piece": "PocketFront",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9519,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1537
+    },
+    {
+     "piece": "PocketFront_L",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1114,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0203
+    },
+    {
+     "piece": "PocketFront_L",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9519,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1537
+    }
+   ],
+   "ease": [],
+   "seconds": 149.2
+  },
+  "replay": {
+   "rows": [
+    {
+     "id": "size.avatar_mesh",
+     "status": "pass",
+     "value": "5d3c6534eaa675e5",
+     "limit": "5d3c6534eaa675e5",
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.avatar_height",
+     "status": "pass",
+     "value": 0.0005,
+     "limit": 0.5,
+     "piece": "",
+     "hint": "cm from the body JSON height"
+    },
+    {
+     "id": "size.avatar_floor",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 4.6e-05,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.1e-05,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 4.6e-05,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.1e-05,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.7e-05,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 7e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.8e-05,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 7e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 5e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 8e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 5e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 8e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.1e-05,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 4e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 4e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.6e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.5e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.6e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.035756,
+     "limit": 0.03,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.037344,
+     "limit": 0.03,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.035756,
+     "limit": 0.3,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.1299,
+     "limit": 0.155756,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.035762,
+     "limit": 0.03,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.037346,
+     "limit": 0.03,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.035762,
+     "limit": 0.3,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.129878,
+     "limit": 0.155762,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.098587,
+     "limit": 0.03,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.035479,
+     "limit": 0.03,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.098587,
+     "limit": 0.3,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.160463,
+     "limit": 0.218587,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.098602,
+     "limit": 0.03,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.035471,
+     "limit": 0.03,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.098602,
+     "limit": 0.3,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.160451,
+     "limit": 0.218602,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.139394,
+     "limit": 0.03,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.811898,
+     "limit": 0.03,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.139394,
+     "limit": 0.3,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.030308,
+     "limit": 0.12,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.139389,
+     "limit": 0.03,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.8119,
+     "limit": 0.03,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.139389,
+     "limit": 0.3,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.030308,
+     "limit": 0.12,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.170146,
+     "limit": 0.03,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.809723,
+     "limit": 0.03,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.170146,
+     "limit": 0.3,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.060671,
+     "limit": 0.12,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.170141,
+     "limit": 0.03,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.809726,
+     "limit": 0.03,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.170141,
+     "limit": 0.3,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.060671,
+     "limit": 0.12,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.034162,
+     "limit": 0.03,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 1.141286,
+     "limit": 0.03,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.034162,
+     "limit": 0.3,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.048727,
+     "limit": 0.154162,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030306,
+     "limit": 0.03,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 1.166371,
+     "limit": 0.03,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030306,
+     "limit": 0.3,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.06497,
+     "limit": 0.150306,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.037007,
+     "limit": 0.03,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.856573,
+     "limit": 0.03,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.037007,
+     "limit": 0.3,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.043512,
+     "limit": 0.157007,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030325,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030298,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.060664,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.094196,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.03313,
+     "limit": 0.03,
+     "piece": "Front_with_pocket | Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030298,
+     "limit": 0.03,
+     "piece": "Front_L | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.060664,
+     "limit": 0.03,
+     "piece": "Front_L | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.082498,
+     "limit": 0.03,
+     "piece": "Front_L | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.14556,
+     "limit": 0.03,
+     "piece": "Front_L | Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.034308,
+     "limit": 0.03,
+     "piece": "Front_L | Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030306,
+     "limit": 0.03,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.031776,
+     "limit": 0.03,
+     "piece": "Back | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.126128,
+     "limit": 0.03,
+     "piece": "Back | Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.031477,
+     "limit": 0.03,
+     "piece": "Back_R | Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030355,
+     "limit": 0.03,
+     "piece": "PocketFront | PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030355,
+     "limit": 0.03,
+     "piece": "PocketFront_L | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.117566,
+     "limit": 0.03,
+     "piece": "PocketFront_L | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.158695,
+     "limit": 0.03,
+     "piece": "PocketBack | Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.153861,
+     "limit": 0.03,
+     "piece": "PocketBack_L | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.065473,
+     "limit": 0.03,
+     "piece": "WaistBand1 | Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 7.3e-05,
+     "limit": 5.0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 7.3e-05,
+     "limit": 5.0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 7.3e-05,
+     "limit": 5.0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 7.3e-05,
+     "limit": 5.0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4e-05,
+     "limit": 5.0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 4e-05,
+     "limit": 5.0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4e-05,
+     "limit": 5.0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 4e-05,
+     "limit": 5.0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000485,
+     "limit": 5.0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000485,
+     "limit": 5.0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000485,
+     "limit": 5.0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000485,
+     "limit": 5.0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000238,
+     "limit": 5.0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000238,
+     "limit": 5.0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000238,
+     "limit": 5.0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000238,
+     "limit": 5.0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.591592,
+     "limit": 5.0,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.591592,
+     "limit": 5.0,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.592479,
+     "limit": 5.0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 4.592479,
+     "limit": 5.0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.003229,
+     "limit": 0.015,
+     "piece": "Front_with_pocket",
+     "hint": "WaistLIne at 1.119 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.003231,
+     "limit": 0.015,
+     "piece": "Front_L",
+     "hint": "WaistLIne at 1.119 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -4e-06,
+     "limit": 0.015,
+     "piece": "Back",
+     "hint": "WaistLIne at 1.116 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -1.3e-05,
+     "limit": 0.015,
+     "piece": "Back_R",
+     "hint": "WaistLIne at 1.116 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -3e-05,
+     "limit": 0.015,
+     "piece": "WaistBand1",
+     "hint": "bottom at 1.166 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.00026,
+     "limit": 0.015,
+     "piece": "Waistband2",
+     "hint": "bottom at 1.166 m, Waist at 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.021865,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "HeelLine at 0.053 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.028229,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "WaistLIne at 1.119 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.128611,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "CrotchLine at 0.880 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.161631,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "HipLine at 0.960 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.063112,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "KneeLine at 0.551 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.021863,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "HeelLine at 0.053 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.028231,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "WaistLIne at 1.119 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.128613,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "CrotchLine at 0.880 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.161633,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "HipLine at 0.960 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.063114,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "KneeLine at 0.551 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.025098,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "HeelLine at 0.049 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.024996,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "WaistLIne at 1.116 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.125378,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "CrotchLine at 0.877 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.158398,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "HipLine at 0.957 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.059879,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "KneeLine at 0.548 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.025107,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "HeelLine at 0.049 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.024987,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "WaistLIne at 1.116 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.12537,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "CrotchLine at 0.877 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.15839,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "HipLine at 0.957 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.05987,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "KneeLine at 0.548 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.026236,
+     "limit": 0.08,
+     "piece": "PocketFront",
+     "hint": "WaistLIne at 1.117 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.159638,
+     "limit": 0.08,
+     "piece": "PocketFront",
+     "hint": "HipLine at 0.958 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.026238,
+     "limit": 0.08,
+     "piece": "PocketFront_L",
+     "hint": "WaistLIne at 1.117 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.15964,
+     "limit": 0.08,
+     "piece": "PocketFront_L",
+     "hint": "HipLine at 0.958 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.0015,
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": 0.1146,
+     "limit": "own side",
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.0015,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": 0.2112,
+     "limit": "own side",
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.6e-05,
+     "limit": 0.0015,
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.2203,
+     "limit": "own side",
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.7e-05,
+     "limit": 0.0015,
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.2685,
+     "limit": "own side",
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.engine_flags",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "engine.honesty",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "",
+     "hint": ""
+    }
+   ],
+   "engine_valid": true,
+   "fit": [
+    {
+     "piece": "Front_with_pocket",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0526,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0219
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1193,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0282
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8801,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1286
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9598,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1616
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5511,
+     "body_y_m": 0.488,
+     "offset_m": 0.0631
+    },
+    {
+     "piece": "Front_L",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0526,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0219
+    },
+    {
+     "piece": "Front_L",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1193,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0282
+    },
+    {
+     "piece": "Front_L",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8801,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1286
+    },
+    {
+     "piece": "Front_L",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9598,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1616
+    },
+    {
+     "piece": "Front_L",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5511,
+     "body_y_m": 0.488,
+     "offset_m": 0.0631
+    },
+    {
+     "piece": "Back",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0493,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0251
+    },
+    {
+     "piece": "Back",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1161,
+     "body_y_m": 1.0911,
+     "offset_m": 0.025
+    },
+    {
+     "piece": "Back",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8768,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1254
+    },
+    {
+     "piece": "Back",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9566,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1584
+    },
+    {
+     "piece": "Back",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5478,
+     "body_y_m": 0.488,
+     "offset_m": 0.0599
+    },
+    {
+     "piece": "Back_R",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0493,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0251
+    },
+    {
+     "piece": "Back_R",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1161,
+     "body_y_m": 1.0911,
+     "offset_m": 0.025
+    },
+    {
+     "piece": "Back_R",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8768,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1254
+    },
+    {
+     "piece": "Back_R",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9566,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1584
+    },
+    {
+     "piece": "Back_R",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5478,
+     "body_y_m": 0.488,
+     "offset_m": 0.0599
+    },
+    {
+     "piece": "PocketFront",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1173,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0262
+    },
+    {
+     "piece": "PocketFront",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9578,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1596
+    },
+    {
+     "piece": "PocketFront_L",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1173,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0262
+    },
+    {
+     "piece": "PocketFront_L",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9578,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1596
+    }
+   ],
+   "ease": [],
+   "seconds": 30.7
+  },
+  "replay_reversed": {
+   "rows": [
+    {
+     "id": "size.avatar_mesh",
+     "status": "pass",
+     "value": "5d3c6534eaa675e5",
+     "limit": "5d3c6534eaa675e5",
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.avatar_height",
+     "status": "pass",
+     "value": 0.0005,
+     "limit": 0.5,
+     "piece": "",
+     "hint": "cm from the body JSON height"
+    },
+    {
+     "id": "size.avatar_floor",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.6e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 1.1e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.7e-05,
+     "limit": 0.001,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.6e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 1e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.001,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 4e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 4e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 8e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 5e-06,
+     "limit": 0.001,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 8e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 5e-06,
+     "limit": 0.001,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.6e-05,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 6e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 1.4e-05,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 6e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 2e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 1e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.03069,
+     "limit": 0.03,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.857103,
+     "limit": 0.03,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.03069,
+     "limit": 0.3,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.037538,
+     "limit": 0.15069,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.034405,
+     "limit": 0.03,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 1.166111,
+     "limit": 0.03,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.034405,
+     "limit": 0.3,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.068264,
+     "limit": 0.154405,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.03568,
+     "limit": 0.03,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 1.141194,
+     "limit": 0.03,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.03568,
+     "limit": 0.3,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.050218,
+     "limit": 0.15568,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.190406,
+     "limit": 0.03,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.806413,
+     "limit": 0.03,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.190406,
+     "limit": 0.3,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.06,
+     "limit": 0.12,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.190411,
+     "limit": 0.03,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.80641,
+     "limit": 0.03,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.190411,
+     "limit": 0.3,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.06,
+     "limit": 0.12,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.221145,
+     "limit": 0.03,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.804317,
+     "limit": 0.03,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.221145,
+     "limit": 0.3,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.090323,
+     "limit": 0.12,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.221214,
+     "limit": 0.03,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.804314,
+     "limit": 0.03,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.221214,
+     "limit": 0.3,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.090323,
+     "limit": 0.12,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.117045,
+     "limit": 0.03,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.039536,
+     "limit": 0.03,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.117045,
+     "limit": 0.3,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.180877,
+     "limit": 0.237045,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.11703,
+     "limit": 0.03,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.039544,
+     "limit": 0.03,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.11703,
+     "limit": 0.3,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.180888,
+     "limit": 0.23703,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.051344,
+     "limit": 0.03,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.034232,
+     "limit": 0.03,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.051344,
+     "limit": 0.3,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.150302,
+     "limit": 0.171344,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.05134,
+     "limit": 0.03,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.03423,
+     "limit": 0.03,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.05134,
+     "limit": 0.3,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.150324,
+     "limit": 0.17134,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.066851,
+     "limit": 0.03,
+     "piece": "Detail | WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.061011,
+     "limit": 0.03,
+     "piece": "Detail | Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.060047,
+     "limit": 0.03,
+     "piece": "Detail | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.174013,
+     "limit": 0.03,
+     "piece": "Waistband2 | PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.043611,
+     "limit": 0.03,
+     "piece": "Waistband2 | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.130496,
+     "limit": 0.03,
+     "piece": "Waistband2 | Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.163997,
+     "limit": 0.03,
+     "piece": "Waistband2 | Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.108699,
+     "limit": 0.03,
+     "piece": "Waistband2 | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.171803,
+     "limit": 0.03,
+     "piece": "WaistBand1 | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.048721,
+     "limit": 0.03,
+     "piece": "WaistBand1 | Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.101577,
+     "limit": 0.03,
+     "piece": "WaistBand1 | Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030316,
+     "limit": 0.03,
+     "piece": "PocketBack_L | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.059993,
+     "limit": 0.03,
+     "piece": "PocketBack_L | Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030316,
+     "limit": 0.03,
+     "piece": "PocketBack | PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.059992,
+     "limit": 0.03,
+     "piece": "PocketBack | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.090316,
+     "limit": 0.03,
+     "piece": "PocketFront_L | Front_L",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.090316,
+     "limit": 0.03,
+     "piece": "PocketFront | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030303,
+     "limit": 0.03,
+     "piece": "Back_R | Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030645,
+     "limit": 0.03,
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.59251,
+     "limit": 5.0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 4.59251,
+     "limit": 5.0,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.591592,
+     "limit": 5.0,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 4.591592,
+     "limit": 5.0,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000223,
+     "limit": 5.0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000223,
+     "limit": 5.0,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000223,
+     "limit": 5.0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000223,
+     "limit": 5.0,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000372,
+     "limit": 5.0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000372,
+     "limit": 5.0,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.000372,
+     "limit": 5.0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.000372,
+     "limit": 5.0,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 3.9e-05,
+     "limit": 5.0,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 6.9e-05,
+     "limit": 5.0,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.015,
+     "piece": "Front_with_pocket",
+     "hint": "WaistLIne at 1.116 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.015,
+     "piece": "Front_L",
+     "hint": "WaistLIne at 1.116 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.003476,
+     "limit": 0.015,
+     "piece": "Back",
+     "hint": "WaistLIne at 1.120 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": 0.003467,
+     "limit": 0.015,
+     "piece": "Back_R",
+     "hint": "WaistLIne at 1.120 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "WaistBand1",
+     "hint": "bottom at 1.166 m, Waist at 1.091 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "Waistband2",
+     "hint": "bottom at 1.166 m, Waist at 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.019157,
+     "limit": 0.08,
+     "piece": "PocketFront_L",
+     "hint": "WaistLIne at 1.110 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.152559,
+     "limit": 0.08,
+     "piece": "PocketFront_L",
+     "hint": "HipLine at 0.951 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.019155,
+     "limit": 0.08,
+     "piece": "PocketFront",
+     "hint": "WaistLIne at 1.110 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.152557,
+     "limit": 0.08,
+     "piece": "PocketFront",
+     "hint": "HipLine at 0.951 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.021627,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "HeelLine at 0.053 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.028467,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "WaistLIne at 1.120 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.128849,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "CrotchLine at 0.880 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.161869,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "HipLine at 0.960 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.06335,
+     "limit": 0.08,
+     "piece": "Back_R",
+     "hint": "KneeLine at 0.551 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.021619,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "HeelLine at 0.053 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.028476,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "WaistLIne at 1.120 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.128858,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "CrotchLine at 0.880 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.161878,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "HipLine at 0.960 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.063358,
+     "limit": 0.08,
+     "piece": "Back",
+     "hint": "KneeLine at 0.551 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.025092,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "HeelLine at 0.049 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.025003,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "WaistLIne at 1.116 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.125385,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "CrotchLine at 0.877 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.158405,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "HipLine at 0.957 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.059885,
+     "limit": 0.08,
+     "piece": "Front_L",
+     "hint": "KneeLine at 0.548 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": -0.025094,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "HeelLine at 0.049 m vs body Ankle 0.074 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.025,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "WaistLIne at 1.116 m vs body Waist 1.091 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.125382,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "CrotchLine at 0.877 m vs body Crotch 0.751 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "check",
+     "value": 0.158402,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "HipLine at 0.957 m vs body Hip 0.798 m"
+    },
+    {
+     "id": "levels.offset",
+     "status": "info",
+     "value": 0.059883,
+     "limit": 0.08,
+     "piece": "Front_with_pocket",
+     "hint": "KneeLine at 0.548 m vs body Knee 0.488 m"
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.9e-05,
+     "limit": 0.0015,
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.272,
+     "limit": "own side",
+     "piece": "PocketBack | PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 2e-05,
+     "limit": 0.0015,
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.2359,
+     "limit": "own side",
+     "piece": "PocketFront | PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.0015,
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": 0.2149,
+     "limit": "own side",
+     "piece": "Back | Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 1.5e-05,
+     "limit": 0.0015,
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": 0.1155,
+     "limit": "own side",
+     "piece": "Front_L | Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "pairs.engine_flags",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Front_with_pocket",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Front_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Back",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Back_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketFront",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketBack",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketFront_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "PocketBack_L",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "WaistBand1",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Waistband2",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Detail",
+     "hint": ""
+    },
+    {
+     "id": "engine.honesty",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "",
+     "hint": ""
+    }
+   ],
+   "engine_valid": true,
+   "fit": [
+    {
+     "piece": "PocketFront_L",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1103,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0192
+    },
+    {
+     "piece": "PocketFront_L",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9508,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1526
+    },
+    {
+     "piece": "PocketFront",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1103,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0192
+    },
+    {
+     "piece": "PocketFront",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9507,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1526
+    },
+    {
+     "piece": "Back_R",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0528,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0216
+    },
+    {
+     "piece": "Back_R",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1196,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0285
+    },
+    {
+     "piece": "Back_R",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8803,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1288
+    },
+    {
+     "piece": "Back_R",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9601,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1619
+    },
+    {
+     "piece": "Back_R",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5513,
+     "body_y_m": 0.488,
+     "offset_m": 0.0633
+    },
+    {
+     "piece": "Back",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0528,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0216
+    },
+    {
+     "piece": "Back",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1196,
+     "body_y_m": 1.0911,
+     "offset_m": 0.0285
+    },
+    {
+     "piece": "Back",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8803,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1289
+    },
+    {
+     "piece": "Back",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9601,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1619
+    },
+    {
+     "piece": "Back",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5513,
+     "body_y_m": 0.488,
+     "offset_m": 0.0634
+    },
+    {
+     "piece": "Front_L",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0494,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0251
+    },
+    {
+     "piece": "Front_L",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1161,
+     "body_y_m": 1.0911,
+     "offset_m": 0.025
+    },
+    {
+     "piece": "Front_L",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8768,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1254
+    },
+    {
+     "piece": "Front_L",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9566,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1584
+    },
+    {
+     "piece": "Front_L",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5478,
+     "body_y_m": 0.488,
+     "offset_m": 0.0599
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "HeelLine",
+     "level": "Ankle",
+     "y_m": 0.0493,
+     "body_y_m": 0.0744,
+     "offset_m": -0.0251
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "WaistLIne",
+     "level": "Waist",
+     "y_m": 1.1161,
+     "body_y_m": 1.0911,
+     "offset_m": 0.025
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "CrotchLine",
+     "level": "Crotch",
+     "y_m": 0.8768,
+     "body_y_m": 0.7515,
+     "offset_m": 0.1254
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "HipLine",
+     "level": "Hip",
+     "y_m": 0.9566,
+     "body_y_m": 0.7982,
+     "offset_m": 0.1584
+    },
+    {
+     "piece": "Front_with_pocket",
+     "line": "KneeLine",
+     "level": "Knee",
+     "y_m": 0.5478,
+     "body_y_m": 0.488,
+     "offset_m": 0.0599
+    }
+   ],
+   "ease": [],
+   "seconds": 28.2
+  }
+ }
+}

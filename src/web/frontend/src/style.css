@@ -160,3 +160,8 @@ aside h2:first-child { margin-top: 0; }
   cursor: pointer;
 }
 .status-violation:hover { border-color: var(--danger); }
+
+/* orientation tools (Rotate, Hang from level) */
+.orient-box, .hang-box { margin: 8px 0; padding-top: 4px; border-top: 1px solid var(--line, #ddd); }
+.orient-box .btn-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.btn.small { padding: 2px 6px; min-width: 34px; }

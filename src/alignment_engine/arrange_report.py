@@ -15,7 +15,7 @@ from scipy.spatial import cKDTree
 from .arrange import Item, Layout
 from .errors import RingNotFoundError, UnknownNamedPointError
 from .stitch import edge_between
-from .validity import PairView, arc, concentric_warnings, pair_violations
+from .validity import TOLERANCE, PairView, arc, concentric_warnings, pair_violations
 from .widths import row_width
 
 F64 = NDArray[np.float64]
@@ -111,10 +111,29 @@ def build_report(
         }
         if it.anchor is not None:
             arr["anchor"] = it.anchor
+        arr["applied_rotation_deg"] = _r(it.rotation)
+        if it.orient_note:
+            arr["orient"] = it.orient_note
+        if any(it.tilt):
+            arr["tilt_deg"] = {"pitch_deg": _r(it.tilt[0]), "roll_deg": _r(it.tilt[1])}
+        off = lay.registration_offset(it)
+        if it.registration is not None and off is not None:
+            reg = it.registration
+            arr["registration"] = {
+                "level": reg.get("level") or "point",
+                "registered": reg["registered"],
+                "level_y_m": _r(reg["level_y_m"]),
+                "offset_m": _r(off),
+                "shift_m": _r(reg["shift_m"]),
+            }
         extras.append(
             {
                 "arrange": arr,
-                "solved": {"radius_m": _r(theta[0], 9), "shift_m": [_r(theta[1], 9), _r(theta[2], 9)]}
+                "solved": {
+                    "radius_m": _r(theta[0], 9),
+                    "shift_m": [_r(theta[1], 9), _r(theta[2], 9)],
+                    **({"needed_radius_m": _r(it.needed_radius, 9)} if it.needed_radius else {}),
+                }
                 if theta is not None
                 else None,
             }
@@ -166,7 +185,7 @@ def build_report(
     clearance_ok = not any(v["kind"] == "CLEARANCE_BODY" for v in violations)
     gaps_ok = not any(v["kind"] == "GAP_PIECES" for v in violations)
     pairs_ok = not any(v["kind"].startswith("PAIR_") for v in violations)
-    placement_ok = not any(v["kind"] in ("STANDOFF_EXCEEDED", "NOT_AT_POINT") for v in violations)
+    placement_ok = not any(v["kind"] in PLACEMENT_KINDS for v in violations)
     min_body = min((d for d, _ in lay.check.body.values()), default=None)
     min_pair = min((d for d, _, _ in lay.check.pairs.values()), default=None)
     validity = {
@@ -438,6 +457,9 @@ def _seam_candidates(
 
 
 MAX_SLIDE = 0.15  # a solver slide farther than this from the anchor leaves the piece off its point (NOT_AT_POINT)
+REGISTRATION_TOLERANCE = 0.015  # a registered point this far from its level height is not registered
+ORIENTATION_TOLERANCE_DEG = 5.0
+PLACEMENT_KINDS = ("STANDOFF_EXCEEDED", "NOT_AT_POINT", "FLOOR", "OFF_REGION", "REGISTRATION", "ORIENTATION")
 
 
 def _placement_check(
@@ -463,10 +485,16 @@ def _placement_check(
     standoff = surf.standoff(th)
     gl = o.gap_layer if o.gap_layer is not None else o.gap_piece
     if surf.kind == "cylinder":
+        if not it.needed_radius and not it.solve:  # carried from an earlier answer: its body clearance radius again
+            it.needed_radius = lay.clear_radius(it)
         fit = fits.get(it.ring, 0.0) if it.mode == "roll" else 0.0
         base = {"piece width": p.r_min, "ring fit": fit, "body clearance": it.needed_radius}
         why, r_need = max(base.items(), key=lambda kv: kv[1])
         r_need += lv.get(it.index, 0) * gl
+        if it.mode == "roll" and lv.get(it.index, 0):  # a layer lies over its ring's innermost piece, wherever that is
+            ring_base = min(j.piece.theta[0] for j in lay.items if j.mode == "roll" and j.ring == it.ring and j.piece)
+            if ring_base + lv[it.index] * gl > r_need:
+                why, r_need = f"layer over the ring at {ring_base * 100:.1f} cm", ring_base + lv[it.index] * gl
         explained = r_need - surf.r_skin
         if lv.get(it.index, 0):
             why += f", layer {lv[it.index]} ({it.layer_reason or 'solver'})"
@@ -497,8 +525,53 @@ def _placement_check(
             "body or other pieces: pick a free point or another reference, or move the piece that is in the way"
         )
         out["violations"].append(_violation("NOT_AT_POINT", it, slide, req, hint, limits))
+    floor = float(p.world[:, 1].min())
+    if floor < o.clearance_body - TOLERANCE:
+        hint = (
+            f"{it.name} reaches {floor * 100:.1f} cm above the floor, below the clearance "
+            f"({o.clearance_body * 100:.0f} cm): register it on a body level (anchor {{level, piece_point}}) or move "
+            "it up (shift_m)"
+        )
+        out["violations"].append(_violation("FLOOR", it, floor, o.clearance_body, hint, limits))
+    reach = max(allowed, o.max_standoff_from_point) + o.max_standoff_from_point
+    dist = float(np.linalg.norm(p.world - surface_point, axis=1).min())
+    if it.registration is None and not it.pl.get("over") and dist > reach + 1e-4:
+        hint = (
+            f"{it.name} lies {dist * 100:.0f} cm from {pt.name} (at most {reach * 100:.0f} cm): it was moved away from "
+            "its point (anchor, slide); pick a point on the body region it belongs to or register it on a level"
+        )
+        out["violations"].append(_violation("OFF_REGION", it, dist, reach, hint, limits))
+    off = lay.registration_offset(it)
+    if off is not None and abs(off) > REGISTRATION_TOLERANCE:
+        reg = it.registration or {}
+        hint = (
+            f"{reg.get('registered')} of {it.name} is {off * 100:+.1f} cm from the {reg.get('level') or 'point'} level "
+            f"(at most {REGISTRATION_TOLERANCE * 100:.1f} cm): the solver had to slide it to clear the body or a piece"
+        )
+        out["violations"].append(_violation("REGISTRATION", it, abs(off), REGISTRATION_TOLERANCE, hint, limits))
+    ang = _orientation_error(it)
+    if ang is not None and ang > ORIENTATION_TOLERANCE_DEG:
+        hint = f"{it.name} is turned {ang:.0f} degrees from the pattern's up without a rotation, orient or tilt asking"
+        out["violations"].append(_violation("ORIENTATION", it, np.radians(ang), np.radians(5.0), hint, limits))
     out["limits"] = sorted(limits)
     return out
+
+
+def _orientation_error(it: Item) -> float | None:
+    """Angle (degrees) between the world image of the pattern's up (after ``orient``) at the reference and the up the
+    placement asked for (the point's up, the ring axis); None when the user asked for a turn (``rotation_deg``,
+    a quarter-turn ``orient``, ``tilt``) or the piece has no size-exact surface."""
+    p = it.piece
+    if p is None or p.surface is None or it.axis_up is None:
+        return None
+    if float(it.pl.get("rotation_deg", 0.0)) or any(it.tilt) or not isinstance(it.pl.get("orient", "auto"), str):
+        return None
+    rho = np.radians(it.rotation)
+    d = np.array([[-np.sin(rho), np.cos(rho)]]) * 1e-3  # the pattern's +y in local coordinates
+    w = p.surface.map(np.vstack([np.zeros((1, 2)), d]), p.theta)
+    v = w[1] - w[0]
+    c = float(v @ it.axis_up) / max(float(np.linalg.norm(v)), 1e-18)
+    return float(np.degrees(np.arccos(np.clip(c, -1.0, 1.0))))
 
 
 def _violation(kind: str, it: Item, value: float, required: float, hint: str, limits: set[str]) -> dict[str, Any]:

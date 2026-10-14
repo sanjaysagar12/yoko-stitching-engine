@@ -1,0 +1,46 @@
+{
+ "Back": {
+  "radius_m": 0.220552,
+  "registration_offset_m": -0.0
+ },
+ "Back_R": {
+  "radius_m": 0.220552,
+  "registration_offset_m": -0.0
+ },
+ "Detail": {
+  "radius_m": 0.246739,
+  "registration_offset_m": 0.0
+ },
+ "Front_L": {
+  "radius_m": 0.220325,
+  "registration_offset_m": -0.0
+ },
+ "Front_with_pocket": {
+  "radius_m": 0.220325,
+  "registration_offset_m": -0.0
+ },
+ "PocketBack": {
+  "radius_m": 0.281185,
+  "registration_offset_m": null
+ },
+ "PocketBack_L": {
+  "radius_m": 0.281185,
+  "registration_offset_m": null
+ },
+ "PocketFront": {
+  "radius_m": 0.250862,
+  "registration_offset_m": null
+ },
+ "PocketFront_L": {
+  "radius_m": 0.250862,
+  "registration_offset_m": null
+ },
+ "WaistBand1": {
+  "radius_m": 0.209339,
+  "registration_offset_m": 0.0
+ },
+ "Waistband2": {
+  "radius_m": 0.209339,
+  "registration_offset_m": 0.0
+ }
+}

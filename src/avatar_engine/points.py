@@ -208,7 +208,9 @@ class PointBuilder:
                         f"point {s.name}: resolved {np.round(pos, 3).tolist()} is not on {s.bv} (axis distance "
                         f"{_axis_distance(pos, bv):.3f} m, radius {bv.radius_m:.3f} m); check the mesh near the ray"
                     )
-            up = a if not bv.limb else -a
+            up = a if not bv.limb else -a  # a limb's up points to the torso
+            if not bv.limb and up[1] < 0:  # a central volume's up is up, whichever way its axis runs (the Hip volume
+                up = -up  # runs pelvis -> crotch, downward: its points had their up pointing to the floor)
             up = up - (up @ n) * n
             if np.linalg.norm(up) < 1e-6:
                 up = np.array([0.0, 1.0, 0.0]) - n[1] * n
@@ -239,12 +241,14 @@ def _axis_distance(p: F64, bv: BoundingVolume) -> float:
 
 
 def _sane(p: F64, n: F64, bv: BoundingVolume, offset: float, flat: bool) -> bool:
-    """A resolved point lies on its volume: 0.5..3 radii (+ offset) from the axis, normal pointing away from it. Flat
-    parts (hands, feet: the radius is set by the spread fingers or the toes) only need to be ``offset`` from it."""
+    """A resolved point lies on its volume: from the offset plus 0.2 radii up to 3 radii (+ offset) from the axis,
+    normal pointing away from it. The volume radius is the widest part (the calf), so a bony side such as the front of
+    the shin lies much closer to the axis than half of it. Flat parts (hands, feet: the radius is set by the spread
+    fingers or the toes) only need to be ``offset`` from it."""
     d = bv.end - bv.start
     foot = bv.start + float(np.clip((p - bv.start) @ d / (d @ d), 0.0, 1.0)) * d
     r = float(np.linalg.norm(p - foot))
-    lo = offset if flat else 0.5 * bv.radius_m
+    lo = offset if flat else offset + 0.2 * bv.radius_m
     return bool(lo <= r <= 3.0 * bv.radius_m + offset and n @ (p - foot) > 0)
 
 

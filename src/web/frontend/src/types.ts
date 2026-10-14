@@ -148,15 +148,35 @@ export interface Placement {
   shift_m?: [number, number];
   /** Auto-arrange: keep the placement as it is and treat the piece as an obstacle. */
   locked?: boolean;
-  /** Limb pieces: where along the arm or leg (auto: cap at the limb root when the piece is longer than the point's volume). */
-  anchor?: "auto" | "point" | "root" | "tip";
+  /** Limb pieces: where along the arm or leg (auto: cap at the limb root when the piece is longer than the point's volume);
+   * an object hangs the piece from a body level: that named piece point (or the top / bottom edge) at the level height. */
+  anchor?: "auto" | "point" | "root" | "tip" | LevelAnchor;
+  /** In-plane orientation added to rotation_deg: grainline (or long axis) along the body axis, or a quarter turn. */
+  orient?: Orient;
+  /** Lean the placement frame about the reference (degrees): pitch = top away from the body, roll = top toward +x. */
+  tilt?: { pitch_deg?: number; roll_deg?: number };
+  /** Lay the piece over another placed piece: the named point coincides with the same point of that piece. */
+  over?: { piece: string; point: string };
   /** Where the engine put the piece last time (radius, shift): sent back so the piece stays exactly there. */
   solved?: Solved;
+}
+
+export const BODY_LEVELS = ["Neck", "Shoulder", "Chest", "Waist", "Hip", "Crotch", "Knee", "Ankle"] as const;
+export type BodyLevel = (typeof BODY_LEVELS)[number];
+export type Orient = "auto" | "grain" | "none" | 0 | 90 | 180 | 270;
+
+export interface LevelAnchor {
+  level?: BodyLevel;
+  piece_point?: string;
+  edge?: "top" | "bottom";
+  offset_m?: number;
 }
 
 export interface Solved {
   radius_m: number;
   shift_m: [number, number];
+  /** the radius the piece needed when it was solved: sent back so its standoff keeps its reason */
+  needed_radius_m?: number;
 }
 
 export const RING_NAMES = ["torso", "neck", "arm_L", "arm_R", "leg_L", "leg_R"] as const;
@@ -201,6 +221,13 @@ export interface ArrangePiece {
   anchor?: { mode: "point" | "root" | "tip"; shift_m: number; reason: string };
   /** why the piece has its radius and its slide */
   reasons?: Record<string, string>;
+  /** in-plane rotation applied: rotation_deg plus orient */
+  applied_rotation_deg?: number;
+  /** what orient did */
+  orient?: string;
+  tilt_deg?: { pitch_deg: number; roll_deg: number };
+  /** level registration: the registered point, the level height and how far from it the point ended */
+  registration?: { level: string; registered: string; level_y_m: number; offset_m: number; shift_m: number };
   point_distance_m?: number | null;
   slide_m?: number;
 }

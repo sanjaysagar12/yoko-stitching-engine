@@ -1,0 +1,2031 @@
+{
+ "garment": "aldrich_skirt",
+ "iteration": "iter_04",
+ "pass": true,
+ "levels_m": {
+  "Neck": 1.3587,
+  "Shoulder": 1.3258,
+  "Crotch": 0.7553,
+  "Waist": 1.0441,
+  "Hip": 0.7851,
+  "Chest": 1.2558,
+  "Knee": 0.4437,
+  "Ankle": 0.0658
+ },
+ "inputs": {
+  "pieces": "C:\\yoko\\yoko-stitching-engine\\build\\_cache\\pieces-aldrich_skirt-6bc9fa09065deb37",
+  "avatar": "C:\\yoko\\yoko-stitching-engine\\build\\_cache\\avatar-female_165-01bb68b433d3998d",
+  "cached": {
+   "pieces": true,
+   "avatar": false
+  },
+  "synthetic": false
+ },
+ "global": [
+  {
+   "id": "carry.moves",
+   "ok": true,
+   "value": 0.0,
+   "limit": 0.001
+  },
+  {
+   "id": "determinism",
+   "ok": true,
+   "value": "bb549d6502815df7",
+   "limit": "bb549d6502815df7"
+  }
+ ],
+ "runs": {
+  "primary": {
+   "rows": [
+    {
+     "id": "size.avatar_mesh",
+     "status": "pass",
+     "value": "e6a3b52695356a59",
+     "limit": "e6a3b52695356a59",
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.avatar_height",
+     "status": "pass",
+     "value": 0.0002,
+     "limit": 0.5,
+     "piece": "",
+     "hint": "cm from the body JSON height"
+    },
+    {
+     "id": "size.avatar_floor",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.2e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.3e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.3e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.045947,
+     "limit": 0.03,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.449704,
+     "limit": 0.03,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.045947,
+     "limit": 0.3,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.103184,
+     "limit": 0.165947,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.045918,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.449704,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.045918,
+     "limit": 0.3,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.103184,
+     "limit": 0.165918,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030667,
+     "limit": 0.03,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.460709,
+     "limit": 0.03,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030667,
+     "limit": 0.3,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148368,
+     "limit": 0.150667,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030676,
+     "limit": 0.03,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.460709,
+     "limit": 0.03,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030676,
+     "limit": 0.3,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148367,
+     "limit": 0.150676,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030573,
+     "limit": 0.03,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030573,
+     "limit": 0.03,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "A - Skirt Front",
+     "hint": "A2 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "Skirt_Front_R",
+     "hint": "A2 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "A - Skirt Back",
+     "hint": "A1 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "Skirt_Back_R",
+     "hint": "A1 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.0015,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.1237,
+     "limit": "own side",
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.0015,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.1278,
+     "limit": "own side",
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.engine_flags",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "pairs.concentric",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.035,
+     "piece": "skirt",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.ring_gaps",
+     "status": "pass",
+     "value": 0.030247,
+     "limit": 0.03,
+     "piece": "skirt",
+     "hint": "Waist: 4 pieces cover 66 % of the ring"
+    },
+    {
+     "id": "semantics.ease",
+     "status": "info",
+     "value": 0.1853,
+     "limit": null,
+     "piece": "skirt",
+     "hint": "Waist: garment 87.8 cm vs body 69.3 cm"
+    },
+    {
+     "id": "semantics.ring_gaps",
+     "status": "pass",
+     "value": 0.03029,
+     "limit": 0.03,
+     "piece": "skirt",
+     "hint": "Hip: 4 pieces cover 77 % of the ring"
+    },
+    {
+     "id": "semantics.ease",
+     "status": "info",
+     "value": 0.0165,
+     "limit": null,
+     "piece": "skirt",
+     "hint": "Hip: garment 102.5 cm vs body 100.9 cm"
+    },
+    {
+     "id": "engine.honesty",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "",
+     "hint": ""
+    }
+   ],
+   "engine_valid": true,
+   "fit": [],
+   "ease": [
+    {
+     "ring": "skirt",
+     "level": "Waist",
+     "y_m": 1.0341,
+     "pieces_cut": 4,
+     "garment_width_m": 0.8779,
+     "body_girth_m": 0.6925,
+     "ease_m": 0.1853,
+     "coverage": 0.661
+    },
+    {
+     "ring": "skirt",
+     "level": "Hip",
+     "y_m": 0.7751,
+     "pieces_cut": 4,
+     "garment_width_m": 1.0251,
+     "body_girth_m": 1.0086,
+     "ease_m": 0.0165,
+     "coverage": 0.773
+    }
+   ],
+   "seconds": 22.9
+  },
+  "replay": {
+   "rows": [
+    {
+     "id": "size.avatar_mesh",
+     "status": "pass",
+     "value": "e6a3b52695356a59",
+     "limit": "e6a3b52695356a59",
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.avatar_height",
+     "status": "pass",
+     "value": 0.0002,
+     "limit": 0.5,
+     "piece": "",
+     "hint": "cm from the body JSON height"
+    },
+    {
+     "id": "size.avatar_floor",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.3e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.1e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.3e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.3e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.3e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.037183,
+     "limit": 0.03,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.449435,
+     "limit": 0.03,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.037183,
+     "limit": 0.3,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.0967,
+     "limit": 0.157183,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.037157,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.449435,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.037157,
+     "limit": 0.3,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.0967,
+     "limit": 0.157157,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030667,
+     "limit": 0.03,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.460709,
+     "limit": 0.03,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030667,
+     "limit": 0.3,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148368,
+     "limit": 0.150667,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030676,
+     "limit": 0.03,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.460709,
+     "limit": 0.03,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030676,
+     "limit": 0.3,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148367,
+     "limit": 0.150676,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030571,
+     "limit": 0.03,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.031938,
+     "limit": 0.03,
+     "piece": "A - Skirt Front | A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.311959,
+     "limit": 0.03,
+     "piece": "A - Skirt Front | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.311959,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R | A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.031938,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030573,
+     "limit": 0.03,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971515,
+     "limit": 5.0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971515,
+     "limit": 5.0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971515,
+     "limit": 5.0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971515,
+     "limit": 5.0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "A - Skirt Front",
+     "hint": "A2 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "Skirt_Front_R",
+     "hint": "A2 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "A - Skirt Back",
+     "hint": "A1 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "Skirt_Back_R",
+     "hint": "A1 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.0015,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.1225,
+     "limit": "own side",
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.0015,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.1278,
+     "limit": "own side",
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.engine_flags",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "pairs.concentric",
+     "status": "pass",
+     "value": 0.006853,
+     "limit": 0.035,
+     "piece": "skirt",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.ring_gaps",
+     "status": "pass",
+     "value": 0.030247,
+     "limit": 0.03,
+     "piece": "skirt",
+     "hint": "Waist: 4 pieces cover 67 % of the ring"
+    },
+    {
+     "id": "semantics.ease",
+     "status": "info",
+     "value": 0.1853,
+     "limit": null,
+     "piece": "skirt",
+     "hint": "Waist: garment 87.8 cm vs body 69.3 cm"
+    },
+    {
+     "id": "semantics.ring_gaps",
+     "status": "pass",
+     "value": 0.030262,
+     "limit": 0.03,
+     "piece": "skirt",
+     "hint": "Hip: 4 pieces cover 78 % of the ring"
+    },
+    {
+     "id": "semantics.ease",
+     "status": "info",
+     "value": 0.0165,
+     "limit": null,
+     "piece": "skirt",
+     "hint": "Hip: garment 102.5 cm vs body 100.9 cm"
+    },
+    {
+     "id": "engine.honesty",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "",
+     "hint": ""
+    }
+   ],
+   "engine_valid": true,
+   "fit": [],
+   "ease": [
+    {
+     "ring": "skirt",
+     "level": "Waist",
+     "y_m": 1.0341,
+     "pieces_cut": 4,
+     "garment_width_m": 0.8778,
+     "body_girth_m": 0.6925,
+     "ease_m": 0.1853,
+     "coverage": 0.672
+    },
+    {
+     "ring": "skirt",
+     "level": "Hip",
+     "y_m": 0.7751,
+     "pieces_cut": 4,
+     "garment_width_m": 1.0251,
+     "body_girth_m": 1.0086,
+     "ease_m": 0.0165,
+     "coverage": 0.785
+    }
+   ],
+   "seconds": 4.4
+  },
+  "replay_reversed": {
+   "rows": [
+    {
+     "id": "size.avatar_mesh",
+     "status": "pass",
+     "value": "e6a3b52695356a59",
+     "limit": "e6a3b52695356a59",
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.avatar_height",
+     "status": "pass",
+     "value": 0.0002,
+     "limit": 0.5,
+     "piece": "",
+     "hint": "cm from the body JSON height"
+    },
+    {
+     "id": "size.avatar_floor",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.3e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.3e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "size.singular_values",
+     "status": "pass",
+     "value": 2.2e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.area",
+     "status": "pass",
+     "value": 9e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.perimeter",
+     "status": "pass",
+     "value": 3e-06,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.outline_edges",
+     "status": "pass",
+     "value": 1.2e-05,
+     "limit": 0.001,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "size.matrix_scale",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 1e-06,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030676,
+     "limit": 0.03,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.460709,
+     "limit": 0.03,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030676,
+     "limit": 0.3,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148367,
+     "limit": 0.150676,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.030667,
+     "limit": 0.03,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.460709,
+     "limit": 0.03,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.030667,
+     "limit": 0.3,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.148368,
+     "limit": 0.150667,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.045917,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.449704,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.045917,
+     "limit": 0.3,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.103183,
+     "limit": 0.165917,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "clearance.body",
+     "status": "pass",
+     "value": 0.045947,
+     "limit": 0.03,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.floor",
+     "status": "pass",
+     "value": 0.449704,
+     "limit": 0.03,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.standoff",
+     "status": "pass",
+     "value": 0.045947,
+     "limit": 0.3,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.region",
+     "status": "pass",
+     "value": 0.103183,
+     "limit": 0.165947,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.self",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030573,
+     "limit": 0.03,
+     "piece": "Skirt_Back_R | A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "clearance.pieces",
+     "status": "pass",
+     "value": 0.030573,
+     "limit": 0.03,
+     "piece": "Skirt_Front_R | A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971776,
+     "limit": 5.0,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "orientation.top_up",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.grain",
+     "status": "pass",
+     "value": 0.971512,
+     "limit": 5.0,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "orientation.face_out",
+     "status": "pass",
+     "value": 1.0,
+     "limit": 0.5,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "A - Skirt Front",
+     "hint": "A2 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "Skirt_Front_R",
+     "hint": "A2 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "A - Skirt Back",
+     "hint": "A1 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "registration",
+     "status": "pass",
+     "value": -0.0,
+     "limit": 0.015,
+     "piece": "Skirt_Back_R",
+     "hint": "A1 at 1.044 m, Waist at 1.044 m"
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.0015,
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.1278,
+     "limit": "own side",
+     "piece": "A - Skirt Back | Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.parameters",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.001,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.mirror_image",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.0015,
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.sides",
+     "status": "pass",
+     "value": -0.1237,
+     "limit": "own side",
+     "piece": "A - Skirt Front | Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "pairs.engine_flags",
+     "status": "pass",
+     "value": 0,
+     "limit": 0,
+     "piece": "",
+     "hint": ""
+    },
+    {
+     "id": "pairs.concentric",
+     "status": "pass",
+     "value": 0.0,
+     "limit": 0.035,
+     "piece": "skirt",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "A - Skirt Front",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Skirt_Front_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "A - Skirt Back",
+     "hint": ""
+    },
+    {
+     "id": "semantics.required",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "Skirt_Back_R",
+     "hint": ""
+    },
+    {
+     "id": "semantics.ring_gaps",
+     "status": "pass",
+     "value": 0.030247,
+     "limit": 0.03,
+     "piece": "skirt",
+     "hint": "Waist: 4 pieces cover 66 % of the ring"
+    },
+    {
+     "id": "semantics.ease",
+     "status": "info",
+     "value": 0.1853,
+     "limit": null,
+     "piece": "skirt",
+     "hint": "Waist: garment 87.8 cm vs body 69.3 cm"
+    },
+    {
+     "id": "semantics.ring_gaps",
+     "status": "pass",
+     "value": 0.03029,
+     "limit": 0.03,
+     "piece": "skirt",
+     "hint": "Hip: 4 pieces cover 77 % of the ring"
+    },
+    {
+     "id": "semantics.ease",
+     "status": "info",
+     "value": 0.0165,
+     "limit": null,
+     "piece": "skirt",
+     "hint": "Hip: garment 102.5 cm vs body 100.9 cm"
+    },
+    {
+     "id": "engine.honesty",
+     "status": "pass",
+     "value": true,
+     "limit": true,
+     "piece": "",
+     "hint": ""
+    }
+   ],
+   "engine_valid": true,
+   "fit": [],
+   "ease": [
+    {
+     "ring": "skirt",
+     "level": "Waist",
+     "y_m": 1.0341,
+     "pieces_cut": 4,
+     "garment_width_m": 0.8779,
+     "body_girth_m": 0.6925,
+     "ease_m": 0.1853,
+     "coverage": 0.661
+    },
+    {
+     "ring": "skirt",
+     "level": "Hip",
+     "y_m": 0.7751,
+     "pieces_cut": 4,
+     "garment_width_m": 1.0251,
+     "body_girth_m": 1.0086,
+     "ease_m": 0.0165,
+     "coverage": 0.773
+    }
+   ],
+   "seconds": 4.7
+  }
+ }
+}

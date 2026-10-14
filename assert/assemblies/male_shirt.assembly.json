@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "garment": "male_shirt",
+  "job": "male_shirt",
+  "notes": "iter 4: yoke layer declared (1, over the back; on the synthetic body it read as NOT_CONCENTRIC beside the front). iter 2: layers of the small pieces declared (cuffs, plackets, pocket 1; flap 2); plackets now a mirror pair (engine: quarter turns compared modulo 360). iter 1: fronts and backs are halves: mirror across CF (A33-A32) and CB (A34-A35, the straight full-height edge; the armhole is at x=0). Yoke CB A28-A25, collars CB D2-D3 / D4-D1. Registered by the high shoulder point (front A22, yoke A15) at the neck base; the back follows by its drafting heights. Sleeves (+cuffs, sleeve plackets) per arm via bbox mirror. One variant each: FullSleeve, Pocket/PocketFlap; interfacings left out (inner layers).",
+  "mode": "arrange",
+  "derived_pieces": [
+    {
+      "id": "FrontPanel_L",
+      "source": "FrontPanel",
+      "op": "mirror",
+      "axis": {
+        "type": "edge",
+        "from_point": "A33",
+        "to_point": "A32"
+      }
+    },
+    {
+      "id": "BackPanel_L",
+      "source": "BackPanel",
+      "op": "mirror",
+      "axis": {
+        "type": "edge",
+        "from_point": "A34",
+        "to_point": "A35"
+      }
+    },
+    {
+      "id": "Yoke_L",
+      "source": "Yoke",
+      "op": "mirror",
+      "axis": {
+        "type": "edge",
+        "from_point": "A28",
+        "to_point": "A25"
+      }
+    },
+    {
+      "id": "CollarBase_L",
+      "source": "CollarBase",
+      "op": "mirror",
+      "axis": {
+        "type": "edge",
+        "from_point": "D2",
+        "to_point": "D3"
+      }
+    },
+    {
+      "id": "CollarTop_L",
+      "source": "CollarTop",
+      "op": "mirror",
+      "axis": {
+        "type": "edge",
+        "from_point": "D4",
+        "to_point": "D1"
+      }
+    },
+    {
+      "id": "FullSleeve_L",
+      "source": "FullSleeve",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    },
+    {
+      "id": "Cuff_L",
+      "source": "Cuff",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    },
+    {
+      "id": "PlacketTop_L",
+      "source": "PlacketTop",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    },
+    {
+      "id": "PlacketUnder_L",
+      "source": "PlacketUnder",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    }
+  ],
+  "placements": [
+    {
+      "piece": "FrontPanel",
+      "point": "Chest_Front",
+      "wrap": "roll",
+      "reference": "A32",
+      "anchor": {
+        "level": "Neck",
+        "piece_point": "A22"
+      }
+    },
+    {
+      "piece": "FrontPanel_L",
+      "point": "Chest_Front",
+      "wrap": "roll",
+      "reference": "A32",
+      "anchor": {
+        "level": "Neck",
+        "piece_point": "A22"
+      }
+    },
+    {
+      "piece": "BackPanel",
+      "point": "Chest_Back",
+      "wrap": "roll",
+      "reference": "A34",
+      "anchor": "point"
+    },
+    {
+      "piece": "BackPanel_L",
+      "point": "Chest_Back",
+      "wrap": "roll",
+      "reference": "A34",
+      "anchor": "point"
+    },
+    {
+      "piece": "Yoke",
+      "point": "Chest_Back",
+      "wrap": "roll",
+      "reference": "A28",
+      "anchor": {
+        "level": "Neck",
+        "piece_point": "A15"
+      },
+      "layer": 1
+    },
+    {
+      "piece": "Yoke_L",
+      "point": "Chest_Back",
+      "wrap": "roll",
+      "reference": "A28",
+      "anchor": {
+        "level": "Neck",
+        "piece_point": "A15"
+      },
+      "layer": 1
+    },
+    {
+      "piece": "FullSleeve",
+      "point": "UpperArm_Outer_R",
+      "wrap": "roll",
+      "anchor": "root"
+    },
+    {
+      "piece": "FullSleeve_L",
+      "point": "UpperArm_Outer_L",
+      "wrap": "roll",
+      "anchor": "root"
+    },
+    {
+      "piece": "Cuff",
+      "point": "Forearm_Outer_R",
+      "wrap": "roll",
+      "anchor": "tip",
+      "layer": 1
+    },
+    {
+      "piece": "Cuff_L",
+      "point": "Forearm_Outer_L",
+      "wrap": "roll",
+      "anchor": "tip",
+      "layer": 1
+    },
+    {
+      "piece": "PlacketTop",
+      "point": "Forearm_Back_R",
+      "wrap": "roll",
+      "orient": 90,
+      "layer": 1
+    },
+    {
+      "piece": "PlacketTop_L",
+      "point": "Forearm_Back_L",
+      "wrap": "roll",
+      "orient": 270,
+      "layer": 1
+    },
+    {
+      "piece": "PlacketUnder",
+      "point": "Forearm_Front_R",
+      "wrap": "roll",
+      "orient": 90,
+      "layer": 1
+    },
+    {
+      "piece": "PlacketUnder_L",
+      "point": "Forearm_Front_L",
+      "wrap": "roll",
+      "orient": 270,
+      "layer": 1
+    },
+    {
+      "piece": "CollarBase",
+      "point": "Neck_Back",
+      "wrap": "roll",
+      "reference": "D2"
+    },
+    {
+      "piece": "CollarBase_L",
+      "point": "Neck_Back",
+      "wrap": "roll",
+      "reference": "D2"
+    },
+    {
+      "piece": "CollarTop",
+      "point": "Neck_Back",
+      "wrap": "roll",
+      "reference": "D4"
+    },
+    {
+      "piece": "CollarTop_L",
+      "point": "Neck_Back",
+      "wrap": "roll",
+      "reference": "D4"
+    },
+    {
+      "piece": "Pocket",
+      "point": "Chest_FrontSide_L",
+      "wrap": "roll",
+      "layer": 1
+    },
+    {
+      "piece": "PocketFlap",
+      "point": "Chest_FrontSide_L",
+      "wrap": "roll",
+      "layer": 2
+    }
+  ],
+  "expect": {
+    "registration": [
+      {
+        "piece": "FrontPanel",
+        "level": "Neck",
+        "piece_point": "A22"
+      },
+      {
+        "piece": "FrontPanel_L",
+        "level": "Neck",
+        "piece_point": "A22"
+      },
+      {
+        "piece": "Yoke",
+        "level": "Neck",
+        "piece_point": "A15"
+      },
+      {
+        "piece": "Yoke_L",
+        "level": "Neck",
+        "piece_point": "A15"
+      }
+    ],
+    "rings": [
+      {
+        "name": "torso",
+        "pieces": [
+          "FrontPanel",
+          "FrontPanel_L",
+          "BackPanel",
+          "BackPanel_L"
+        ],
+        "levels": [
+          "Chest",
+          "Waist"
+        ]
+      }
+    ],
+    "sections": [
+      "Neck",
+      "Chest",
+      "Waist",
+      "Hip"
+    ],
+    "required_pieces": [
+      "FrontPanel",
+      "FrontPanel_L",
+      "BackPanel",
+      "BackPanel_L",
+      "Yoke",
+      "Yoke_L",
+      "FullSleeve",
+      "FullSleeve_L",
+      "Cuff",
+      "Cuff_L",
+      "PlacketTop",
+      "PlacketTop_L",
+      "PlacketUnder",
+      "PlacketUnder_L",
+      "CollarBase",
+      "CollarBase_L",
+      "CollarTop",
+      "CollarTop_L",
+      "Pocket",
+      "PocketFlap"
+    ]
+  }
+}

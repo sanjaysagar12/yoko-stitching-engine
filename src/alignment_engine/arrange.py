@@ -35,8 +35,10 @@ from scipy.spatial import cKDTree
 from shapely.affinity import translate
 from shapely.geometry import Polygon
 
-from .errors import RingNotFoundError
+from .errors import RingNotFoundError, UnknownNamedPointError
+from .levels import level_height
 from .loaders import Avatar, PieceInfo, PointRecord
+from .orient import edge_point, orient_rotation, registration_spec, tilt_angles, tilt_matrix
 from .pairs import counterpart_point
 from .refine import RefineCache, RefinedPiece
 from .roll import (
@@ -68,6 +70,7 @@ RADIUS_STEP, RADIUS_ROUNDS, RADIUS_ITER = 0.02, 6, 20
 GROW_TOL = 0.003  # a ring grows (its placed pieces move out) only when it lacks more than this
 DATUM_HEIGHT_RATIO = 0.5  # torso pieces at least this similar in height share the drafting datum (not pockets)
 LIMB_RINGS = ("arm_L", "arm_R", "leg_L", "leg_R")
+REGISTERED_AXIAL_WEIGHT = 1.0e4  # a registered piece slides along the axis only when nothing else can clear it
 ANCHOR_STEP, ANCHOR_RANGE = 0.01, 0.8  # limb registration: search step and reach along the limb (metres)
 
 
@@ -135,6 +138,10 @@ class Item:
     edges: I64 = field(default_factory=lambda: np.zeros((0, 2), dtype=np.int64))
     outline: F64 = field(default_factory=lambda: np.zeros((0, 2)))  # pattern outline in local coordinates
     geom_key: tuple[Any, ...] = ()
+    orient_note: str = ""
+    tilt: tuple[float, float] = (0.0, 0.0)
+    registration: dict[str, Any] | None = None  # level registration: spec + the heights (filled by ``_register``)
+    axis_up: F64 | None = None  # the up the placement asks for (point up / ring axis), before any tilt
 
     @property
     def name(self) -> str:
@@ -172,6 +179,7 @@ class Layout:
         self.ring_radius: dict[str, float] = {}
         self.check: LayoutCheck | None = None
         self.iterations = 0
+        self.version = int(spec.get("schema_version", 1))
 
     # -- preparation -----------------------------------------------------------------------------------------------
     def shells(self) -> Shells:
@@ -184,7 +192,15 @@ class Layout:
     def prepare(self, incremental: bool) -> None:
         """Items, surfaces, start parameters, groups."""
         o = self.o
+        new = {
+            pl["piece"]
+            for pl in self.spec["placements"]
+            if not isinstance(pl.get("solved"), dict) and not pl.get("locked")
+        }
         for k, pl in enumerate(self.spec["placements"]):
+            ov = pl.get("over")
+            if ov and incremental and ov.get("piece") in new and isinstance(pl.get("solved"), dict):
+                pl = {key: v for key, v in pl.items() if key != "solved"}  # its host is new: it moves onto the host
             info = self.pieces[pl["piece"]]
             point = self.avatar.points[pl["point"]]
             it = Item(k, pl, info, point, self.sources.get(pl["piece"], ""), str(pl.get("wrap", "flat")))
@@ -226,7 +242,69 @@ class Layout:
         self._datum()
         self._groups()
         self._lone_halves()
+        self._over()
         self._start_radii(incremental)
+        self._reregister()
+        self._over()
+
+    def _over(self) -> None:
+        """``over: {piece, point}``: a piece laid over another one (a pocket on a front, an interfacing on a collar)
+        starts where its named ``point`` coincides with the same named point of the other piece (same arrangement point
+        and wrap, so the same surface); the layering then lifts it one gap out. A placed piece keeps its place."""
+        for it in self.items:
+            ov = it.pl.get("over")
+            p = it.piece
+            if not ov or p is None or np.any(p.sign < 0):
+                continue
+            placed = isinstance(it.pl.get("solved"), dict)
+            tgt = next((j for j in self.items if j.name == ov["piece"] and j is not it), None)
+            if tgt is None or tgt.piece is None:  # placed before its host (one piece at a time): on its own point
+                it.warnings.append(f"OVER_PENDING: {ov['piece']} is not placed; {it.name} stays on {it.point.name}")
+                continue
+            if tgt.point.name != it.point.name or tgt.mode != it.mode:
+                it.warnings.append(
+                    f"OVER_IGNORED: {it.name} is over {tgt.name} only on the same point and wrap "
+                    f"({tgt.point.name}, {tgt.mode})"
+                )
+                continue
+
+            def local(x: Item, name: str = str(ov["point"])) -> F64:
+                q = next((q for q in x.info.bundle["named_points"] if q["name"] == name), None)
+                if q is None:
+                    raise UnknownNamedPointError(x.name, name, [q["name"] for q in x.info.bundle["named_points"]])
+                xy = local_coords(np.array([q["xy_m"]], dtype=np.float64), x.ref, x.rotation, x.mirror)
+                return np.asarray(xy[0], dtype=np.float64)
+
+            d = tgt.piece.theta[1:] + local(tgt) - local(it)
+            p.theta0[1:] = d  # the anchor; a placed piece keeps its place (its slide is measured from here)
+            if not placed:
+                p.theta[1:] = d
+            p.update()
+            for g in self.groups.values():  # a pair's clone follows its lead
+                if g[0] is it and not placed:
+                    g[1].piece.theta = p.theta * g[1].piece.sign  # type: ignore[union-attr]
+                    g[1].piece.theta0 = p.theta0 * g[1].piece.sign  # type: ignore[union-attr]
+                    g[1].piece.update()  # type: ignore[union-attr]
+
+    def _reregister(self) -> None:
+        """Registration again at the start radius (a radial move shifts heights a little on a tilted axis); a pair's
+        clone follows its lead."""
+        for it in self.items:
+            p = it.piece
+            if it.registration is None or p is None or p.surface is None or not it.solve or np.any(p.sign < 0):
+                continue
+            if isinstance(it.pl.get("solved"), dict):
+                continue
+            user = float(it.pl.get("shift_m", [0.0, 0.0])[1])
+            th = p.theta.copy()
+            th[2] = user
+            p.theta[2] = p.theta0[2] = self._register(it, p.surface, th)
+            p.update()
+        for lead, clone in self.groups.values():
+            assert lead.piece is not None and clone.piece is not None
+            clone.piece.theta = lead.piece.theta * clone.piece.sign
+            clone.piece.theta0 = lead.piece.theta0 * clone.piece.sign
+            clone.piece.update()
 
     def _neck_or_torso(self, it: Item) -> str:
         """A piece on a neck point that is taller than the neck (a front or back panel cut up to the neckline) rolls
@@ -236,7 +314,7 @@ class Layout:
             return "neck"
         outline = np.asarray(it.info.bundle["outline_m"], dtype=np.float64)
         ref = it.info.reference(str(it.pl.get("reference", "bbox_centre")))
-        height = float(np.ptp(local_coords(outline, ref, float(it.pl.get("rotation_deg", 0.0)), False)[:, 1]))
+        height = float(np.ptp(local_coords(outline, ref, self._rotation(it)[0], False)[:, 1]))
         neck = float(np.linalg.norm(vol.end - vol.start))
         if height <= neck:
             return "neck"
@@ -246,13 +324,18 @@ class Layout:
         )
         return "torso"
 
+    def _rotation(self, it: Item) -> tuple[float, str]:
+        """(in-plane rotation: ``rotation_deg`` plus ``orient``, why the orient part)."""
+        extra, why = orient_rotation(it.info.bundle, it.pl.get("orient", "auto" if self.version >= 5 else "none"))
+        return float(it.pl.get("rotation_deg", 0.0)) + extra, why
+
     def _surface(self, it: Item) -> None:
         o, pl, point = self.o, it.pl, it.point
         it.refined = self.cache.get(it.info.bundle, o.refine_max_edge, it.info.mesh())
         r = it.refined
         it.ref = it.info.reference(str(pl.get("reference", "bbox_centre")))
         it.mirror = bool(pl.get("mirror", False))
-        it.rotation = float(pl.get("rotation_deg", 0.0))
+        it.rotation, it.orient_note = self._rotation(it)
         flip = bool(pl.get("flip_facing", False))
         g = self._geometry(it, r)
         local, faces = g["local"], g["faces"]
@@ -276,13 +359,25 @@ class Layout:
             r_min = (float(np.ptp(local[:, 0])) + gap) / (2.0 * np.pi)  # never wide enough to overlap itself
             r_max = surf.r_skin + o.max_standoff
             r0 = max(r0, r_min)
-        it.surface = surf
         shift = np.array(pl.get("shift_m", [0.0, 0.0]), dtype=np.float64)
         theta0 = np.array([r0, shift[0], shift[1]])
+        it.tilt = tilt_angles(pl)
+        it.axis_up = surf.e_y.copy()
+        if any(it.tilt):  # rotate the frame (and a cylinder's axis) about the reference
+            pivot = surf.map(np.zeros((1, 2)), theta0)[0]
+            rm = tilt_matrix(surf.e_n, surf.e_x, surf.e_y, *it.tilt)
+            surf = Surface(
+                surf.kind, pivot + rm @ (surf.origin - pivot), rm @ surf.e_n, rm @ surf.e_x, rm @ surf.e_y, surf.r_skin
+            )
+        it.surface = surf
+        it.registration = None if pl.get("over") else registration_spec(pl, it.info.bundle, self.version, point.bv)
+        if it.registration is not None:
+            theta0[2] = self._register(it, surf, theta0)
         theta = theta0.copy()
         if isinstance(pl.get("solved"), dict):
             sv = pl["solved"]
             theta = np.array([float(sv["radius_m"]), float(sv["shift_m"][0]), float(sv["shift_m"][1])])
+            it.needed_radius = float(sv.get("needed_radius_m", 0.0))  # why it sits there (kept with the piece)
         it.piece = Piece(
             it.name,
             it.index,
@@ -308,7 +403,57 @@ class Layout:
                 it.piece.other_tris = np.isin(tri_region, [names.index(a) for a in ("arm_L", "arm_R")])
             else:
                 it.piece.other_tris = tri_region != names.index(ring)
+        if it.registration is not None:
+            it.piece.axial_weight = REGISTERED_AXIAL_WEIGHT
+            if ring in LIMB_RINGS:  # a registered limb piece wraps the torso too: only the arms and the other limb
+                names, tri_region = self._tri_regions()  # are slid away from
+                other = {"leg_L": "leg_R", "leg_R": "leg_L", "arm_L": "arm_R", "arm_R": "arm_L"}[ring]
+                it.piece.other_tris = np.isin(tri_region, [names.index(a) for a in ("arm_L", "arm_R", other)])
         it.piece.update()
+
+    def _register(self, it: Item, surf: Surface, theta0: F64) -> float:
+        """Axial shift ``t`` that puts the registered piece point (or edge) at its level height; records the heights
+        in ``it.registration``. The user's ``shift_m`` along the axis is added on top."""
+        reg = it.registration
+        assert reg is not None
+        if "piece_point" in reg:
+            q = next((p for p in it.info.bundle["named_points"] if p["name"] == reg["piece_point"]), None)
+            if q is None:
+                raise UnknownNamedPointError(
+                    it.name, str(reg["piece_point"]), [p["name"] for p in it.info.bundle["named_points"]]
+                )
+            xy = local_coords(np.array([q["xy_m"]], dtype=np.float64), it.ref, it.rotation, it.mirror)
+            what = str(reg["piece_point"])
+        else:
+            edge = str(reg.get("edge", "top"))
+            ol = local_coords(np.asarray(it.info.bundle["outline_m"], dtype=np.float64), it.ref, it.rotation, it.mirror)
+            xy = edge_point(ol, edge)[None, :]
+            what = f"{edge} edge"
+        level = reg.get("level")
+        target = level_height(self.avatar, str(level)) if level else float(it.point.position[1])
+        target += float(reg.get("offset_m", 0.0))
+        user = float(theta0[2])
+        th = theta0.copy()
+        for _ in range(3):  # world y is linear in t (slope e_y.y); repeated only for rounding
+            y = float(surf.map(xy, th)[0, 1])
+            th[2] += (target - y) / max(float(surf.e_y[1]), 1e-6)
+        th[2] += user  # the user's own shift on top
+        it.registration = {
+            **reg,
+            "registered": what,
+            "level_y_m": target,
+            "local_xy_m": [float(xy[0, 0]), float(xy[0, 1])],
+            "shift_m": float(th[2] - user),
+        }
+        return float(th[2])
+
+    def registration_offset(self, it: Item) -> float | None:
+        """Height of the registered point now minus its level height (None: not registered)."""
+        if it.registration is None or it.piece is None or it.piece.surface is None:
+            return None
+        xy = np.array([it.registration["local_xy_m"]])
+        y = float(it.piece.surface.map(xy, it.piece.theta)[0, 1])
+        return y - float(it.registration["level_y_m"])
 
     def _ring_of(self, it: Item) -> str:
         """The body region a rolled piece wraps (its ring; for ``around`` the ring of its point's volume), else ''."""
@@ -384,8 +529,8 @@ class Layout:
                     side = clone.point.name == counterpart_point(it.point.name, self.avatar.points) != it.point.name
                 except Exception:  # noqa: BLE001 - no counterpart: not a side pair
                     side = False
-                if not (same and abs(clone.rotation - it.rotation) < 1e-9) and not (
-                    side and abs(clone.rotation + it.rotation) < 1e-9
+                if not (same and _same_angle(clone.rotation, it.rotation)) and not (
+                    side and _same_angle(clone.rotation, -it.rotation)
                 ):
                     continue
                 used |= {it.index, clone.index}
@@ -501,15 +646,22 @@ class Layout:
             return float(np.ptp(x.outline[:, 1]))
 
         placed = [x for x in cands if isinstance(x.pl.get("solved"), dict) or not x.solve]
-        # the first placed panel keeps the datum (a placed panel's anchor stays where it was); else the tallest
-        lead = min(placed, key=lambda x: x.index) if placed else max(cands, key=lambda x: (height(x), -x.index))
+        registered = [x for x in cands if x.registration is not None]
+        # a registered panel is the datum; else the first placed panel keeps it (a placed panel's anchor stays where it
+        # was); else the tallest
+        if registered:
+            lead = registered[0]
+        elif placed:
+            lead = min(placed, key=lambda x: x.index)
+        else:
+            lead = max(cands, key=lambda x: (height(x), -x.index))
         assert lead.piece is not None
         y_datum = float(lead.info.bundle["pattern_origin_m"][1] + lead.ref[1])  # drafting height of its reference
         a_datum = lead.axial0 + float(lead.piece.theta[2])  # where that height lies along the axis
         for it in cands:
             p = it.piece
             assert p is not None
-            if it is lead:
+            if it is lead or it.registration is not None or it.pl.get("over"):
                 continue
             if min(height(it), height(lead)) < DATUM_HEIGHT_RATIO * max(height(it), height(lead)):
                 continue
@@ -543,7 +695,11 @@ class Layout:
         ring = self._ring_of(it)
         verts = self.avatar.vertices
         if ring in LIMB_RINGS:
-            verts = verts[self.shells().regions[ring].vertex_ids]
+            regions = self.shells().regions
+            ids = regions[ring].vertex_ids
+            if it.registration is not None and "torso" in regions:  # a trouser panel at the waist wraps the torso
+                ids = np.concatenate([ids, regions["torso"].vertex_ids])
+            verts = verts[ids]
         c = self.o.clearance_body
         poly = _polygon(it.outline).buffer(c)
 
@@ -590,6 +746,8 @@ class Layout:
         ring = self._ring_of(it)
         mode = str(it.pl.get("anchor", "auto"))
         if p is None or surf is None or ring not in LIMB_RINGS or mode == "point" or np.any(p.sign < 0):
+            return
+        if it.registration is not None or it.pl.get("over"):  # registered on a level, or over a piece: kept
             return
         t_user = float(it.pl.get("shift_m", [0.0, 0.0])[1])
         ys = it.outline[:, 1]
@@ -1013,6 +1171,11 @@ class Layout:
                 hits.add("fixed")
         order = ("max_standoff", "max_shift", "iterations", "fixed")
         return ",".join(h for h in order if h in hits) or "none"
+
+
+def _same_angle(a: float, b: float) -> bool:
+    """Equal directions (degrees, modulo 360: a mirrored quarter turn of 90 is 270)."""
+    return abs((a - b + 180.0) % 360.0 - 180.0) < 1e-9
 
 
 def _polygon(pts: F64) -> Polygon:

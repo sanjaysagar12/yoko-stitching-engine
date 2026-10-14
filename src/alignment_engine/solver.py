@@ -72,6 +72,7 @@ class Piece:
     group: int = -1
     sign: F64 = field(default_factory=lambda: np.ones(3))
     slide_weight: float = 1.0  # cost of a slide across (s); a centre-line pair keeps its gap by sliding very little
+    axial_weight: float = 1.0  # cost of a slide along (t); a piece registered on a body level keeps its height
     x_mid: float = 0.0
     world: F64 = field(default_factory=lambda: np.zeros((0, 3)))
     tree2d: cKDTree | None = None
@@ -398,11 +399,12 @@ class Solver:
     # -- step ------------------------------------------------------------------------------------------------------
     def step(self, rows: list[tuple[int, F64, int, F64, float]]) -> dict[int, F64]:
         """Kaczmarz sweeps over the rows: the weighted smallest parameter change that satisfies them (linearised)."""
-        weights = {self._key(i): p.slide_weight for i, p in enumerate(self.pieces) if p.moving}
+        weights = {self._key(i): (p.slide_weight, p.axial_weight) for i, p in enumerate(self.pieces) if p.moving}
         zero = np.zeros(3)
 
         def wv(key: int) -> F64:
-            return np.array([1.0 / RADIAL_WEIGHT, 1.0 / weights.get(key, 1.0), 1.0])
+            ws, wa = weights.get(key, (1.0, 1.0))
+            return np.array([1.0 / RADIAL_WEIGHT, 1.0 / ws, 1.0 / wa])
 
         delta: dict[int, F64] = {}
         for _ in range(SWEEPS):
@@ -459,6 +461,9 @@ class Solver:
         """Iterate until no constraint is violated (with the margin), ``max_iter``, or no progress for
         ``PATIENCE`` iterations (the next, wider stage takes over)."""
         st = SolveStats()
+        for p in self.pieces:  # a limit is the one of this stage: a narrower earlier stage's cap is not a limit
+            if p.moving:
+                p.limits_hit.discard("max_shift")
         self._project_pairs(max_shift)  # start (and restart after layering or a larger radius) with the pairs apart
         best, since = np.inf, 0
         for it in range(1, max_iter + 1):
@@ -490,10 +495,13 @@ def pair_half_gap(req: Requirements) -> float:
 
 def _pair_clear(p: Piece, th: F64, half_gap: float) -> float:
     """Smallest distance of the lead's vertices from x = 0 on its own side, minus the half gap (>= 0: the pair is
-    ``gap`` apart). World x depends on local x only (the axis has no x component), so one row of samples does."""
+    ``gap`` apart). On a vertical axis world x depends on local x only and one row of samples would do; a leg axis
+    leans sideways (and a tilt turns any axis), so every iteration sample is mapped."""
     assert p.surface is not None
-    xs = p.local[p.iter_idx, 0] if len(p.iter_idx) else p.local[:, 0]
-    x = p.surface.map(np.column_stack([xs, np.zeros_like(xs)]), th)[:, 0]
+    loc = p.local[p.iter_idx] if len(p.iter_idx) else p.local
+    if abs(float(p.surface.e_y[0])) < 1e-9:
+        loc = np.column_stack([loc[:, 0], np.zeros(len(loc))])
+    x = p.surface.map(loc, th)[:, 0]
     return float((p.pair_side * x).min()) - half_gap
 
 

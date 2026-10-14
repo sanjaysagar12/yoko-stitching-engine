@@ -14,8 +14,10 @@
         1,
         2,
         3,
-        4
-      ]
+        4,
+        5
+      ],
+      "description": "5: orient defaults to auto and pieces with a level line register on their body level unless anchor says otherwise"
     },
     "placements": {
       "type": "array",
@@ -98,17 +100,113 @@
                 },
                 "minItems": 2,
                 "maxItems": 2
+              },
+              "needed_radius_m": {
+                "type": "number",
+                "description": "the radius the piece needed when it was solved (body clearance, ring fit): carried so that its standoff keeps its reason"
               }
             }
           },
           "anchor": {
-            "enum": [
-              "auto",
-              "point",
-              "root",
-              "tip"
+            "description": "limb pieces (roll/around on an arm or leg): where along the limb the piece sits. auto: root (cap/waist at the limb root) when the piece is longer than the point's volume or would reach into another body part, else point; point: the reference on the point; root: the top edge at the limb root; tip: the bottom edge at the wrist/ankle. An object registers the piece on a body level: {level, piece_point} puts that named piece point at the level height, {level, edge: top|bottom} the top/bottom of the outline, {edge} alone uses the point's height",
+            "oneOf": [
+              {
+                "enum": [
+                  "auto",
+                  "point",
+                  "root",
+                  "tip"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "minProperties": 1,
+                "properties": {
+                  "level": {
+                    "enum": [
+                      "Neck",
+                      "Shoulder",
+                      "Chest",
+                      "Waist",
+                      "Hip",
+                      "Crotch",
+                      "Knee",
+                      "Ankle"
+                    ]
+                  },
+                  "piece_point": {
+                    "type": "string"
+                  },
+                  "edge": {
+                    "enum": [
+                      "top",
+                      "bottom"
+                    ]
+                  },
+                  "offset_m": {
+                    "type": "number",
+                    "description": "the registered point this far above the level (metres)"
+                  }
+                },
+                "not": {
+                  "required": [
+                    "piece_point",
+                    "edge"
+                  ]
+                }
+              }
+            ]
+          },
+          "orient": {
+            "description": "in-plane orientation added to rotation_deg: auto (grainline, else long axis of a tall piece, parallel to the point's up / ring axis; default for schema_version 5), grain, none (default before 5) or a quarter turn",
+            "oneOf": [
+              {
+                "enum": [
+                  "auto",
+                  "grain",
+                  "none"
+                ]
+              },
+              {
+                "enum": [
+                  0,
+                  90,
+                  180,
+                  270
+                ]
+              }
+            ]
+          },
+          "tilt": {
+            "description": "rotate the placement frame (and a cylinder's axis) about the reference; pitch: top away from the body (+), roll: top toward the piece's +x (+); clamped to 45 degrees",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "pitch_deg": {
+                "type": "number"
+              },
+              "roll_deg": {
+                "type": "number"
+              }
+            }
+          },
+          "over": {
+            "description": "lay this piece over another placed piece (same point and wrap): its named point starts on the same named point of that piece, one layer out (pockets, plackets, interfacings)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "piece",
+              "point"
             ],
-            "description": "limb pieces (roll/around on an arm or leg): where along the limb the piece sits. auto: root (cap/waist at the limb root) when the piece is longer than the point's volume or would reach into another body part, else point; point: the reference on the point; root: the top edge at the limb root; tip: the bottom edge at the wrist/ankle"
+            "properties": {
+              "piece": {
+                "type": "string"
+              },
+              "point": {
+                "type": "string"
+              }
+            }
           }
         }
       }

@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "garment": "trousers",
+  "job": "trousers",
+  "notes": "iter 6: pocket layers declared (1: front bag, 2: back bag) so they are not judged as ring panels; + the two pocket bags (PocketFront, PocketBack; the mouth and panel facings lie in the same spot and would stack 4 layers out, left out) laid over each front (over: shared point A47; mirrored for the left leg), the two waistbands on the torso ring just above the panel tops, Detail (fly) rolled at centre front (flat followed the belly normal, 6 deg off upright). Fronts: Front_with_pocket is the right-leg front. Waist line worn 2.5 cm above the natural waist (the pattern reaches the floor).",
+  "mode": "arrange",
+  "derived_pieces": [
+    {
+      "id": "Front_L",
+      "source": "Front_with_pocket",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    },
+    {
+      "id": "Back_R",
+      "source": "Back",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    },
+    {
+      "id": "PocketFront_L",
+      "source": "PocketFront",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    },
+    {
+      "id": "PocketBack_L",
+      "source": "PocketBack",
+      "op": "mirror",
+      "axis": {
+        "type": "bbox_center"
+      }
+    }
+  ],
+  "placements": [
+    {
+      "piece": "Front_with_pocket",
+      "point": "Thigh_Front_R",
+      "wrap": "roll",
+      "anchor": {
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      }
+    },
+    {
+      "piece": "Front_L",
+      "point": "Thigh_Front_L",
+      "wrap": "roll",
+      "anchor": {
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      }
+    },
+    {
+      "piece": "Back",
+      "point": "Thigh_Back_L",
+      "wrap": "roll",
+      "anchor": {
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      }
+    },
+    {
+      "piece": "Back_R",
+      "point": "Thigh_Back_R",
+      "wrap": "roll",
+      "anchor": {
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      }
+    },
+    {
+      "piece": "PocketFront",
+      "point": "Thigh_Front_R",
+      "wrap": "roll",
+      "over": {
+        "piece": "Front_with_pocket",
+        "point": "A47"
+      },
+      "layer": 1
+    },
+    {
+      "piece": "PocketFront_L",
+      "point": "Thigh_Front_L",
+      "wrap": "roll",
+      "over": {
+        "piece": "Front_L",
+        "point": "A47"
+      },
+      "layer": 1
+    },
+    {
+      "piece": "PocketBack",
+      "point": "Thigh_Front_R",
+      "wrap": "roll",
+      "over": {
+        "piece": "Front_with_pocket",
+        "point": "A47"
+      },
+      "layer": 2
+    },
+    {
+      "piece": "PocketBack_L",
+      "point": "Thigh_Front_L",
+      "wrap": "roll",
+      "over": {
+        "piece": "Front_L",
+        "point": "A47"
+      },
+      "layer": 2
+    },
+    {
+      "piece": "WaistBand1",
+      "point": "Waist_Left",
+      "wrap": "roll",
+      "anchor": {
+        "level": "Waist",
+        "edge": "bottom",
+        "offset_m": 0.075
+      }
+    },
+    {
+      "piece": "Waistband2",
+      "point": "Waist_Right",
+      "wrap": "roll",
+      "anchor": {
+        "level": "Waist",
+        "edge": "bottom",
+        "offset_m": 0.075
+      }
+    },
+    {
+      "piece": "Detail",
+      "point": "Waist_Front",
+      "wrap": "roll",
+      "anchor": {
+        "level": "Waist",
+        "edge": "top",
+        "offset_m": 0.025
+      }
+    }
+  ],
+  "expect": {
+    "required_pieces": [
+      "Front_with_pocket",
+      "Front_L",
+      "Back",
+      "Back_R",
+      "PocketFront",
+      "PocketBack",
+      "PocketFront_L",
+      "PocketBack_L",
+      "WaistBand1",
+      "Waistband2",
+      "Detail"
+    ],
+    "registration": [
+      {
+        "piece": "Front_with_pocket",
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      },
+      {
+        "piece": "Front_L",
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      },
+      {
+        "piece": "Back",
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      },
+      {
+        "piece": "Back_R",
+        "level": "Waist",
+        "piece_point": "WaistLIne",
+        "offset_m": 0.025
+      },
+      {
+        "piece": "WaistBand1",
+        "level": "Waist",
+        "edge": "bottom",
+        "offset_m": 0.075
+      },
+      {
+        "piece": "Waistband2",
+        "level": "Waist",
+        "edge": "bottom",
+        "offset_m": 0.075
+      }
+    ],
+    "sections": [
+      "Waist",
+      "Hip",
+      "Crotch",
+      "Knee",
+      "Ankle"
+    ]
+  }
+}

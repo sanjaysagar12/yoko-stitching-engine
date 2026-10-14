@@ -5,6 +5,7 @@ import type { PairMode, PieceInfo, PlacedResult, Placement, WrapMode } from "../
 import { RING_NAMES } from "../types";
 import type { Actions } from "./actions";
 import { h } from "./dom";
+import { orientationSection } from "./orientation";
 
 const LEVELS = ["Chest", "Waist", "Hip"] as const;
 
@@ -78,7 +79,7 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
     layer.value = pl?.layer === undefined ? "" : String(pl.layer);
     layer.addEventListener("change", () => actions.updatePlacement(name, { layer: layer.value === "" ? undefined : Number(layer.value) }));
     const anchor = h("select", { "data-testid": "ctl-anchor", disabled: off, title: "Arm and leg pieces: where along the limb (auto: a sleeve longer than the point's volume sits with its cap at the shoulder)" }, ...["auto", "point", "root", "tip"].map((n) => h("option", { value: n }, n)));
-    anchor.value = pl?.anchor ?? "auto";
+    anchor.value = typeof pl?.anchor === "string" ? pl.anchor : "auto";
     anchor.addEventListener("change", () => actions.updatePlacement(name, { anchor: anchor.value === "auto" ? undefined : (anchor.value as Placement["anchor"]) }));
     const arr = res?.arrange;
 
@@ -141,6 +142,7 @@ export function mountControls(host: HTMLElement, store: Store, actions: Actions)
       res ? h("div", { class: `side side-${res.extends}`, "data-testid": "extends" }, `extends ${sideText}`) : null,
       row("Offset (cm)", num("ctl-offset", pl?.offset_m == null ? null : pl.offset_m * 100, 0.5, (v) => actions.updatePlacement(name, { offset_m: v === null ? null : v / 100 }), "point default")),
       row("Rotation (deg)", rot, rotNum),
+      orientationSection(name, pl, res, actions, (info.named_points ?? []).map((p) => p.name)),
       row("Mirror", check("ctl-mirror", pl?.mirror ?? false, (b) => actions.updatePlacement(name, { mirror: b }))),
       row("Flip facing", check("ctl-flip", pl?.flip_facing ?? false, (b) => actions.updatePlacement(name, { flip_facing: b }))),
       row("Wrap", wrap),

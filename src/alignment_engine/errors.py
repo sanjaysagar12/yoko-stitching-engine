@@ -138,3 +138,11 @@ class SizeChangedError(AlignmentError):
 class ArrangementInfeasible(UserWarning):
     """The clearance and gap constraints cannot all be met within ``max_standoff`` and ``max_shift``; the best layout
     is returned with ``validity.valid = false`` and the violations."""
+
+
+class UnknownLevelError(AlignmentError):
+    """A level registration names a body level the avatar does not have."""
+
+    def __init__(self, name: str, known: list[str]) -> None:
+        self.name = name
+        super().__init__(f"unknown body level {name!r}; available: {', '.join(known)}")

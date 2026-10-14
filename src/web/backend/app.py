@@ -102,7 +102,7 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
 
     # -- alignment ---------------------------------------------------------------------------------------------------
     def spec_of(body: dict[str, Any]) -> dict[str, Any]:
-        spec: dict[str, Any] = {"schema_version": 3}
+        spec: dict[str, Any] = {"schema_version": int(body.get("schema_version", 5))}
         spec.update(
             {k: body[k] for k in ("placements", "stitches", "rings", "derived_pieces", "arrange_options") if k in body}
         )

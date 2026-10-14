@@ -8,3 +8,4 @@ models/
 outputs/
 node_modules/
 src/web/frontend/dist/
+build/

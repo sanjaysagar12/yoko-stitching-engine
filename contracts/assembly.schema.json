@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "assembly.schema.json",
+  "title": "Garment assembly: a placement spec plus what the result must show (assembler)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "garment",
+    "job",
+    "placements"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "garment": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "job": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$",
+      "description": "assert/jobs/<job>.json"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "arrange",
+        "incremental"
+      ],
+      "description": "the primary run: arrange (joint solve) or align one piece at a time"
+    },
+    "derived_pieces": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "as in placement_spec"
+    },
+    "placements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "piece",
+          "point"
+        ]
+      },
+      "description": "as in placement_spec (schema_version 5)"
+    },
+    "arrange_options": {
+      "type": "object",
+      "description": "as in placement_spec; allow_distortion must stay false"
+    },
+    "stitches": {
+      "type": "array"
+    },
+    "rings": {
+      "type": "array"
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required_pieces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "registration": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "piece",
+              "level"
+            ],
+            "properties": {
+              "piece": {
+                "type": "string"
+              },
+              "level": {
+                "enum": [
+                  "Neck",
+                  "Shoulder",
+                  "Chest",
+                  "Waist",
+                  "Hip",
+                  "Crotch",
+                  "Knee",
+                  "Ankle"
+                ]
+              },
+              "piece_point": {
+                "type": "string"
+              },
+              "edge": {
+                "enum": [
+                  "top",
+                  "bottom"
+                ]
+              },
+              "offset_m": {
+                "type": "number",
+                "description": "declared height of the registered point above the level (a fit decision, reported)"
+              }
+            }
+          }
+        },
+        "grain": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "vertical",
+              "any"
+            ]
+          }
+        },
+        "far_ok": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "pieces"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "pieces": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "levels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "dy_m": {
+                "type": "number"
+              },
+              "centre_xz": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "body_radius_m": {
+                "type": "number"
+              },
+              "concentric": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "levels for the cross-section plots"
+        }
+      }
+    },
+    "views": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+ "A - Skirt Back": {
+  "radius_m": 0.20783,
+  "registration_offset_m": 0.0
+ },
+ "A - Skirt Front": {
+  "radius_m": 0.22283,
+  "registration_offset_m": 0.0
+ },
+ "Skirt_Back_R": {
+  "radius_m": 0.20783,
+  "registration_offset_m": 0.0
+ },
+ "Skirt_Front_R": {
+  "radius_m": 0.22283,
+  "registration_offset_m": 0.0
+ }
+}

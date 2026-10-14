@@ -182,7 +182,11 @@
                     "PAIR_STACKED",
                     "PAIR_NO_ROOM",
                     "STANDOFF_EXCEEDED",
-                    "NOT_AT_POINT"
+                    "NOT_AT_POINT",
+                    "FLOOR",
+                    "OFF_REGION",
+                    "REGISTRATION",
+                    "ORIENTATION"
                   ]
                 }
               },
@@ -304,6 +308,59 @@
               "slide_m": {
                 "type": "number",
                 "description": "slide of the solver away from the anchor (s, t)"
+              },
+              "applied_rotation_deg": {
+                "type": "number",
+                "description": "in-plane rotation applied: rotation_deg plus orient"
+              },
+              "orient": {
+                "type": "string",
+                "description": "what orient did"
+              },
+              "tilt_deg": {
+                "type": "object",
+                "properties": {
+                  "pitch_deg": {
+                    "type": "number"
+                  },
+                  "roll_deg": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "registration": {
+                "type": "object",
+                "description": "level registration: the registered piece point/edge, the level height and how far from it the point ended",
+                "properties": {
+                  "level": {
+                    "type": "string"
+                  },
+                  "registered": {
+                    "type": "string"
+                  },
+                  "level_y_m": {
+                    "type": "number"
+                  },
+                  "offset_m": {
+                    "type": "number"
+                  },
+                  "shift_m": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "level",
+                  "registered",
+                  "level_y_m",
+                  "offset_m",
+                  "shift_m"
+                ],
+                "additionalProperties": false
+              },
+              "needed_radius_m": {
+                "type": "number",
+                "description": "the radius the piece needed when it was solved (body clearance, ring fit): carried so that its standoff keeps its reason"
               }
             },
             "additionalProperties": false
@@ -445,6 +502,10 @@
                     },
                     "minItems": 2,
                     "maxItems": 2
+                  },
+                  "needed_radius_m": {
+                    "type": "number",
+                    "description": "the radius the piece needed when it was solved (body clearance, ring fit): carried so that its standoff keeps its reason"
                   }
                 }
               }
@@ -729,7 +790,11 @@
                   "PAIR_ASYMMETRY",
                   "PAIR_STACKED",
                   "PAIR_NO_ROOM",
-                  "NOT_AT_POINT"
+                  "NOT_AT_POINT",
+                  "FLOOR",
+                  "OFF_REGION",
+                  "REGISTRATION",
+                  "ORIENTATION"
                 ]
               },
               "pieces": {
@@ -844,7 +909,11 @@
                   "PAIR_ASYMMETRY",
                   "PAIR_STACKED",
                   "PAIR_NO_ROOM",
-                  "NOT_AT_POINT"
+                  "NOT_AT_POINT",
+                  "FLOOR",
+                  "OFF_REGION",
+                  "REGISTRATION",
+                  "ORIENTATION"
                 ]
               },
               "pieces": {

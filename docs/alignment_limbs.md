@@ -80,8 +80,9 @@ images; the same call gives the same answer.
 
 ## Points (`avatar_engine`)
 
-A point is a ray from its volume's axis to the surface, then `offset_m` out along the surface normal. Every resolved
-point is checked: 0.5 to 3 radii (+ offset) from the volume's axis (flat hands and feet: at least the offset), normal
+A point is a ray from its volume's axis to the surface, then `offset_m` out along the surface normal. Its `up` runs
+along its volume's axis, toward the torso on a limb and upward on the torso (the Hip volume runs downward; before
+avatar_engine 0.2.1 the Hip points' up pointed to the floor). Every resolved point is checked: from the offset plus 0.2 radii up to 3 radii (+ offset) from the volume's axis (flat hands and feet: at least the offset), normal
 pointing away from the axis. A point that fails is re-cast from the volume vertex nearest the ray, and if that fails
 too the build stops with a `PointConfigError` naming the point. (The synthetic body's legs are single 40 cm triangle
 bands: the offset step ignored the hit triangle, whose vertices are all far from the hit, and walked to 3-11 m; the

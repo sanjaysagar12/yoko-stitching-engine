@@ -88,6 +88,26 @@ def test_build_is_cached_by_content_hash(client: TestClient, shirt: dict[str, An
         assert r["build_id"] == shirt["id"] and r["cached"] is True and r["status"] == "done"
 
 
+def test_align_round_trips_the_orientation_tools(client: TestClient, shirt: dict[str, Any]) -> None:
+    """The fields of the UI's Rotate and Hang-from-level tools reach the engine and come back in the answer."""
+    pl = {
+        "piece": "FrontPanel",
+        "point": "Chest_Front",
+        "wrap": "roll",
+        "rotation_deg": 5,
+        "orient": "grain",
+        "tilt": {"pitch_deg": 4, "roll_deg": -3},
+        "anchor": {"level": "Neck", "piece_point": "A22", "offset_m": 0.01},
+    }
+    r = client.post("/api/align", json={"build": shirt["id"], "placements": [pl]})
+    assert r.status_code == 200, r.text
+    a = r.json()["placements"][0]["arrange"]
+    assert a["applied_rotation_deg"] == pytest.approx(5.0)
+    assert a["tilt_deg"] == {"pitch_deg": 4.0, "roll_deg": -3.0}
+    assert a["registration"]["level"] == "Neck" and a["registration"]["registered"] == "A22"
+    assert r.json()["placements"][0]["changes_piece_size"] is False
+
+
 def test_align_places_the_front_panel_at_chest_front(client: TestClient, shirt: dict[str, Any]) -> None:
     pts = {p["name"]: p for p in shirt["result"]["avatar"]["points"]}
     body = {"build": shirt["id"], "placements": [{"piece": "FrontPanel", "point": "Chest_Front"}]}
