@@ -20,15 +20,22 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--renderer", choices=["soft", "web"], default="soft")
     r.add_argument("--fast", action="store_true", help="primary run only (no replays, carry or determinism checks)")
     r.add_argument("--no-render", action="store_true")
+    d = sub.add_parser("render", help="solve an assembly and write only the images (all views, sheet, sections)")
+    d.add_argument("assembly", type=Path)
+    d.add_argument("--out", type=Path, required=True)
+    d.add_argument("--synthetic", action="store_true", help="the synthetic test body instead of SMPL-X")
     c = sub.add_parser("check", help="validate an assembly file only")
     c.add_argument("assembly", type=Path)
     a = ap.parse_args(argv)
-    from .run import AssemblyError, load_assembly, run
+    from .run import AssemblyError, load_assembly, render_assembly, run
 
     try:
         if a.cmd == "check":
             load_assembly(a.assembly)
             print("ok")
+            return 0
+        if a.cmd == "render":
+            print(json.dumps(sorted(str(p) for p in render_assembly(a.assembly, a.out, a.synthetic).values())))
             return 0
         if a.renderer == "web":
             print("--renderer web needs the web app and Playwright; the soft renderer is used", file=sys.stderr)

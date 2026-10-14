@@ -14,11 +14,13 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from PIL import Image
 
 from alignment_engine import AlignmentEngine
 from alignment_engine.contracts import validate
@@ -126,12 +128,8 @@ def build_inputs(job_name: str, synthetic: bool, cache: Path) -> Inputs:
 
 
 # -- the spec ----------------------------------------------------------------------------------------------------------
-def load_assembly(path: Path) -> dict[str, Any]:
-    """Read and validate an assembly file (assembly schema; its placement spec against placement_spec)."""
-    try:
-        doc = json.loads(Path(path).read_text(encoding="utf-8-sig"))
-    except json.JSONDecodeError as e:
-        raise AssemblyError(f"{path}: invalid JSON: {e}") from None
+def check_doc(doc: dict[str, Any]) -> None:
+    """Validate an assembly document (assembly schema; its placement spec against placement_spec; real size kept)."""
     try:
         validate("assembly", doc)
         validate("placement_spec", spec_of(doc))
@@ -141,6 +139,15 @@ def load_assembly(path: Path) -> dict[str, Any]:
         raise AssemblyError("arrange_options.allow_distortion must stay false: pieces keep their real size")
     if any(pl.get("wrap") == "body_slice" for pl in doc["placements"]):
         raise AssemblyError("wrap body_slice changes piece sizes and is not allowed in an assembly")
+
+
+def load_assembly(path: Path) -> dict[str, Any]:
+    """Read and validate an assembly file (assembly schema; its placement spec against placement_spec)."""
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError as e:
+        raise AssemblyError(f"{path}: invalid JSON: {e}") from None
+    check_doc(doc)
     out: dict[str, Any] = doc
     return out
 
@@ -267,12 +274,22 @@ def images(
     res: AlignmentResult,
     avatar: Any,
     levels: dict[str, float],
-    near: dict[str, Any],
+    near: dict[str, Any] | None,
     options: dict[str, Any],
     expect: dict[str, Any],
     views: list[str] | None,
     points: dict[str, Any],
+    closeups: bool = True,
+    heat: bool = True,
+    progress: Callable[[str, float], None] | None = None,
+    failures: list[str] | None = None,
 ) -> dict[str, Path]:
+    """Render every view, the heat maps, sections, close-ups and the contact sheet into ``out``.
+
+    ``near`` (closest body points per piece) orients the close-ups; None computes it. ``progress(name, fraction)`` is
+    called before each image (it may raise to cancel). With ``failures`` a failing image is listed there instead of
+    stopping the others.
+    """
     img = out / "images"
     av = R.Mesh("avatar", avatar.vertices, avatar.faces, R.AVATAR)
     pieces = [R.Mesh(p.name, p.vertices, p.faces, R.piece_colour(i)) for i, p in enumerate(res.placed)]
@@ -280,43 +297,102 @@ def images(
     title = f"{garment} {it_name}"
     paths: dict[str, Path] = {}
     shown: list[tuple[str, Any]] = []
+    todo = len(R.VIEWS) + 3 + (2 if heat else 0) + (len(pieces) if closeups else 0)
+    count = 0
+
+    def step(name: str, fn: Callable[[], Any]) -> Any:
+        nonlocal count
+        if progress:
+            progress(name, count / todo)
+        count += 1
+        if failures is None:
+            return fn()
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001 - one broken image must not lose the others
+            failures.append(f"{name}: {type(e).__name__}: {e}")
+            return None
+
     for v in R.VIEWS:
         if views and v.name not in views:
             continue
-        im = R.render_view(scene, v, f"{title} - {v.name}")
-        paths[v.name] = R.save(im, img / f"{v.name}.png")
-        shown.append((v.name, im))
+        im = step(v.name, lambda v=v: R.render_view(scene, v, f"{title} - {v.name}"))  # type: ignore[misc]
+        if im is not None:
+            paths[v.name] = R.save(im, img / f"{v.name}.png")
+            shown.append((v.name, im))
     # with arrangement points used by the placements
     used = {p.point for p in res.placed}
     pts_scene = R.Scene(av, pieces, {n: np.asarray(points[n]["position_m"]) for n in sorted(used) if n in points})
-    im = R.render_view(pts_scene, R.VIEWS[0], f"{title} - front, arrangement points", labels=False)
-    paths["points"] = R.save(im, img / "points_front.png")
-    # clearance heat map
-    clear = float(options.get("clearance_body", 0.03))
+    im = step(
+        "points", lambda: R.render_view(pts_scene, R.VIEWS[0], f"{title} - front, arrangement points", labels=False)
+    )
+    if im is not None:
+        paths["points"] = R.save(im, img / "points_front.png")
     body = V.Surf(avatar.vertices, avatar.faces)
-    heat = []
-    for m in pieces:
-        d, _ = body.signed(m.vertices)
-        heat.append(R.Mesh(m.name, m.vertices, m.faces, m.colour, R.heat_colours(d, clear)))
-    hs = R.Scene(av, heat)
-    for vname in ("front", "back"):
-        v = next(x for x in R.VIEWS if x.name == vname)
-        im = R.render_view(hs, v, f"{title} - clearance {vname} (red < {clear * 100:.0f} cm, amber < +1 cm, green ok)")
-        paths[f"heat_{vname}"] = R.save(im, img / f"heat_{vname}.png")
-        shown.append((f"heat_{vname}", im))
+    if heat:  # clearance heat map
+        clear = float(options.get("clearance_body", 0.03))
+        hm = []
+        for m in pieces:
+            d, _ = body.signed(m.vertices)
+            hm.append(R.Mesh(m.name, m.vertices, m.faces, m.colour, R.heat_colours(d, clear)))
+        hs = R.Scene(av, hm)
+        for vname in ("front", "back"):
+            v = next(x for x in R.VIEWS if x.name == vname)
+            t = f"{title} - clearance {vname} (red < {clear * 100:.0f} cm, amber < +1 cm, green ok)"
+            im = step(f"heat_{vname}", lambda v=v, t=t: R.render_view(hs, v, t))  # type: ignore[misc]
+            if im is not None:
+                paths[f"heat_{vname}"] = R.save(im, img / f"heat_{vname}.png")
+                shown.append((f"heat_{vname}", im))
     lv = {k: levels[k] for k in (expect.get("sections") or SECTION_LEVELS) if k in levels}
-    xs = R.cross_sections(scene, lv, f"{title} - horizontal sections (top view, +z front up)")
-    paths["sections"] = R.save(xs, img / "sections.png")
-    shown.append(("sections", xs))
-    for m, p in zip(pieces, res.placed, strict=True):
-        q = near.get(p.name)
-        n = (p.vertices - q).mean(axis=0) if q is not None else np.array([0.0, 0.0, 1.0])
-        im = R.close_up(scene, m, n, f"{title} - close-up {p.name} on {p.point}")
-        safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in p.name)
-        paths[f"close:{p.name}"] = R.save(im, img / "closeups" / f"{safe}.png")
-    sheet = R.contact_sheet(shown, f"{title} - all views")
-    paths["sheet"] = R.save(sheet, out / "sheet.png")
+    xs = step("sections", lambda: R.cross_sections(scene, lv, f"{title} - horizontal sections (top view, +z front up)"))
+    if xs is not None:
+        paths["sections"] = R.save(xs, img / "sections.png")
+        shown.append(("sections", xs))
+    if closeups:
+        for m, p in zip(pieces, res.placed, strict=True):
+
+            def one(m: R.Mesh = m, p: Any = p) -> Image.Image:
+                q = near.get(p.name) if near is not None else body.closest(p.vertices)[1]
+                n = (p.vertices - q).mean(axis=0) if q is not None else np.array([0.0, 0.0, 1.0])
+                return R.close_up(scene, m, n, f"{title} - close-up {p.name} on {p.point}")
+
+            im = step(f"closeup {p.name}", one)
+            if im is not None:
+                safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in p.name)
+                paths[f"close:{p.name}"] = R.save(im, img / "closeups" / f"{safe}.png")
+    if shown:
+        sheet = step("sheet", lambda: R.contact_sheet(shown, f"{title} - all views"))
+        if sheet is not None:
+            paths["sheet"] = R.save(sheet, out / "sheet.png")
     return paths
+
+
+def render_result(
+    out: Path,
+    doc: dict[str, Any],
+    inp: Inputs,
+    res: AlignmentResult,
+    near: dict[str, Any] | None = None,
+    all_views: bool = False,
+    **kw: Any,
+) -> dict[str, Path]:
+    """``images`` for a solved assembly on a built ``Inputs`` (shared by ``assembler render`` and the web export)."""
+    avatar = read_avatar(inp.avatar)
+    points = {p["name"]: p for p in json.loads((inp.avatar / "arrangement_points.json").read_text("utf-8"))["points"]}
+    return images(
+        out,
+        doc["garment"],
+        out.name,
+        res,
+        avatar,
+        body_levels(avatar),
+        near,
+        res.doc["arrangement"]["options"],
+        doc.get("expect", {}),
+        None if all_views else doc.get("views"),
+        points,
+        **kw,
+    )
 
 
 def _md(garment: str, it_name: str, runs: dict[str, dict[str, Any]], extra: dict[str, Any]) -> str:
@@ -489,3 +565,13 @@ def run(
         )
     summary["seconds"] = round(time.perf_counter() - t0, 1)
     return summary
+
+
+def render_assembly(assembly: Path, out: Path, synthetic: bool = False, cache: Path | None = None) -> dict[str, Path]:
+    """``assembler render``: solve an assembly (its mode) and write only the images, all views, to ``out``."""
+    doc = load_assembly(assembly)
+    out = Path(out)
+    cache = cache or ROOT / "build" / "_cache"
+    inp = build_inputs(doc["job"], synthetic, cache)
+    res = _solve(AlignmentEngine(), inp, spec_of(doc), out / "derived", cache / "refined", doc.get("mode", "arrange"))
+    return render_result(out, doc, inp, res, all_views=True)

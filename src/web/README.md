@@ -37,6 +37,11 @@ error. Provided: `male_shirt`, `aldrich_skirt` (the two skirt pieces, female bod
 | `POST /api/clone` | `{build, source, axis, id}`: a linked mirrored copy of a piece (size, named points, files, suggested seam); `{build, source, id, op: "copy", derived_pieces?}`: an exact copy (no axis; the UI's **Clone**, for pieces cut twice / identical pieces; never a pair) |
 | `POST /api/pair` | `{build, base, derived_id, mode, derived_pieces}`: the two placements of a pair (`same_anchor` or `mirror_anchor`) |
 | `GET` / `PUT /api/jobs/{name}/placements` | load / save `outputs/<job>/placements.json` (placements and `derived_pieces`) |
+| `POST /api/assembly/import?job=&build=&skip_missing=` | body = the assembly JSON text (max 2 MB, UTF-8, BOM accepted). Without `build` only the file and its `job` are checked (schema, placement spec, no `allow_distortion`, no `body_slice`, `job` a known job name). With the id of that job's build every piece (original or declared derived) and every `point` is checked too. Answer: `{garment, job, notes, mode, run, derived_pieces, placements, arrange_options, stitches, rings, expect, views, warnings[]}`; `run` is `arrange`, `incremental` or `align` (every placement carries `solved`: nothing moves). The older `{placements, derived_pieces}` shape is upgraded (name its job with `?job=`). `skip_missing` leaves out placements of pieces the job does not have (listed in `warnings`) |
+| `POST /api/assembly/export` | `{job, placements, derived_pieces?, arrange_options?, stitches?, rings?, garment?, notes?, mode?, include_solved?, expect?, views?}` to the assembly file text (schema_version 1, 2-space indent, LF, stable key order), validated like `python -m assembler check` before it is returned. `expect` and `views` of an imported file are kept; otherwise `expect.required_pieces` = every placed piece |
+| `POST /api/export/images` | `{build, placements (with solved), derived_pieces, arrange_options, stitches, rings, garment, notes?, mode?, expect?, views?, options: {closeups, heat, verify, assembly}, viewport?: {name: png data URL}}`: starts a background render of the layout on screen (aligned incrementally with every `solved` block: nothing moves, nothing is solved from scratch) and returns `{id, status, stage, progress, files, failures}`; the same layout and options give the same id (cached) |
+| `GET /api/export/images/{id}` / `DELETE` | status (`queued` / `running` / `done` / `failed` / `cancelled`) / cancel |
+| `GET /api/export/images/{id}/download` | `<garment>_images.zip` (deterministic bytes): `front back left right top front_left front_right back_left back_right points_front heat_front heat_back sections sheet` as PNG, `closeups/<piece>.png`, `assembly.json`, `verify.md` / `verify.json` (option), `viewport/*.png` (option), `export_report.txt` (a view that failed to render is listed there; the others are kept) |
 | `GET /api/export/{id}?format=obj\|glb` | avatar plus the job's saved placements (avatar only if none are saved) |
 
 Builds run in a background thread pool and are cached in `outputs/<job>/<hash>/`, keyed by a hash of the three input
@@ -47,7 +52,7 @@ Errors are always `{"error": {"code", "message", "piece"?, "tool"?}}`, never a s
 `job_file_missing`, `unsupported_tool`, `missing_measurement`, `model_files_not_found`, `fit_did_not_converge`,
 `unknown_piece`, `unknown_point`, `unknown_named_point`, `reference_not_on_axis`, `no_mirrored_point`,
 `derived_of_derived`, `duplicate_piece`, `ring_not_found`, `size_changed`, `invalid_document`, `invalid_request`,
-`not_found`, `internal_error`, ...). **A failed
+`not_found`, `internal_error`, and for assembly files `invalid_assembly`, `unknown_job`, `unknown_piece`, `unknown_point`, `unsupported_option`: those errors also carry `problems: [{code, message}]`, every problem of the file, not only the first; `no_placements`, `export_not_found`, `export_not_ready`, ...). **A failed
 piece does not fail the build**: it is listed with `status: "failed"`, its `reason`, and the `tool` or variable named.
 
 ## Frontend
@@ -92,3 +97,22 @@ bounding box in cm is unchanged; set the CF point as reference in the inspector,
 `Place pair now`, click `Chest_Front` and check that both copies share the anchor and the CF edges coincide; a sleeve
 side pair; a back point is not pickable in the front view until X-ray), and `frontend/tests` (Vitest).
 Needs `npm run build` once and `python -m playwright install chromium`.
+
+## Import and export of assemblies, image export
+
+Topbar buttons (all with `data-testid`): **Import assembly** (`import-assembly`, file chooser `import-assembly-input`; a
+`.json` can also be dropped on the viewer), **Export assembly** (`export-assembly`), **Export images** (`export-images`);
+**Cancel** (`cancel-busy`) appears while an import or image export runs. Export buttons are disabled until a job is built.
+
+* Import: the file is read on the server (`/api/assembly/import`), its job is built if it is not the one on show (without
+  touching the current view), then derived pieces (mirrors and copies, no `/api/clone` calls: the first align/arrange
+  makes them), placements (every field), arrange options, stitches and rings are applied and assembled (`arrange` joint
+  solve, `incremental` one placement at a time). The panel over the viewer shows `Assembly: <garment> (<job>, N pieces,
+  M derived) - valid / N problems`, the import warnings, the file's notes and `expect` (read-only), **Re-assemble from
+  file** and **Revert** (the layout before the import). Any error keeps the previous layout; a missing piece offers
+  "Import without the missing pieces". A second import while one runs is refused with a message.
+* Export assembly: garment name, notes, "include solved poses" (on: the file reopens exactly as it is), mode.
+* Export images: close-ups, heat maps, verification report (slow: minutes on a real body), the assembly.json, and
+  "viewport screenshots" (the canvas from the five preset sides, under `viewport/`). The server renders with the
+  assembler's renderer (`python -m assembler render <assembly.json> --out DIR` uses the same function).
+* The conversion lives in `src/assembler/webio.py`; the frontend only calls the API and applies the answer.

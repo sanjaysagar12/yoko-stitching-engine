@@ -390,3 +390,159 @@ def test_symmetric_copy_on_the_other_side_has_no_handedness_hint(page: Any, serv
     page.wait_for_selector("[data-testid=copy-of]")
     page.wait_for_timeout(300)
     assert page.query_selector("[data-testid=copy-handedness]") is None
+
+
+# -- assembly import / export, image export ----------------------------------------------------------------
+MINI = {
+    "schema_version": 1,
+    "garment": "mini_shirt",
+    "job": "male_shirt",
+    "notes": "two front halves and a pocket",
+    "mode": "arrange",
+    "derived_pieces": [
+        {
+            "id": "FrontPanel_L",
+            "source": "FrontPanel",
+            "op": "mirror",
+            "axis": {"type": "edge", "from_point": "A33", "to_point": "A32"},
+        }
+    ],
+    "placements": [
+        {"piece": "FrontPanel", "point": "Chest_Front", "reference": "A32", "wrap": "roll"},
+        {"piece": "FrontPanel_L", "point": "Chest_Front", "reference": "A32", "wrap": "roll"},
+        {"piece": "Pocket", "point": "Chest_FrontSide_L", "wrap": "roll"},
+    ],
+    "expect": {"required_pieces": ["FrontPanel", "FrontPanel_L", "Pocket"]},
+}
+
+
+def mini_file(tmp_path: Path, doc: Any = None, name: str = "mini_shirt.assembly.json") -> str:
+    f = tmp_path / name
+    f.write_text(json.dumps(MINI if doc is None else doc), encoding="utf-8")
+    return str(f)
+
+
+def import_file(page: Any, path: str) -> None:
+    page.set_input_files("[data-testid=import-assembly-input]", path)
+
+
+def wait_assembled(page: Any) -> str:
+    page.wait_for_function(
+        "document.querySelector('[data-testid=assembly-summary]') && window.__fit.status().valid !== null"
+        " && window.__fit.ready()",
+        timeout=180_000,
+    )
+    return str(page.inner_text("[data-testid=assembly-summary]"))
+
+
+def test_import_assembly_builds_assembles_and_reports(page: Any, server: str, tmp_path: Path) -> None:
+    page.goto(server)  # nothing built yet: the job comes from the file
+    page.wait_for_function("document.querySelectorAll('[data-testid=job-select] option').length >= 4")
+    assert page.is_disabled("[data-testid=export-assembly]") and page.is_disabled("[data-testid=export-images]")
+    import_file(page, mini_file(tmp_path))
+    text = wait_assembled(page)
+    assert text == "Assembly: mini_shirt (male_shirt, 3 pieces, 1 derived) - valid"
+    st = page.evaluate("window.__fit.state()")
+    assert [p["piece"] for p in st["placements"]] == ["FrontPanel", "FrontPanel_L", "Pocket"]
+    assert st["derived"] == ["FrontPanel_L"] and all(p.get("solved") for p in st["placements"])
+    assert page.evaluate("window.__fit.arrangeState().arranged") is True
+    assert page.input_value("[data-testid=job-select]") == "male_shirt"
+    assert page.is_enabled("[data-testid=export-assembly]") and page.is_enabled("[data-testid=export-images]")
+    page.click("[data-testid=assembly-banner] summary")
+    assert "two front halves" in page.inner_text("[data-testid=assembly-notes]")
+    page.click("[data-testid=assembly-banner] details:nth-of-type(2) summary")
+    assert "required pieces (3)" in page.inner_text("[data-testid=assembly-expect]")
+    assert page.evaluate("window.__fit.status().valid") is True
+
+
+def test_export_assembly_downloads_a_valid_file(page: Any, server: str, tmp_path: Path) -> None:
+    from assembler.run import load_assembly
+
+    fresh(page, server)
+    import_file(page, mini_file(tmp_path))
+    wait_assembled(page)
+    page.click("[data-testid=export-assembly]")
+    assert page.input_value("[data-testid=export-garment]") == "mini_shirt"
+    assert "two front halves" in page.input_value("[data-testid=export-notes]")
+    page.fill("[data-testid=export-garment]", "my_shirt")
+    with page.expect_download() as dl:
+        page.click("[data-testid=export-assembly-go]")
+    assert dl.value.suggested_filename == "my_shirt.assembly.json"
+    out = tmp_path / "exported.assembly.json"
+    dl.value.save_as(out)
+    text = out.read_bytes().decode("utf-8")
+    assert "\r" not in text and text.endswith("\n")
+    doc = load_assembly(out)  # python -m assembler check
+    assert doc["garment"] == "my_shirt" and doc["job"] == "male_shirt" and doc["expect"] == MINI["expect"]
+    assert [p["piece"] for p in doc["placements"]] == ["FrontPanel", "FrontPanel_L", "Pocket"]
+    assert all("solved" in p for p in doc["placements"]) and doc["derived_pieces"][0]["id"] == "FrontPanel_L"
+    # the exported file imports again
+    page.on("dialog", lambda d: d.accept())
+    import_file(page, str(out))
+    page.wait_for_function("document.querySelector('[data-testid=assembly-summary]').textContent.includes('my_shirt')")
+    assert wait_assembled(page).startswith("Assembly: my_shirt")
+
+
+def test_export_images_downloads_a_zip(page: Any, server: str, tmp_path: Path) -> None:
+    import io
+    import zipfile
+
+    fresh(page, server)
+    import_file(page, mini_file(tmp_path))
+    wait_assembled(page)
+    page.click("[data-testid=export-images]")
+    page.uncheck("[data-testid=images-closeups]")
+    page.check("[data-testid=images-viewport]")
+    with page.expect_download(timeout=600_000) as dl:
+        page.click("[data-testid=export-images-go]")
+    assert dl.value.suggested_filename == "mini_shirt_images.zip"
+    out = tmp_path / "images.zip"
+    dl.value.save_as(out)
+    names = set(zipfile.ZipFile(io.BytesIO(out.read_bytes())).namelist())
+    assert len(names) >= 12 and {"sheet.png", "sections.png", "front.png", "assembly.json"} <= names
+    assert {"viewport/front.png", "viewport/top.png"} <= names
+
+
+def test_bad_file_keeps_the_layout_and_revert_goes_back(page: Any, server: str, tmp_path: Path) -> None:
+    page.on("dialog", lambda d: d.accept())  # "Replace the current layout?"
+    fresh(page, server)
+    page.click("[data-testid=piece-FrontPanel]")
+    click_point(page, "Chest_Front")
+    before = page.evaluate("window.__fit.state().placements")
+    assert [p["piece"] for p in before] == ["FrontPanel"]
+    import_file(page, mini_file(tmp_path))
+    wait_assembled(page)
+    assert len(page.evaluate("window.__fit.state().placements")) == 3
+    # a bad file: the error lists every problem and nothing changes
+    bad = {
+        **MINI,
+        "placements": [{**MINI["placements"][0], "piece": "Ghost"}, {**MINI["placements"][2], "point": "Nope"}],
+    }
+    import_file(page, mini_file(tmp_path, bad, "bad.assembly.json"))
+    page.wait_for_selector("[data-testid=error-problems]")
+    problems = page.inner_text("[data-testid=error-problems]")
+    assert "Ghost" in problems and "Nope" in problems
+    names = [p["piece"] for p in page.evaluate("window.__fit.state().placements")]
+    assert names == ["FrontPanel", "FrontPanel_L", "Pocket"]
+    page.click("[data-testid=import-skip-missing]")  # leaves Ghost out, but the unknown point stays an error
+    page.wait_for_function(
+        "(t => t.includes('Nope') && !t.includes('Ghost'))"
+        "(document.querySelector('[data-testid=error-problems]')?.textContent ?? '')"
+    )
+    # not JSON at all
+    junk = tmp_path / "junk.json"
+    junk.write_text("{oops", encoding="utf-8")
+    import_file(page, str(junk))
+    page.wait_for_function("document.querySelector('[data-testid=error-panel]').textContent.includes('not valid JSON')")
+    assert len(page.evaluate("window.__fit.state().placements")) == 3
+    # revert: the FrontPanel alone again
+    page.click("[data-testid=assembly-revert]")
+    page.wait_for_function("window.__fit.state().placements.length === 1 && window.__fit.ready()")
+    assert page.evaluate("window.__fit.state().placements")[0]["piece"] == "FrontPanel"
+    assert page.evaluate("window.__fit.state().derived") == []
+    # re-assemble from the file brings the mini shirt back
+    import_file(page, mini_file(tmp_path))
+    wait_assembled(page)
+    page.click("[data-testid=assembly-reassemble]")
+    page.wait_for_function("window.__fit.ready() && window.__fit.status().valid !== null")
+    assert len(page.evaluate("window.__fit.state().placements")) == 3

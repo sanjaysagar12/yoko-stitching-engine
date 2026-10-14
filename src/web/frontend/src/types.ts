@@ -13,6 +13,8 @@ export interface ApiError {
   message: string;
   piece?: string;
   tool?: string;
+  /** Assembly import: every problem found, each with its own code. */
+  problems?: Array<{ code: string; message: string }>;
 }
 
 export interface NamedPoint {
@@ -189,6 +191,10 @@ export interface ArrangeOptions {
   max_standoff: number;
   max_shift: number;
   refine_max_edge: number;
+  /** Not in the sliders; kept so that an imported assembly exports unchanged. */
+  max_standoff_from_point?: number;
+  standoff_mode?: "uniform" | "per_row";
+  incremental?: boolean;
 }
 
 export const DEFAULT_ARRANGE_OPTIONS: ArrangeOptions = {
@@ -373,3 +379,46 @@ export interface AlignResult {
 export type Selection =
   | { kind: "edge"; piece: string; id: string; from: string; to: string; length_m: number }
   | { kind: "point"; piece: string; name: string; world_m: [number, number, number] };
+
+/** What `POST /api/assembly/import` returns: an assembly file, normalised. `run` says how to assemble it. */
+export interface AssemblyPayload {
+  garment: string;
+  job: string;
+  notes: string;
+  mode: "arrange" | "incremental";
+  run: "arrange" | "align" | "incremental";
+  derived_pieces: DerivedDef[];
+  placements: Placement[];
+  arrange_options: Partial<ArrangeOptions>;
+  stitches: Stitch[];
+  rings: unknown[];
+  expect: AssemblyExpect;
+  views: string[];
+  warnings: string[];
+}
+
+export interface AssemblyExpect {
+  required_pieces?: string[];
+  registration?: Array<{ piece: string; level: string; piece_point?: string; edge?: string; offset_m?: number }>;
+  grain?: Record<string, string>;
+  far_ok?: string[];
+  rings?: Array<{ name: string; pieces: string[] }>;
+  sections?: string[];
+}
+
+export interface ExportJobStatus {
+  id: string;
+  status: "queued" | "running" | "done" | "failed" | "cancelled";
+  stage: string;
+  progress: number;
+  files: number;
+  failures: string[];
+  error?: ApiError;
+}
+
+export interface ImageExportOptions {
+  closeups: boolean;
+  heat: boolean;
+  verify: boolean;
+  assembly: boolean;
+}

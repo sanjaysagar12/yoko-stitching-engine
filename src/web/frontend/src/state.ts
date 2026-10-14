@@ -4,6 +4,7 @@ import type {
   ApiError,
   ArrangeOptions,
   Arrangement,
+  AssemblyPayload,
   BuildResult,
   DerivedDef,
   Job,
@@ -12,9 +13,30 @@ import type {
   PlacedResult,
   Placement,
   Selection,
+  Stitch,
   WrapMode,
 } from "./types";
 import { DEFAULT_ARRANGE_OPTIONS } from "./types";
+
+/** The layout as it was, to go back to (Revert after an import). */
+export interface LayoutSnapshot {
+  job: string | null;
+  placements: Placement[];
+  derived: DerivedDef[];
+  options: ArrangeOptions;
+  stitches: Stitch[];
+  rings: unknown[];
+  arranged: boolean;
+  assembly: AssemblyInfo | null;
+}
+
+/** An imported assembly file: what to assemble again and what to go back to. */
+export interface AssemblyInfo {
+  payload: AssemblyPayload;
+  before: LayoutSnapshot | null;
+  /** The panel was dismissed (the file stays known for Re-assemble and for the export). */
+  dismissed: boolean;
+}
 
 export interface State {
   jobs: Job[];
@@ -61,6 +83,12 @@ export interface State {
   selection: Selection | null;
   /** Text under the pointer while hovering an arranged piece (distance to its neighbours). */
   hoverText: string | null;
+  /** Stitches and rings that came with an imported assembly (the mirror seams are added from the derived pieces). */
+  stitches: Stitch[];
+  rings: unknown[];
+  assembly: AssemblyInfo | null;
+  /** Set while a long job (import, image export) can be cancelled. */
+  cancel: (() => void) | null;
 }
 
 export type Listener = (state: State, changed: ReadonlyArray<keyof State>) => void;
@@ -97,6 +125,10 @@ export class Store {
     highlight: [],
     selection: null,
     hoverText: null,
+    stitches: [],
+    rings: [],
+    assembly: null,
+    cancel: null,
   };
   private listeners = new Set<Listener>();
 

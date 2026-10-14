@@ -1,5 +1,5 @@
 // What the UI can ask the application to do (implemented in main.ts).
-import type { ArrangeOptions, Axis, PairMode, Placement } from "../types";
+import type { ArrangeOptions, Axis, ImageExportOptions, PairMode, Placement } from "../types";
 
 export interface CloneRequest {
   source: string;
@@ -53,4 +53,17 @@ export interface Actions {
   toggleHidden(piece: string): void;
   /** Frame the place of a violation and highlight its pieces. */
   focusViolation(index: number): void;
+  /** Import an assembly file (text or File): build its job, create the derived pieces, place and assemble. */
+  importAssembly(file: File | string, skipMissing?: boolean): Promise<void>;
+  /** The last import again, leaving out the pieces the job does not have. */
+  retryImportSkipping(): void;
+  reassemble(): void;
+  revertImport(): void;
+  dismissAssembly(): void;
+  /** Download the layout as `<garment>.assembly.json`. */
+  exportAssembly(o: { garment: string; notes: string; includeSolved: boolean; mode: "arrange" | "incremental" }): Promise<void>;
+  /** Render every view of the layout on screen on the server and download the zip. */
+  exportImages(o: { garment: string; options: ImageExportOptions; viewport: boolean }): Promise<void>;
+  /** Cancel the running import or image export. */
+  cancelBusy(): void;
 }

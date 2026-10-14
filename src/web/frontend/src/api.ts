@@ -3,9 +3,13 @@ import type {
   AlignResult,
   ApiError,
   ArrangeOptions,
+  AssemblyExpect,
+  AssemblyPayload,
   Axis,
   BuildStatus,
   DerivedDef,
+  ExportJobStatus,
+  ImageExportOptions,
   Job,
   PairMode,
   PieceBundle,
@@ -24,6 +28,10 @@ export class ApiFailure extends Error {
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  return (await (await requestRaw(url, init)).json()) as T;
+}
+
+async function requestRaw(url: string, init?: RequestInit): Promise<Response> {
   const res = await fetch(url, init);
   if (!res.ok) {
     let err: ApiError = { code: "http_error", message: `${res.status} ${res.statusText}` };
@@ -35,7 +43,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiFailure(res.status, err);
   }
-  return (await res.json()) as T;
+  return res;
 }
 
 const json = (method: string, body: unknown): RequestInit => ({
@@ -59,10 +67,11 @@ export const align = (
   stitches: Stitch[] = [],
   options?: ArrangeOptions,
   knownMeshes: string[] = [],
+  rings: unknown[] = [],
 ): Promise<AlignResult> =>
   request<AlignResult>(
     "/api/align",
-    json("POST", { build, placements, derived_pieces: derived, stitches, arrange_options: options, compact: true, known_meshes: knownMeshes }),
+    json("POST", { build, placements, derived_pieces: derived, stitches, rings, arrange_options: options, compact: true, known_meshes: knownMeshes }),
   );
 
 /** Re-solve every piece that is not locked (Auto-arrange). Same answer as align. */
@@ -73,10 +82,11 @@ export const arrange = (
   options: ArrangeOptions,
   stitches: Stitch[] = [],
   knownMeshes: string[] = [],
+  rings: unknown[] = [],
 ): Promise<AlignResult> =>
   request<AlignResult>(
     "/api/arrange",
-    json("POST", { build, placements, derived_pieces: derived, stitches, arrange_options: options, compact: true, known_meshes: knownMeshes }),
+    json("POST", { build, placements, derived_pieces: derived, stitches, rings, arrange_options: options, compact: true, known_meshes: knownMeshes }),
   );
 
 /** Make a linked mirrored copy of a piece (the backend asks the alignment engine). */
@@ -115,3 +125,47 @@ export async function fetchText(url: string): Promise<string> {
   if (!res.ok) throw new ApiFailure(res.status, { code: "http_error", message: `${url}: ${res.status}` });
   return res.text();
 }
+
+// -- assembly files and image export -------------------------------------------------------------------------------------
+
+/** Read an assembly file (text) on the server. Without `build` only the file and its job are checked. */
+export const importAssembly = (text: string, q: { job?: string; build?: string; skipMissing?: boolean } = {}): Promise<AssemblyPayload> => {
+  const params = new URLSearchParams();
+  if (q.job) params.set("job", q.job);
+  if (q.build) params.set("build", q.build);
+  if (q.skipMissing) params.set("skip_missing", "true");
+  return request<AssemblyPayload>(`/api/assembly/import?${params.toString()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: text,
+  });
+};
+
+export interface AssemblyExportBody {
+  job: string;
+  placements: Placement[];
+  derived_pieces: DerivedDef[];
+  arrange_options: ArrangeOptions;
+  stitches: Stitch[];
+  rings: unknown[];
+  garment: string;
+  notes: string;
+  mode: "arrange" | "incremental";
+  include_solved: boolean;
+  expect?: AssemblyExpect;
+  views?: string[];
+}
+
+/** The assembly file text (validated by the server). */
+export const exportAssembly = async (body: AssemblyExportBody): Promise<string> => (await requestRaw("/api/assembly/export", json("POST", body))).text();
+
+export interface ImageExportBody extends Omit<AssemblyExportBody, "include_solved" | "job"> {
+  build: string;
+  options: ImageExportOptions;
+  viewport?: Record<string, string>;
+}
+
+export const startImageExport = (body: ImageExportBody): Promise<ExportJobStatus> => request("/api/export/images", json("POST", body));
+export const imageExportStatus = (id: string): Promise<ExportJobStatus> => request(`/api/export/images/${encodeURIComponent(id)}`);
+export const cancelImageExport = (id: string): Promise<ExportJobStatus> => request(`/api/export/images/${encodeURIComponent(id)}`, { method: "DELETE" });
+export const imageExportUrl = (id: string): string => `/api/export/images/${encodeURIComponent(id)}/download`;

@@ -18,11 +18,14 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from alignment_engine import AlignmentEngine
+from assembler import webio
+from assembler.run import AssemblyError
 
 from .builds import BuildManager
 from .config import AppConfig
 from .errors import ENGINE_ERRORS, error_body, to_error
-from .jobs import JobError, list_jobs, load_job
+from .exports import ImageExports
+from .jobs import JobError, list_jobs, load_job, resolve_inputs
 
 _SAFE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
@@ -40,9 +43,16 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
     mgr = BuildManager(cfg)
     aligner = AlignmentEngine()
 
+    def body_json(job: str) -> dict[str, Any]:
+        loaded: dict[str, Any] = json.loads(resolve_inputs(cfg, load_job(cfg, job))[2].read_text(encoding="utf-8-sig"))
+        return loaded
+
+    exporter = ImageExports(body_json)
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
+        exporter.shutdown()
         mgr.shutdown()
 
     app = FastAPI(title="Pattern fit viewer", version="0.2.0", lifespan=lifespan)
@@ -75,8 +85,9 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
 
     @app.exception_handler(JobError)
     async def job_error(_: Request, e: JobError) -> JSONResponse:
-        status = 404 if e.code in ("job_not_found", "build_not_found") else 422
-        return JSONResponse(error_body(e.code, str(e)), status_code=status)
+        status = 404 if e.code in ("job_not_found", "build_not_found", "export_not_found") else 422
+        extra = {"problems": e.problems} if e.problems else {}
+        return JSONResponse(error_body(e.code, str(e), **extra), status_code=status)
 
     # -- jobs and builds -----------------------------------------------------------------------------------------------
     @app.get("/api/jobs")
@@ -229,6 +240,91 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
             warnings,
         )
         return {"placements": placements, "warnings": warnings}
+
+    # -- assembly files (import / export) and image export ------------------------------------------------------------
+    def problems_error(e: webio.AssemblyProblems) -> JobError:
+        return JobError(e.code, str(e), [{"code": c, "message": m} for c, m in e.problems])
+
+    @app.post("/api/assembly/import")
+    async def assembly_import(
+        request: Request, job: str | None = None, build: str | None = None, skip_missing: bool = False
+    ) -> dict[str, Any]:
+        """Read an assembly file (the request body) into the payload the viewer applies. Without ``build`` only the file
+        and its job are checked; with the id of the job's build every piece and point is checked too. Accepts the older
+        ``{placements, derived_pieces}`` shape (name its job with ``?job=``). Lists every problem."""
+        if int(request.headers.get("content-length") or 0) > webio.MAX_BYTES:
+            raise JobError("invalid_assembly", "file is larger than 2 MB")
+        raw = await request.body()
+        try:
+            doc, warns = webio.parse(raw, job)
+            try:
+                load_job(cfg, doc["job"])
+            except JobError:
+                raise webio.AssemblyProblems([("unknown_job", f"no job named {doc['job']!r} in this app")]) from None
+            if build:
+                b = ready_build({"build": build})
+                if b.job != doc["job"]:
+                    raise webio.AssemblyProblems(
+                        [("unknown_job", f"build {build} is of job {b.job!r}, not {doc['job']!r}")]
+                    )
+                pieces = {p["name"] for p in b.result["pieces"] if p["status"] == "ok"}
+                points = {p["name"] for p in b.result["avatar"]["points"]}
+                doc, more = webio.check_build(doc, pieces, points, skip_missing)
+                warns += more
+        except webio.AssemblyProblems as e:
+            raise problems_error(e) from None
+        return webio.normalise(doc, warns)
+
+    @app.post("/api/assembly/export")
+    def assembly_export(body: Annotated[dict[str, Any], Body()]) -> Response:
+        """The current layout as an assembly file: ``{job, placements, derived_pieces, arrange_options, stitches, rings,
+        garment, notes, mode, include_solved, expect?, views?}``. Validated before it is returned."""
+        load_job(cfg, str(body.get("job", "")))
+        try:
+            doc = webio.export_doc(
+                job=str(body["job"]),
+                placements=list(body.get("placements") or []),
+                derived_pieces=body.get("derived_pieces"),
+                arrange_options=body.get("arrange_options"),
+                stitches=body.get("stitches"),
+                rings=body.get("rings"),
+                garment=body.get("garment") or None,
+                notes=str(body.get("notes") or ""),
+                mode=str(body.get("mode") or "arrange"),
+                include_solved=bool(body.get("include_solved", True)),
+                expect=body.get("expect") or None,
+                views=body.get("views") or None,
+            )
+        except AssemblyError as e:
+            raise JobError("invalid_assembly", str(e)) from None
+        return Response(webio.dumps(doc), media_type="application/json")
+
+    @app.post("/api/export/images")
+    def export_images(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+        """Start the image zip of the layout on screen (see ``exports.py``); poll ``GET /api/export/images/{id}``."""
+        return exporter.start(ready_build(body), body).public()
+
+    def export_job(jid: str) -> Any:
+        j = exporter.get(jid)
+        if j is None:
+            raise JobError("export_not_found", f"no image export {jid!r}")
+        return j
+
+    @app.get("/api/export/images/{jid}")
+    def export_images_status(jid: str) -> dict[str, Any]:
+        return export_job(jid).public()  # type: ignore[no-any-return]
+
+    @app.delete("/api/export/images/{jid}")
+    def export_images_cancel(jid: str) -> dict[str, Any]:
+        export_job(jid)
+        return exporter.cancel(jid).public()  # type: ignore[union-attr]
+
+    @app.get("/api/export/images/{jid}/download")
+    def export_images_download(jid: str) -> Response:
+        j = export_job(jid)
+        if j.status != "done" or j.zip is None or not j.zip.is_file():
+            raise JobError("export_not_ready", f"image export {jid} is {j.status}")
+        return FileResponse(j.zip, media_type="application/zip", filename=f"{j.garment}_images.zip")
 
     @app.get("/api/jobs/{name}/placements")
     def get_placements(name: str) -> dict[str, Any]:

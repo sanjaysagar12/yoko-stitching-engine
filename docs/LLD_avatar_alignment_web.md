@@ -233,6 +233,9 @@ sequenceDiagram
 | `POST /api/align` | Placement spec in, alignment result out. The frontend never computes placement |
 | `GET /api/jobs/{name}/placements`, `PUT …` | Load or save `outputs/<job>/placements.json` |
 | `GET /api/export/{id}?format=obj\|glb` | Avatar plus placed pieces |
+| `POST /api/assembly/import` | An assembly file (or an older placements.json) to the normalised payload `{garment, job, notes, mode, run, derived_pieces, placements, arrange_options, stitches, rings, expect, views, warnings}`; errors list every problem (`invalid_assembly`, `unknown_job`, `unknown_piece`, `unknown_point`, `unsupported_option`) |
+| `POST /api/assembly/export` | The layout on screen to an assembly file (schema_version 1, validated) |
+| `POST /api/export/images`, `GET`/`DELETE /api/export/images/{id}`, `GET …/download` | Background render of the layout on screen to `<garment>_images.zip` (every view, sections, sheet, heat maps, close-ups, assembly.json); cached by a hash of build, layout and options; cancellable |
 
 Errors come back as `{"error": {"code", "message", "piece"?, "tool"?}}`. A failed piece does not fail the build: it appears in the piece list with `status: "failed"` and a reason. Jobs: `male_shirt`, `aldrich_skirt` (two skirt pieces), `trousers`, each pointing at a body in `assert/body/`.
 
@@ -475,3 +478,16 @@ faces once per `mesh_id`; `known_meshes` lists the ones the browser has), about 
   Both sleeves on one arm (ShortSleeve and FullSleeve) stack radially, 3 cm per layer.
 * Time on this CPU (AMD, no GPU): one changed piece of the 23-piece shirt about 0.7 - 1.7 s in the engine; a full arrange
   of the 23 pieces 8 - 12 s warm; the first run refines the pieces to 5 mm (about 30 s for the shirt, cached on disk).
+
+## 13. Assembly import / export and image export (web)
+
+The shared conversion is `src/assembler/webio.py` (the web backend may import the assembler; engines still import nothing
+from each other). Import is two calls so that the layout on screen is never touched by a bad file: call 1 (no build) checks
+the file and names the job; the frontend builds that job in the background; call 2 (`?build=`) checks every piece and point
+against the built job and returns the payload. Only then is the job switched and the layout replaced (a snapshot is kept for
+**Revert**). `run: "align"` is chosen when every placement carries `solved`, so an exported file reopens identically.
+Image export (`src/web/backend/exports.py`) uses a one-worker thread pool, aligns the posted placements incrementally
+(their `solved` blocks keep every piece where it is), renders with `assembler.run.render_result` and zips with
+`zipfile` (fixed timestamps: same layout, same bytes). Progress and cancel go through `GET`/`DELETE
+/api/export/images/{id}`; temp files are removed in a `finally`. Limit: `verify` (the independent verifier) takes minutes
+on a real body, so it is off by default.

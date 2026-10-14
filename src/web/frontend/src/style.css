@@ -165,3 +165,13 @@ aside h2:first-child { margin-top: 0; }
 .orient-box, .hang-box { margin: 8px 0; padding-top: 4px; border-top: 1px solid var(--line, #ddd); }
 .orient-box .btn-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
 .btn.small { padding: 2px 6px; min-width: 34px; }
+
+/* assembly import / export */
+.assembly-banner { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; max-width: min(760px, 92%); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); max-height: 40%; overflow: auto; }
+.assembly-banner.ok { border-color: #86efac; background: #f0fdf4; }
+.assembly-banner.bad { border-color: #fca5a5; background: #fef2f2; }
+.assembly-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.assembly-head .spacer { flex: 1; }
+.problems { margin: 4px 0 0; padding-left: 18px; }
+.clone-dialog textarea { flex: 1; min-width: 0; font: inherit; }
+.clone-dialog::backdrop { background: rgba(0, 0, 0, 0.25); }

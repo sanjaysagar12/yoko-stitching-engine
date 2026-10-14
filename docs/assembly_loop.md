@@ -107,6 +107,26 @@ soft renderer is used and the CLI says so.
   Flip face, Upside down, tilt sliders, the applied angles, undo / redo of orientation edits, and "Hang from level"
   (level, piece point or top / bottom edge, offset). The backend sends `schema_version` 5.
 
+## Web import/export
+
+Workflow: Claude Code's loop writes `assert/assemblies/<garment>.assembly.json` and verifies it (`python -m assembler
+run`) -> **Import assembly** in the web viewer (`src/web`) builds the job, makes the derived pieces, places and
+assembles -> adjust by hand (the pieces keep their real size; each edit is an incremental align) -> **Export assembly**
+(`<garment>.assembly.json`, accepted by `python -m assembler check` and `run`) and **Export images** (zip with every
+angle, `sheet.png`, `sections.png`, heat maps, close-ups; the layout on screen, not re-solved).
+
+* `src/assembler/webio.py`: `parse` / `check_build` / `normalise` (import: every problem listed with a code
+  `invalid_assembly`, `unknown_job`, `unknown_piece`, `unknown_point`, `unsupported_option`; `allow_distortion` and
+  `body_slice` are refused as in `load_assembly`), `export_doc` (validated by `run.check_doc`), `write_zip`
+  (deterministic).
+* An exported file with `solved` blocks reopens with `align` (nothing moves, identical); without them, with the
+  file's `mode` (`arrange` re-solves: the same garment within 1 mm in the tests).
+* `python -m assembler render <assembly.json> --out DIR [--synthetic]` solves the assembly and writes only the images
+  (all nine views, points, heat maps, sections, sheet, close-ups) with the same `run.images` function the loop and the
+  web export use.
+* Not in the file: avatar data, meshes, absolute paths. `expect`, `views` and `notes` of an imported file are kept
+  and shown; an export of a hand-made layout gets `expect.required_pieces` = every placed piece.
+
 ## Tests
 
 `tests/test_assembler.py` (schema good/bad, caching, the three assemblies end to end on the synthetic avatar,

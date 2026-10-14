@@ -70,6 +70,12 @@ export class SceneKit {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /** Draw one frame now (for a screenshot taken right after moving the camera). */
+  render(): void {
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+  }
+
   private resize(): void {
     const w = Math.max(this.host.clientWidth, 1);
     const h = Math.max(this.host.clientHeight, 1);

@@ -28,8 +28,9 @@ class JobFile(BaseModel):
 class JobError(Exception):
     """A job file is missing, malformed, or points at files that do not exist."""
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(self, code: str, message: str, problems: list[dict[str, str]] | None = None) -> None:
         self.code = code
+        self.problems = problems
         super().__init__(message)
 
 

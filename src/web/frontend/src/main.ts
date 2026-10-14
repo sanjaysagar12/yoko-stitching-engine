@@ -8,16 +8,22 @@ import {
   arrange as arrangeApi,
   ApiFailure,
   buildStatus,
+  cancelImageExport,
   clonePiece,
   copyPiece,
+  exportAssembly as exportAssemblyApi,
   exportUrl,
   fetchBundle,
   fileUrl,
+  imageExportStatus,
+  imageExportUrl,
+  importAssembly as importAssemblyApi,
   listJobs,
   loadPlacements,
   pairPlacements,
   savePlacements,
   startBuild,
+  startImageExport,
 } from "./api";
 import { AvatarView } from "./avatarView";
 import { formatMm, mirrorName, nearestPiece, VIOLATION_FRAME_M, withDependents } from "./lib";
@@ -27,12 +33,16 @@ import { PointsView } from "./pointsView";
 import { SceneKit } from "./scene";
 import { StitchView } from "./stitchView";
 import { defaultPlacement, Store } from "./state";
-import type { AlignResult, ApiError, ArrangeOptions, BuildResult, PairMode, PieceBundle, PieceInfo, Placement, Stitch } from "./types";
+import type { LayoutSnapshot } from "./state";
+import { DEFAULT_ARRANGE_OPTIONS } from "./types";
+import type { AlignResult, ApiError, ArrangeOptions, AssemblyPayload, BuildResult, ImageExportOptions, PairMode, PieceBundle, PieceInfo, Placement, Stitch } from "./types";
 import type { Actions, CloneRequest, CopyRequest } from "./ui/actions";
 import { mountArrange } from "./ui/arrange";
 import { mountCloneDialog, mountCopyDialog } from "./ui/cloneDialog";
+import { mountAssemblyPanel } from "./ui/assemblyPanel";
 import { mountControls } from "./ui/controls";
 import { mountErrors } from "./ui/errors";
+import { mountExportDialogs } from "./ui/exportDialogs";
 import { mountInspector } from "./ui/inspector";
 import { mountMeasurements } from "./ui/measurements";
 import { mountPieceList } from "./ui/pieceList";
@@ -233,6 +243,27 @@ const actions: Actions = {
     if (!next.delete(piece)) next.add(piece);
     store.set({ hiddenPieces: next });
   },
+  importAssembly: (file, skipMissing) => importAssemblyFile(file, skipMissing),
+  retryImportSkipping() {
+    if (lastImport !== null) void importAssemblyFile(lastImport, true);
+  },
+  reassemble() {
+    const a = store.get().assembly;
+    if (a) void runStep(() => applyAssembly(a.payload, a.before), `assembling ${a.payload.garment}...`);
+  },
+  revertImport() {
+    const before = store.get().assembly?.before;
+    if (before) void runStep(() => restore(before), "going back to the earlier layout...");
+  },
+  dismissAssembly() {
+    const a = store.get().assembly;
+    if (a) store.set({ assembly: { ...a, dismissed: true } });
+  },
+  exportAssembly: (o) => exportAssemblyFile(o),
+  exportImages: (o) => exportImagesZip(o),
+  cancelBusy() {
+    store.get().cancel?.();
+  },
   focusViolation(index) {
     const v = store.get().lastAlign?.validity?.violations[index];
     if (!v) return;
@@ -340,6 +371,21 @@ function suggestedStitches(): Stitch[] {
   return out;
 }
 
+/** The stitches of an imported file plus the mirror seams, each seam once, both ends placed. */
+function allStitches(): Stitch[] {
+  const s = store.get();
+  const seen = new Set<string>();
+  const out: Stitch[] = [];
+  for (const st of [...s.stitches, ...suggestedStitches()]) {
+    if (!s.placements.has(st.a.piece) || !s.placements.has(st.b.piece)) continue;
+    const key = JSON.stringify([st.a, st.b].map((e) => JSON.stringify(e)).sort());
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(st);
+  }
+  return out;
+}
+
 /** Faces of the rolled meshes by mesh id: they never change for a piece, so the backend sends them once. */
 const meshFaces = new Map<string, Uint32Array>();
 
@@ -391,40 +437,51 @@ function forgetSolved(): void {
   }
 }
 
-async function runAlign(): Promise<void> {
+/** Resolves to false when the engine refused the layout (the error is shown); true also when a newer request took over. */
+async function runAlign(): Promise<boolean> {
   const s = store.get();
-  if (!s.buildId) return;
+  if (!s.buildId) return true;
   const list = [...s.placements.values()];
-  if (list.length === 0 && s.derived.length === 0) return;
+  if (list.length === 0 && s.derived.length === 0) return true;
   const seq = ++alignSeq;
   try {
-    const res = await align(s.buildId, list, s.derived, suggestedStitches(), s.arrangeOptions, [...meshFaces.keys()]);
-    if (seq !== alignSeq) return; // a newer request is on its way
+    const res = await align(s.buildId, list, s.derived, allStitches(), s.arrangeOptions, [...meshFaces.keys()], s.rings);
+    if (seq !== alignSeq) return true; // a newer request is on its way
     await showResult(res, s.arranged);
     store.set({ lastAlign: res, arrangement: res.arrangement ?? null, error: null });
     store.touch("placed", "placements");
+    return true;
   } catch (e) {
-    if (seq === alignSeq) fail(e);
+    if (seq === alignSeq) {
+      fail(e);
+      return false;
+    }
+    return true;
   }
 }
 
 // -- auto-arrange --------------------------------------------------------------------------------------------------------
-async function runArrange(): Promise<void> {
+async function runArrange(): Promise<boolean> {
   const s = store.get();
-  if (!s.buildId) return;
+  if (!s.buildId) return true;
   forgetSolved(); // a fresh arrangement of everything that is not locked
   const list = [...s.placements.values()];
-  if (list.length === 0) return;
+  if (list.length === 0) return true;
   const seq = ++alignSeq;
   store.set({ busy: { text: "arranging around the body...", progress: 0.5 }, error: null });
   try {
-    const res = await arrangeApi(s.buildId, list, s.derived, s.arrangeOptions, suggestedStitches(), [...meshFaces.keys()]);
-    if (seq !== alignSeq) return;
+    const res = await arrangeApi(s.buildId, list, s.derived, s.arrangeOptions, allStitches(), [...meshFaces.keys()], s.rings);
+    if (seq !== alignSeq) return true;
     await showResult(res, true);
     store.set({ lastAlign: res, arrangement: res.arrangement ?? null, arranged: true, busy: null, error: null, selection: null });
     store.touch("placed", "placements");
+    return true;
   } catch (e) {
-    if (seq === alignSeq) fail(e);
+    if (seq === alignSeq) {
+      fail(e);
+      return false;
+    }
+    return true;
   }
 }
 
@@ -525,6 +582,274 @@ async function loadSaved(): Promise<void> {
   }
 }
 
+// -- assembly import / export, image export -------------------------------------------------------------------------------
+class Cancelled extends Error {}
+
+const clientError = (code: string, message: string): ApiFailure => new ApiFailure(0, { code, message });
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+let importToken = 0;
+let importing = false;
+let lastImport: string | null = null;
+
+/** Copy of the layout on show (placements keep their `solved`, so going back is an incremental align). */
+function snapshot(): LayoutSnapshot {
+  const s = store.get();
+  return {
+    job: s.job,
+    placements: [...s.placements.values()].map((p) => ({ ...p })),
+    derived: [...s.derived],
+    options: { ...s.arrangeOptions },
+    stitches: [...s.stitches],
+    rings: [...s.rings],
+    arranged: s.arranged,
+    assembly: s.assembly,
+  };
+}
+
+/** Empty the layout: placements, all derived pieces (they are made again from the new list), results and selections. */
+function clearLayout(): void {
+  const s = store.get();
+  alignSeq++; // an answer still on its way belongs to the old layout
+  for (const name of [...s.placements.keys()]) {
+    pieces.clear(name, false);
+    s.placed.delete(name);
+  }
+  s.placements.clear();
+  for (const d of s.derived) {
+    pieces.remove(d.id);
+    s.derivedInfos.delete(d.id);
+  }
+  pieces.endArrangement();
+  s.referenceDraft.clear();
+  store.set({ derived: [], lastAlign: null, arrangement: null, arranged: false, selectedPiece: null, pendingPoint: null, pendingPair: null, selection: null, highlight: [], hoverText: null });
+  store.touch("placements", "placed", "derived", "derivedInfos");
+}
+
+/** Run a step with a busy message; an error leaves the earlier state and is shown. */
+async function runStep(step: () => Promise<boolean>, text: string): Promise<boolean> {
+  store.set({ busy: { text, progress: 0.5 }, error: null });
+  try {
+    const ok = await step();
+    store.set({ busy: null });
+    return ok;
+  } catch (e) {
+    fail(e);
+    return false;
+  }
+}
+
+/** Align one placement at a time, every earlier `solved` block carried (the way the placements were made by hand). */
+async function assembleIncremental(): Promise<boolean> {
+  const s = store.get();
+  const todo = [...s.placements.values()].map((p) => {
+    const fresh = { ...p };
+    delete fresh.solved;
+    return fresh;
+  });
+  s.placements.clear();
+  for (const [i, pl] of todo.entries()) {
+    s.placements.set(pl.piece, pl);
+    store.set({ busy: { text: `assembling ${i + 1}/${todo.length}: ${pl.piece}`, progress: (i + 1) / todo.length } });
+    store.touch("placements");
+    if (!(await runAlign())) return false;
+  }
+  return true;
+}
+
+/** Make the layout of an imported file: derived pieces, placements, options; then run the assembly. */
+async function applyAssembly(payload: AssemblyPayload, before: LayoutSnapshot | null): Promise<boolean> {
+  const s = store.get();
+  clearLayout();
+  store.set({
+    derived: payload.derived_pieces.map((d) => ({ ...d })),
+    arrangeOptions: { ...DEFAULT_ARRANGE_OPTIONS, ...payload.arrange_options },
+    stitches: payload.stitches,
+    rings: payload.rings,
+    arranged: payload.mode === "arrange",
+    assembly: { payload, before, dismissed: false },
+  });
+  for (const p of payload.placements) s.placements.set(p.piece, { ...p });
+  store.touch("placements", "derived");
+  if (payload.run === "incremental") return assembleIncremental();
+  return payload.run === "align" ? runAlign() : runArrange();
+}
+
+/** Back to an earlier layout (switching job when needed). */
+async function restore(snap: LayoutSnapshot): Promise<boolean> {
+  if (!snap.job) return true;
+  if (store.get().job !== snap.job) await buildJob(snap.job);
+  const s = store.get();
+  clearLayout();
+  store.set({ derived: [...snap.derived], arrangeOptions: { ...snap.options }, stitches: snap.stitches, rings: snap.rings, arranged: snap.arranged, assembly: snap.assembly });
+  for (const p of snap.placements) s.placements.set(p.piece, { ...p });
+  store.touch("placements", "derived");
+  return snap.placements.length === 0 ? true : runAlign();
+}
+
+/** Start the build of a job and wait for it, without touching what is on show. Returns the build id. */
+async function waitBuild(job: string, token: number): Promise<string> {
+  const started = await startBuild(job);
+  for (;;) {
+    const st = await buildStatus(started.build_id);
+    if (token !== importToken) throw new Cancelled();
+    if (st.status === "failed") throw new ApiFailure(422, st.error ?? { code: "build_failed", message: "build failed" });
+    if (st.status === "done") return st.id;
+    store.set({ busy: { text: `building ${job}: ${st.stage}`, progress: Math.max(0.05, st.progress * 0.8) } });
+    await sleep(350);
+  }
+}
+
+async function importAssemblyFile(file: File | string, skipMissing = false): Promise<void> {
+  if (importing) {
+    store.set({ error: { code: "busy", message: "An import is already running: wait for it or cancel it first." } });
+    return;
+  }
+  importing = true;
+  const token = ++importToken;
+  const before = snapshot();
+  try {
+    if (typeof file !== "string" && file.size > 2_000_000) throw clientError("invalid_assembly", "file is larger than 2 MB");
+    store.set({ error: null, busy: { text: "reading the assembly...", progress: 0.03 }, cancel: () => void importToken++ });
+    const text = typeof file === "string" ? file : await file.text();
+    lastImport = text;
+    const first = await importAssemblyApi(text, { job: store.get().job ?? undefined });
+    if (token !== importToken) throw new Cancelled();
+    if (store.get().placements.size > 0 && !window.confirm("Replace the current layout?")) throw new Cancelled();
+    const buildId = await waitBuild(first.job, token);
+    store.set({ busy: { text: "checking pieces and points...", progress: 0.85 } });
+    const payload = await importAssemblyApi(text, { job: first.job, build: buildId, skipMissing });
+    if (token !== importToken) throw new Cancelled();
+    store.set({ cancel: null });
+    if (store.get().buildId !== buildId) await buildJob(first.job);
+    if (store.get().buildId !== buildId) return; // the build failed (its error is shown)
+    store.set({ busy: { text: `assembling ${payload.garment}...`, progress: 0.9 } });
+    if (!(await applyAssembly(payload, before))) {
+      const err = store.get().error; // the engine refused the layout: put the earlier one back
+      await restore(before);
+      store.set({ error: err });
+    }
+    store.set({ busy: null });
+  } catch (e) {
+    if (e instanceof Cancelled) store.set({ busy: null });
+    else fail(e);
+  } finally {
+    importing = false;
+    store.set({ cancel: null });
+  }
+}
+
+const download = (href: string, name: string): void => {
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+};
+
+/** What an imported file declared about the result (kept when the same job is exported again). */
+function keptFromImport(): { expect?: AssemblyPayload["expect"]; views?: string[] } {
+  const a = store.get().assembly;
+  if (!a || a.payload.job !== store.get().job) return {};
+  return { expect: a.payload.expect, views: a.payload.views };
+}
+
+async function exportAssemblyFile(o: { garment: string; notes: string; includeSolved: boolean; mode: "arrange" | "incremental" }): Promise<void> {
+  const s = store.get();
+  if (!s.job) return;
+  try {
+    const text = await exportAssemblyApi({
+      job: s.job,
+      placements: [...s.placements.values()],
+      derived_pieces: s.derived,
+      arrange_options: s.arrangeOptions,
+      stitches: allStitches(),
+      rings: s.rings,
+      garment: o.garment,
+      notes: o.notes,
+      mode: o.mode,
+      include_solved: o.includeSolved,
+      ...keptFromImport(),
+    });
+    const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    download(url, `${o.garment}.assembly.json`);
+    window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    store.set({ error: null, busy: { text: `exported ${o.garment}.assembly.json`, progress: 1 } });
+    window.setTimeout(() => store.set({ busy: null }), 2500);
+  } catch (e) {
+    fail(e);
+  }
+}
+
+/** Screenshots of the canvas from the five preset sides (what the viewer would show), camera put back afterwards. */
+function captureViewports(): Record<string, string> {
+  const pos = kit.camera.position.clone();
+  const target = kit.controls.target.clone();
+  const out: Record<string, string> = {};
+  for (const side of ["front", "back", "left", "right", "top"] as const) {
+    kit.view(side, avatar.bounds());
+    kit.render();
+    out[side] = kit.renderer.domElement.toDataURL("image/png");
+  }
+  kit.camera.position.copy(pos);
+  kit.controls.target.copy(target);
+  kit.controls.update();
+  return out;
+}
+
+async function exportImagesZip(o: { garment: string; options: ImageExportOptions; viewport: boolean }): Promise<void> {
+  const s = store.get();
+  if (!s.buildId) return;
+  if (s.placements.size === 0) {
+    store.set({ error: { code: "no_placements", message: "Place at least one piece before exporting images." } });
+    return;
+  }
+  if (s.cancel) {
+    store.set({ error: { code: "busy", message: "Another long job is running: wait for it or cancel it first." } });
+    return;
+  }
+  let id: string | undefined;
+  store.set({ error: null, busy: { text: "exporting images...", progress: 0.02 }, cancel: () => void (id ? cancelImageExport(id) : (id = ""))});
+  try {
+    const a = s.assembly;
+    let st = await startImageExport({
+      build: s.buildId,
+      placements: [...s.placements.values()],
+      derived_pieces: s.derived,
+      arrange_options: s.arrangeOptions,
+      stitches: allStitches(),
+      rings: s.rings,
+      garment: o.garment,
+      notes: a?.payload.notes ?? "",
+      mode: a?.payload.mode ?? "arrange",
+      options: o.options,
+      ...(o.viewport ? { viewport: captureViewports() } : {}),
+      ...keptFromImport(),
+    });
+    const jobId = st.id;
+    if (id === "") await cancelImageExport(jobId); // cancelled while it was starting
+    id = jobId;
+    while (st.status === "queued" || st.status === "running") {
+      store.set({ busy: { text: `exporting images: ${st.stage}`, progress: Math.max(0.03, st.progress) } });
+      await sleep(400);
+      st = await imageExportStatus(jobId);
+    }
+    if (st.status === "failed") throw new ApiFailure(422, st.error ?? { code: "export_failed", message: "image export failed" });
+    if (st.status === "cancelled") {
+      store.set({ busy: { text: "image export cancelled", progress: 1 } });
+    } else {
+      download(imageExportUrl(jobId), `${o.garment}_images.zip`);
+      const bad = st.failures.length;
+      store.set({ busy: { text: bad ? `images exported; ${bad} failed (see export_report.txt)` : `exported ${st.files} files`, progress: 1 } });
+    }
+    window.setTimeout(() => store.set({ busy: null }), 3500);
+  } catch (e) {
+    fail(e);
+  } finally {
+    store.set({ cancel: null });
+  }
+}
+
 // -- builds ---------------------------------------------------------------------------------------------------------------
 async function buildJob(name: string): Promise<void> {
   const token = ++buildToken;
@@ -615,6 +940,17 @@ canvas.addEventListener("pointermove", (ev) => {
   }
 });
 
+const viewHost = must("view");
+viewHost.addEventListener("dragover", (ev) => {
+  if (ev.dataTransfer?.types.includes("Files")) ev.preventDefault();
+});
+viewHost.addEventListener("drop", (ev) => {
+  const f = ev.dataTransfer?.files[0];
+  if (!f) return;
+  ev.preventDefault();
+  void importAssemblyFile(f);
+});
+
 // -- keep the views in sync with the state ----------------------------------------------------------------------------------
 store.subscribe((s, changed) => {
   if (changed.includes("selectedPiece")) pieces.setSelected(s.selectedPiece);
@@ -635,7 +971,8 @@ store.subscribe((s, changed) => {
   }
 });
 
-mountTopbar(must("topbar"), store, actions);
+const exportDialogs = mountExportDialogs(store, actions);
+mountTopbar(must("topbar"), store, actions, exportDialogs);
 mountViewbar(must("viewbar"), store, actions);
 mountPieceList(must("left"), store, actions);
 mountArrange(must("left"), store, actions);
@@ -645,7 +982,8 @@ inspectorHost.className = "inspector-host";
 must("right").append(inspectorHost);
 const inspector = mountInspector(inspectorHost, store, actions, getBundle);
 mountControls(must("right"), store, actions);
-mountErrors(must("view"), store);
+mountErrors(must("view"), store, actions);
+mountAssemblyPanel(must("view"), store, actions);
 mountStatus(must("view"), store, actions);
 const openCloneDialog = mountCloneDialog(store, actions, inspector);
 const openCopyDialog = mountCopyDialog(store, actions);
