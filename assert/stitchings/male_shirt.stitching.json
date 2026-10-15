@@ -1,0 +1,980 @@
+{
+  "schema_version": "1.0",
+  "garment": "male_shirt",
+  "assembly": "assert/assemblies/male_shirt.assembly.json",
+  "notes": "Seam suffix _L / _R = the wearer's left (+x) / right (-x). The alignment puts the pattern's own pieces (FrontPanel, BackPanel, Yoke, CollarBase, CollarTop) on +x and their *_L mirrors on -x, while FullSleeve_L, Cuff_L and the *_L plackets are on +x. Interfacings and the variants (ShortSleeve, PocketRound, PocketFlapRound) are not in the assembly.",
+  "defaults": {
+    "samples_per_cm": 2,
+    "max_length_diff_pct": 3,
+    "max_gap_m": 0.3
+  },
+  "seams": [
+    {
+      "id": "shoulder_L",
+      "label": "left shoulder: front neck point A22 -> shoulder end A23 to yoke A15 -> A17",
+      "kind": "plain",
+      "allow_far": true,
+      "a": {
+        "piece": "FrontPanel",
+        "chain": [
+          "A22",
+          "A21",
+          "A23"
+        ]
+      },
+      "b": {
+        "piece": "Yoke",
+        "chain": [
+          "A15",
+          "A16",
+          "A17"
+        ]
+      }
+    },
+    {
+      "id": "side_L",
+      "label": "left side seam: underarm A24 -> hem, front to back",
+      "kind": "plain",
+      "a": {
+        "piece": "FrontPanel",
+        "chain": [
+          "A24",
+          "A30",
+          "A47"
+        ]
+      },
+      "b": {
+        "piece": "BackPanel",
+        "chain": [
+          "A24",
+          "A31",
+          "A48"
+        ]
+      }
+    },
+    {
+      "id": "yoke_back_L",
+      "label": "left yoke seam: back top (CB A34, box pleat A34-A25 2.9 cm, to A27) into the yoke's lower edge A25 -> A26; the pleat is laid into the seam (gather)",
+      "kind": "gather",
+      "a": {
+        "piece": "BackPanel",
+        "chain": [
+          "A34",
+          "A25",
+          "A27"
+        ]
+      },
+      "b": {
+        "piece": "Yoke",
+        "chain": [
+          "A25",
+          "A26"
+        ]
+      },
+      "ease": {
+        "mode": "gather",
+        "ratio": 1.15
+      }
+    },
+    {
+      "id": "back_dart_L",
+      "label": "left back fish-eye dart, cut open to the hem: leg A49 -> apex A37 to leg A50 -> A37",
+      "kind": "dart",
+      "a": {
+        "piece": "BackPanel",
+        "chain": [
+          "A49",
+          "A46",
+          "A40",
+          "A37"
+        ]
+      },
+      "b": {
+        "piece": "BackPanel",
+        "chain": [
+          "A50",
+          "A38",
+          "A39",
+          "A37"
+        ]
+      }
+    },
+    {
+      "id": "armhole_L",
+      "label": "left sleeve cap C5 -> C4 into the armhole: front A24 -> A23, yoke A17 -> A26, back A27 -> A24 (ease spread along the seam). ",
+      "kind": "ease",
+      "allow_crossings": "the cap rings the T-pose arm 12-23 cm from the armhole, which spans three pieces (front, yoke on the back, back): segments of that layout cross",
+      "a": {
+        "piece": "FullSleeve_L",
+        "chain": [
+          "C5",
+          "C12",
+          "C13",
+          "C",
+          "C10",
+          "C6",
+          "C9",
+          "C4"
+        ]
+      },
+      "b": {
+        "parts": [
+          {
+            "piece": "FrontPanel",
+            "chain": [
+              "A24",
+              "A23"
+            ]
+          },
+          {
+            "piece": "Yoke",
+            "chain": [
+              "A17",
+              "A26"
+            ]
+          },
+          {
+            "piece": "BackPanel",
+            "chain": [
+              "A27",
+              "A24"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "underarm_L",
+      "label": "left sleeve underarm seam, hem -> cap",
+      "kind": "plain",
+      "a": {
+        "piece": "FullSleeve_L",
+        "chain": [
+          "C15",
+          "C33",
+          "C36",
+          "C5"
+        ]
+      },
+      "b": {
+        "piece": "FullSleeve_L",
+        "chain": [
+          "C16",
+          "C34",
+          "C37",
+          "C4"
+        ]
+      }
+    },
+    {
+      "id": "cuff_L",
+      "label": "left sleeve hem (two pleats C22-C24-C21 and C20-C23-C19 folded in; both sides of the placket slit) gathered into the cuff's upper edge",
+      "kind": "gather",
+      "a": {
+        "parts": [
+          {
+            "piece": "FullSleeve_L",
+            "chain": [
+              "C16",
+              "C27",
+              "C14",
+              "C22",
+              "C24",
+              "C21",
+              "C20",
+              "C23",
+              "C19",
+              "C17",
+              "C25"
+            ]
+          },
+          {
+            "piece": "FullSleeve_L",
+            "chain": [
+              "C18",
+              "C29",
+              "C15"
+            ],
+            "trim_start_m": 0.15
+          }
+        ]
+      },
+      "b": {
+        "piece": "Cuff_L",
+        "chain": [
+          "C14",
+          "C22",
+          "C21",
+          "C20",
+          "C19",
+          "C17",
+          "C25",
+          "C28",
+          "C15",
+          "C30"
+        ]
+      },
+      "ease": {
+        "mode": "gather",
+        "ratio": 1.6
+      }
+    },
+    {
+      "id": "placket_under_L",
+      "label": "left under placket (folded binding) E1 -> E onto the slit side C18 -> C25 (sewn, then folded over the slit; placed at its own forearm point, 20-35 cm from the slit)",
+      "kind": "fold",
+      "allow_far": true,
+      "a": {
+        "piece": "PlacketUnder_L",
+        "chain": [
+          "E1",
+          "E"
+        ]
+      },
+      "b": {
+        "piece": "FullSleeve_L",
+        "chain": [
+          "C18",
+          "C25"
+        ]
+      }
+    },
+    {
+      "id": "placket_top_L",
+      "label": "left top placket E1 -> E onto the slit side C18 -> slit bottom (15.0 cm; the last 6.13 cm of that edge is hem; sewn, then folded over the slit; placed at its own forearm point, 20-35 cm from the slit)",
+      "kind": "fold",
+      "allow_far": true,
+      "a": {
+        "piece": "PlacketTop_L",
+        "chain": [
+          "E1",
+          "E"
+        ]
+      },
+      "b": {
+        "piece": "FullSleeve_L",
+        "chain": [
+          "C18",
+          "C29"
+        ],
+        "trim_end_m": 0.0613
+      }
+    },
+    {
+      "id": "neck_L",
+      "label": "left collar stand lower edge D8 -> CB D2 onto the neckline: front from mid button stand (CF, 2.75 cm in from A32) -> A22, yoke A15 -> CB A28",
+      "kind": "ease",
+      "allow_far": true,
+      "allow_crossings": "the stand reaches only CB -> side of the neck while the neckline runs CB -> CF on the front and the back: segments of that rotated layout cross",
+      "a": {
+        "piece": "CollarBase",
+        "chain": [
+          "D8",
+          "D7",
+          "D2"
+        ]
+      },
+      "b": {
+        "parts": [
+          {
+            "piece": "FrontPanel",
+            "chain": [
+              "A32",
+              "A20",
+              "A22"
+            ],
+            "trim_start_m": 0.0275
+          },
+          {
+            "piece": "Yoke",
+            "chain": [
+              "A15",
+              "A28"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "collar_L",
+      "label": "left collar fall lower edge CB D4 -> D10 onto the stand's upper edge CB D13 -> D10",
+      "kind": "plain",
+      "a": {
+        "piece": "CollarTop",
+        "chain": [
+          "D4",
+          "D10"
+        ]
+      },
+      "b": {
+        "piece": "CollarBase",
+        "chain": [
+          "D13",
+          "D10"
+        ]
+      }
+    },
+    {
+      "id": "shoulder_R",
+      "label": "right shoulder: front neck point A22 -> shoulder end A23 to yoke A15 -> A17",
+      "kind": "plain",
+      "allow_far": true,
+      "a": {
+        "piece": "FrontPanel_L",
+        "chain": [
+          "A22",
+          "A21",
+          "A23"
+        ]
+      },
+      "b": {
+        "piece": "Yoke_L",
+        "chain": [
+          "A15",
+          "A16",
+          "A17"
+        ]
+      }
+    },
+    {
+      "id": "side_R",
+      "label": "right side seam: underarm A24 -> hem, front to back",
+      "kind": "plain",
+      "a": {
+        "piece": "FrontPanel_L",
+        "chain": [
+          "A24",
+          "A30",
+          "A47"
+        ]
+      },
+      "b": {
+        "piece": "BackPanel_L",
+        "chain": [
+          "A24",
+          "A31",
+          "A48"
+        ]
+      }
+    },
+    {
+      "id": "yoke_back_R",
+      "label": "right yoke seam: back top (CB A34, box pleat A34-A25 2.9 cm, to A27) into the yoke's lower edge A25 -> A26; the pleat is laid into the seam (gather)",
+      "kind": "gather",
+      "a": {
+        "piece": "BackPanel_L",
+        "chain": [
+          "A34",
+          "A25",
+          "A27"
+        ]
+      },
+      "b": {
+        "piece": "Yoke_L",
+        "chain": [
+          "A25",
+          "A26"
+        ]
+      },
+      "ease": {
+        "mode": "gather",
+        "ratio": 1.15
+      }
+    },
+    {
+      "id": "back_dart_R",
+      "label": "right back fish-eye dart, cut open to the hem: leg A49 -> apex A37 to leg A50 -> A37",
+      "kind": "dart",
+      "a": {
+        "piece": "BackPanel_L",
+        "chain": [
+          "A49",
+          "A46",
+          "A40",
+          "A37"
+        ]
+      },
+      "b": {
+        "piece": "BackPanel_L",
+        "chain": [
+          "A50",
+          "A38",
+          "A39",
+          "A37"
+        ]
+      }
+    },
+    {
+      "id": "armhole_R",
+      "label": "right sleeve cap C5 -> C4 into the armhole: front A24 -> A23, yoke A17 -> A26, back A27 -> A24 (ease spread along the seam). ",
+      "kind": "ease",
+      "allow_crossings": "the cap rings the T-pose arm 12-23 cm from the armhole, which spans three pieces (front, yoke on the back, back): segments of that layout cross",
+      "a": {
+        "piece": "FullSleeve",
+        "chain": [
+          "C5",
+          "C12",
+          "C13",
+          "C",
+          "C10",
+          "C6",
+          "C9",
+          "C4"
+        ]
+      },
+      "b": {
+        "parts": [
+          {
+            "piece": "FrontPanel_L",
+            "chain": [
+              "A24",
+              "A23"
+            ]
+          },
+          {
+            "piece": "Yoke_L",
+            "chain": [
+              "A17",
+              "A26"
+            ]
+          },
+          {
+            "piece": "BackPanel_L",
+            "chain": [
+              "A27",
+              "A24"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "underarm_R",
+      "label": "right sleeve underarm seam, hem -> cap",
+      "kind": "plain",
+      "a": {
+        "piece": "FullSleeve",
+        "chain": [
+          "C15",
+          "C33",
+          "C36",
+          "C5"
+        ]
+      },
+      "b": {
+        "piece": "FullSleeve",
+        "chain": [
+          "C16",
+          "C34",
+          "C37",
+          "C4"
+        ]
+      }
+    },
+    {
+      "id": "cuff_R",
+      "label": "right sleeve hem (two pleats C22-C24-C21 and C20-C23-C19 folded in; both sides of the placket slit) gathered into the cuff's upper edge",
+      "kind": "gather",
+      "a": {
+        "parts": [
+          {
+            "piece": "FullSleeve",
+            "chain": [
+              "C16",
+              "C27",
+              "C14",
+              "C22",
+              "C24",
+              "C21",
+              "C20",
+              "C23",
+              "C19",
+              "C17",
+              "C25"
+            ]
+          },
+          {
+            "piece": "FullSleeve",
+            "chain": [
+              "C18",
+              "C29",
+              "C15"
+            ],
+            "trim_start_m": 0.15
+          }
+        ]
+      },
+      "b": {
+        "piece": "Cuff",
+        "chain": [
+          "C14",
+          "C22",
+          "C21",
+          "C20",
+          "C19",
+          "C17",
+          "C25",
+          "C28",
+          "C15",
+          "C30"
+        ]
+      },
+      "ease": {
+        "mode": "gather",
+        "ratio": 1.6
+      }
+    },
+    {
+      "id": "placket_under_R",
+      "label": "right under placket (folded binding) E1 -> E onto the slit side C18 -> C25 (sewn, then folded over the slit; placed at its own forearm point, 20-35 cm from the slit)",
+      "kind": "fold",
+      "allow_far": true,
+      "a": {
+        "piece": "PlacketUnder",
+        "chain": [
+          "E1",
+          "E"
+        ]
+      },
+      "b": {
+        "piece": "FullSleeve",
+        "chain": [
+          "C18",
+          "C25"
+        ]
+      }
+    },
+    {
+      "id": "placket_top_R",
+      "label": "right top placket E1 -> E onto the slit side C18 -> slit bottom (15.0 cm; the last 6.13 cm of that edge is hem; sewn, then folded over the slit; placed at its own forearm point, 20-35 cm from the slit)",
+      "kind": "fold",
+      "allow_far": true,
+      "a": {
+        "piece": "PlacketTop",
+        "chain": [
+          "E1",
+          "E"
+        ]
+      },
+      "b": {
+        "piece": "FullSleeve",
+        "chain": [
+          "C18",
+          "C29"
+        ],
+        "trim_end_m": 0.0613
+      }
+    },
+    {
+      "id": "neck_R",
+      "label": "right collar stand lower edge D8 -> CB D2 onto the neckline: front from mid button stand (CF, 2.75 cm in from A32) -> A22, yoke A15 -> CB A28",
+      "kind": "ease",
+      "allow_far": true,
+      "allow_crossings": "the stand reaches only CB -> side of the neck while the neckline runs CB -> CF on the front and the back: segments of that rotated layout cross",
+      "a": {
+        "piece": "CollarBase_L",
+        "chain": [
+          "D8",
+          "D7",
+          "D2"
+        ]
+      },
+      "b": {
+        "parts": [
+          {
+            "piece": "FrontPanel_L",
+            "chain": [
+              "A32",
+              "A20",
+              "A22"
+            ],
+            "trim_start_m": 0.0275
+          },
+          {
+            "piece": "Yoke_L",
+            "chain": [
+              "A15",
+              "A28"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "collar_R",
+      "label": "right collar fall lower edge CB D4 -> D10 onto the stand's upper edge CB D13 -> D10",
+      "kind": "plain",
+      "a": {
+        "piece": "CollarTop_L",
+        "chain": [
+          "D4",
+          "D10"
+        ]
+      },
+      "b": {
+        "piece": "CollarBase_L",
+        "chain": [
+          "D13",
+          "D10"
+        ]
+      }
+    },
+    {
+      "id": "centre_front",
+      "label": "centre front: the button stands' edges A32 -> A33 closed (buttoned; sewn shut for the simulation)",
+      "kind": "join_mirror",
+      "a": {
+        "piece": "FrontPanel",
+        "chain": [
+          "A32",
+          "A33"
+        ]
+      },
+      "b": {
+        "piece": "FrontPanel_L",
+        "chain": [
+          "A32",
+          "A33"
+        ]
+      }
+    },
+    {
+      "id": "centre_back",
+      "label": "centre back fold A34 -> A35 (back cut on the fold)",
+      "kind": "join_mirror",
+      "a": {
+        "piece": "BackPanel",
+        "chain": [
+          "A34",
+          "A35"
+        ]
+      },
+      "b": {
+        "piece": "BackPanel_L",
+        "chain": [
+          "A34",
+          "A35"
+        ]
+      }
+    },
+    {
+      "id": "yoke_cb",
+      "label": "yoke centre back fold A28 -> A25",
+      "kind": "join_mirror",
+      "a": {
+        "piece": "Yoke",
+        "chain": [
+          "A28",
+          "A25"
+        ]
+      },
+      "b": {
+        "piece": "Yoke_L",
+        "chain": [
+          "A28",
+          "A25"
+        ]
+      }
+    },
+    {
+      "id": "stand_cb",
+      "label": "collar stand centre back D2 -> D3",
+      "kind": "join_mirror",
+      "a": {
+        "piece": "CollarBase",
+        "chain": [
+          "D2",
+          "D3"
+        ]
+      },
+      "b": {
+        "piece": "CollarBase_L",
+        "chain": [
+          "D2",
+          "D3"
+        ]
+      }
+    },
+    {
+      "id": "collar_cb",
+      "label": "collar fall centre back D4 -> D1",
+      "kind": "join_mirror",
+      "a": {
+        "piece": "CollarTop",
+        "chain": [
+          "D4",
+          "D1"
+        ]
+      },
+      "b": {
+        "piece": "CollarTop_L",
+        "chain": [
+          "D4",
+          "D1"
+        ]
+      }
+    },
+    {
+      "id": "pocket",
+      "label": "patch pocket: sides and pointed bottom P7 -> P6 onto the left front (mouth P7-B1-P6 open)",
+      "kind": "attach",
+      "a": {
+        "piece": "Pocket",
+        "chain": [
+          "P7",
+          "P1",
+          "B4",
+          "P2",
+          "P4",
+          "P5",
+          "B3",
+          "P",
+          "P6"
+        ]
+      },
+      "b": {
+        "onto": "FrontPanel"
+      }
+    },
+    {
+      "id": "pocket_flap",
+      "label": "pocket flap top edge P -> P1 onto the left front above the pocket",
+      "kind": "attach",
+      "a": {
+        "piece": "PocketFlap",
+        "chain": [
+          "P",
+          "P1"
+        ]
+      },
+      "b": {
+        "onto": "FrontPanel"
+      }
+    }
+  ],
+  "ignore_edges": [
+    {
+      "piece": "FrontPanel",
+      "chain": [
+        "A47",
+        "A8",
+        "A33"
+      ],
+      "reason": "front hem (finished)"
+    },
+    {
+      "piece": "FrontPanel",
+      "chain": [
+        "A32",
+        "A20"
+      ],
+      "reason": "button stand top beyond the collar stand (folded in)"
+    },
+    {
+      "piece": "BackPanel",
+      "chain": [
+        "A48",
+        "A49"
+      ],
+      "reason": "back hem (finished)"
+    },
+    {
+      "piece": "BackPanel",
+      "chain": [
+        "A50",
+        "Hemline",
+        "A35"
+      ],
+      "reason": "back hem (finished)"
+    },
+    {
+      "piece": "Cuff_L",
+      "chain": [
+        "C30",
+        "C31",
+        "C1",
+        "C14"
+      ],
+      "reason": "cuff ends (button closure) and folded lower edge"
+    },
+    {
+      "piece": "PlacketTop_L",
+      "chain": [
+        "E1",
+        "E5",
+        "E6",
+        "E9",
+        "E7",
+        "E4",
+        "E"
+      ],
+      "reason": "top placket: folded outer edges topstitched, bottom caught in the cuff"
+    },
+    {
+      "piece": "PlacketUnder_L",
+      "chain": [
+        "E1",
+        "E3",
+        "E2",
+        "E"
+      ],
+      "reason": "under placket: fold and ends (bottom caught in the cuff)"
+    },
+    {
+      "piece": "CollarBase",
+      "chain": [
+        "D10",
+        "D9",
+        "D8"
+      ],
+      "reason": "collar stand front end (button / buttonhole)"
+    },
+    {
+      "piece": "CollarTop",
+      "chain": [
+        "D1",
+        "D11",
+        "D10"
+      ],
+      "reason": "collar fall: outer edge and point (finished)"
+    },
+    {
+      "piece": "FrontPanel_L",
+      "chain": [
+        "A47",
+        "A8",
+        "A33"
+      ],
+      "reason": "front hem (finished)"
+    },
+    {
+      "piece": "FrontPanel_L",
+      "chain": [
+        "A32",
+        "A20"
+      ],
+      "reason": "button stand top beyond the collar stand (folded in)"
+    },
+    {
+      "piece": "BackPanel_L",
+      "chain": [
+        "A48",
+        "A49"
+      ],
+      "reason": "back hem (finished)"
+    },
+    {
+      "piece": "BackPanel_L",
+      "chain": [
+        "A50",
+        "Hemline",
+        "A35"
+      ],
+      "reason": "back hem (finished)"
+    },
+    {
+      "piece": "Cuff",
+      "chain": [
+        "C30",
+        "C31",
+        "C1",
+        "C14"
+      ],
+      "reason": "cuff ends (button closure) and folded lower edge"
+    },
+    {
+      "piece": "PlacketTop",
+      "chain": [
+        "E1",
+        "E5",
+        "E6",
+        "E9",
+        "E7",
+        "E4",
+        "E"
+      ],
+      "reason": "top placket: folded outer edges topstitched, bottom caught in the cuff"
+    },
+    {
+      "piece": "PlacketUnder",
+      "chain": [
+        "E1",
+        "E3",
+        "E2",
+        "E"
+      ],
+      "reason": "under placket: fold and ends (bottom caught in the cuff)"
+    },
+    {
+      "piece": "CollarBase_L",
+      "chain": [
+        "D10",
+        "D9",
+        "D8"
+      ],
+      "reason": "collar stand front end (button / buttonhole)"
+    },
+    {
+      "piece": "CollarTop_L",
+      "chain": [
+        "D1",
+        "D11",
+        "D10"
+      ],
+      "reason": "collar fall: outer edge and point (finished)"
+    },
+    {
+      "piece": "Pocket",
+      "chain": [
+        "P7",
+        "B1",
+        "P6"
+      ],
+      "reason": "pocket mouth (hemmed)"
+    },
+    {
+      "piece": "PocketFlap",
+      "chain": [
+        "P1",
+        "B4",
+        "B5",
+        "B3",
+        "P"
+      ],
+      "reason": "flap free edges"
+    }
+  ],
+  "expect": {
+    "required_seams": [
+      "shoulder_L",
+      "side_L",
+      "yoke_back_L",
+      "back_dart_L",
+      "armhole_L",
+      "underarm_L",
+      "cuff_L",
+      "placket_under_L",
+      "placket_top_L",
+      "neck_L",
+      "collar_L",
+      "shoulder_R",
+      "side_R",
+      "yoke_back_R",
+      "back_dart_R",
+      "armhole_R",
+      "underarm_R",
+      "cuff_R",
+      "placket_under_R",
+      "placket_top_R",
+      "neck_R",
+      "collar_R",
+      "centre_front",
+      "centre_back",
+      "yoke_cb",
+      "stand_cb",
+      "collar_cb",
+      "pocket",
+      "pocket_flap"
+    ]
+  }
+}

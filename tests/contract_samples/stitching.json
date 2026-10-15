@@ -1,0 +1,75 @@
+{
+ "schema_version": "1.0",
+ "garment": "aldrich_skirt",
+ "assembly": "assert/assemblies/aldrich_skirt.assembly.json",
+ "notes": "Seam suffix _L / _R = the wearer's left (+x) / right (-x). The alignment puts the pattern's own blocks ('A - Skirt Front', 'A - Skirt Back') on -x and their mirrors (Skirt_Front_R, Skirt_Back_R) on +x. The job (assert/jobs/aldrich_skirt.json) has only the two skirt blocks: no waistband, facing or zip piece, so the waist edge is left free. The darts are not cut into the outline: each is sewn along its legs from the waist (dart-cap points on the outline) to its apex (an interior named point).",
+ "defaults": {
+  "samples_per_cm": 2,
+  "max_length_diff_pct": 3,
+  "max_gap_m": 0.3
+ },
+ "seams": [
+  {
+   "id": "side_R",
+   "label": "right side seam: front waist A16 -> hip A7 -> hem A8c to back waist A10 -> A7 -> hem A8a",
+   "kind": "plain",
+   "a": {
+    "piece": "A - Skirt Front",
+    "chain": [
+     "A16",
+     "A16e",
+     "A16b",
+     "A7",
+     "A8c"
+    ]
+   },
+   "b": {
+    "piece": "A - Skirt Back",
+    "chain": [
+     "A10",
+     "A10b",
+     "A7",
+     "A8a"
+    ]
+   }
+  },
+  {
+   "id": "front_dart_R",
+   "label": "right front dart: leg A17a -> apex A18 to leg A17b -> A18",
+   "kind": "dart",
+   "a": {
+    "piece": "A - Skirt Front",
+    "line": [
+     "A17a",
+     "A18"
+    ]
+   },
+   "b": {
+    "piece": "A - Skirt Front",
+    "line": [
+     "A17b",
+     "A18"
+    ]
+   }
+  }
+ ],
+ "ignore_edges": [
+  {
+   "piece": "A - Skirt Front",
+   "chain": [
+    "A2",
+    "A17b",
+    "A17e",
+    "A17a",
+    "A17d",
+    "A16"
+   ],
+   "reason": "waist: no waistband in the job (finished edge); A17b-A17e-A17a is the front dart cap"
+  }
+ ],
+ "expect": {
+  "required_seams": [
+   "side_R"
+  ]
+ }
+}

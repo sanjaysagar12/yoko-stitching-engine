@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stitching.schema.json",
+  "title": "Garment stitching: which outline chains of the placed pieces are sewn together (stitcher)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "garment",
+    "assembly",
+    "seams"
+  ],
+  "$defs": {
+    "chain": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "named points on the outline, in sewing order; the outline is walked between the first and the last the way that passes every listed point (an exact list of one way wins; otherwise ambiguous is an error)"
+    },
+    "part": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "piece"
+      ],
+      "properties": {
+        "piece": {
+          "type": "string",
+          "description": "a placed piece of the assembly (derived names included)"
+        },
+        "chain": {
+          "$ref": "#/$defs/chain"
+        },
+        "reverse": {
+          "type": "boolean",
+          "default": false,
+          "description": "sew this chain from its last point to its first"
+        },
+        "trim_start_m": {
+          "type": "number",
+          "minimum": 0,
+          "description": "cut this much off the start of the chain as listed (a seam that ends between named points)"
+        },
+        "trim_end_m": {
+          "type": "number",
+          "minimum": 0,
+          "description": "cut this much off the end of the chain as listed"
+        },
+        "line": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string"
+          },
+          "description": "a straight polyline through named points inside the piece (a dart leg down to its apex); trims do not apply"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "chain"
+          ]
+        },
+        {
+          "required": [
+            "line"
+          ]
+        }
+      ]
+    },
+    "side": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/part"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "parts"
+          ],
+          "properties": {
+            "parts": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/part"
+              },
+              "description": "chains sewn one after the other (an armhole of front, yoke and back)"
+            },
+            "reverse": {
+              "type": "boolean",
+              "default": false,
+              "description": "reverse the whole side (part order and every part)"
+            }
+          }
+        }
+      ]
+    },
+    "onto": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "onto"
+      ],
+      "properties": {
+        "onto": {
+          "type": "string",
+          "description": "attach: the host piece; side b is the closest point of its placed surface to every sample of side a"
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "garment": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "assembly": {
+      "type": "string",
+      "description": "path of the assembly JSON (repository-relative) or sha256:<hex> of one in assert/assemblies"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "samples_per_cm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "default": 2
+        },
+        "max_length_diff_pct": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3,
+          "description": "tolerance of ease none when a seam has no tolerance_pct"
+        },
+        "max_gap_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 0.3,
+          "description": "largest world gap of a seam without allow_far"
+        }
+      }
+    },
+    "seams": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "a",
+          "b"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          },
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "plain",
+              "ease",
+              "gather",
+              "fold",
+              "join_mirror",
+              "dart",
+              "attach"
+            ],
+            "description": "plain: a flat join, the pieces end on opposite sides of the seam; ease / gather: plain with a length difference; fold: the pieces end on the same side (a facing turned in, a bag sewn round its edge, a placket folded over the slit); join_mirror: a piece and its mirror_of/clone_of twin along the centre edge; dart: two legs of one piece; attach: side a sewn onto the surface of the host piece named by b {onto} (patch pockets, flaps)"
+          },
+          "a": {
+            "$ref": "#/$defs/side"
+          },
+          "b": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/side"
+              },
+              {
+                "$ref": "#/$defs/onto"
+              }
+            ]
+          },
+          "ease": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode"
+            ],
+            "properties": {
+              "mode": {
+                "enum": [
+                  "none",
+                  "distribute",
+                  "gather"
+                ],
+                "description": "none: lengths equal within tolerance_pct; distribute: up to 5 % spread along the seam; gather: up to the declared ratio"
+              },
+              "ratio": {
+                "type": "number",
+                "minimum": 1,
+                "description": "gather: the largest allowed long/short length ratio (recorded for the simulation)"
+              }
+            }
+          },
+          "tolerance_pct": {
+            "type": "number",
+            "minimum": 0
+          },
+          "required": {
+            "type": "boolean",
+            "default": true
+          },
+          "allow_far": {
+            "type": "boolean",
+            "default": false,
+            "description": "the world gap may exceed defaults.max_gap_m (the simulation closes it)"
+          },
+          "allow_crossings": {
+            "type": "string",
+            "minLength": 10,
+            "description": "why sewing segments of the initial layout cross although the seam is oriented right (pieces placed apart or rotated, a jog in the outline, a step between layers): crossings are then reported, not judged; the sewing rule is always judged"
+          }
+        }
+      }
+    },
+    "ignore_edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "piece",
+          "reason"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "edge"
+            ]
+          },
+          {
+            "required": [
+              "chain"
+            ]
+          }
+        ],
+        "properties": {
+          "piece": {
+            "type": "string"
+          },
+          "edge": {
+            "type": "string",
+            "description": "an edge id FROM-TO of the alignment result"
+          },
+          "chain": {
+            "$ref": "#/$defs/chain"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required_seams": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

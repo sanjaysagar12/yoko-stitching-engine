@@ -281,3 +281,26 @@ def write_zip(path: Path, files: dict[str, Path | bytes]) -> Path:
             info.external_attr = 0o644 << 16
             z.writestr(info, src if isinstance(src, bytes) else src.read_bytes())
     return path
+
+
+def stitch_run_folder(
+    out: Path, res: Any, spec: dict[str, Any], pieces: Path, avatar: Path, derived: Path, synthetic: bool = False
+) -> Path:
+    """A folder the stitcher reads like an ``assembler run`` output, for a layout solved elsewhere (the web app):
+    ``result.json`` and ``verify.json`` with the inputs and the size audit (every ``size.*`` row of the primary run)."""
+    from . import verify as V
+    from .run import Inputs, bundles_of, run_view
+
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    doc = {**res.doc, "arrangement": {**res.doc["arrangement"], "timing_s": 0.0}}
+    (out / "result.json").write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8", newline="\n")
+    rv = run_view("primary", res, spec, bundles_of(Inputs(Path(pieces), Path(avatar), None, "", {}), Path(derived)))
+    V.check_size(rv)
+    verify = {
+        "pass": V.verdict(rv.rows),
+        "inputs": {"pieces": str(pieces), "avatar": str(avatar), "derived": str(derived), "synthetic": synthetic},
+        "runs": {"primary": {"rows": rv.rows}},
+    }
+    (out / "verify.json").write_text(json.dumps(verify, indent=1) + "\n", encoding="utf-8", newline="\n")
+    return out

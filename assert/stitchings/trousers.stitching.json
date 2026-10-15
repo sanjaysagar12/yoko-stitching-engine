@@ -1,0 +1,756 @@
+{
+  "schema_version": "1.0",
+  "garment": "trousers",
+  "assembly": "assert/assemblies/trousers.assembly.json",
+  "notes": "Seam suffix _L / _R = the wearer's left (+x) / right (-x). Pieces on the wearer's left: Front_L, Back, PocketFront_L, PocketBack_L, WaistBand1; right: Front_with_pocket, Back_R, PocketFront, PocketBack, Waistband2. The pocket mouth and panel facings (PocketMouth, PocketPanel), Front_Pleats and Front_no_pocket are not in the assembly.",
+  "defaults": {
+    "samples_per_cm": 2,
+    "max_length_diff_pct": 3,
+    "max_gap_m": 0.3
+  },
+  "seams": [
+    {
+      "id": "inseam_L",
+      "label": "left inseam: crotch point -> knee -> hem, front to back. The leg panels lie on the front and back of the thigh, so the two inseams are 42-44 cm apart across the inner leg (allow_far: the simulation closes it)",
+      "kind": "plain",
+      "allow_far": true,
+      "a": {
+        "piece": "Front_L",
+        "chain": [
+          "CrotchPointFront",
+          "A7",
+          "A20",
+          "A24",
+          "A57"
+        ]
+      },
+      "b": {
+        "piece": "Back",
+        "chain": [
+          "CrotchPointBack",
+          "A8",
+          "A21",
+          "A25",
+          "A58"
+        ]
+      }
+    },
+    {
+      "id": "outseam_L",
+      "label": "left outseam: waist -> hem; the front side is the pocket back piece A54 -> A53 (waist to below the pocket opening), then the front A46 -> hem",
+      "kind": "plain",
+      "allow_crossings": "side a steps from the pocket back piece (layer 2, ends at A53) to the front (layer 0, starts at A46): on the SMPL-X body that 6 cm step crosses one pair of sewing segments",
+      "a": {
+        "parts": [
+          {
+            "piece": "PocketBack_L",
+            "chain": [
+              "A54",
+              "A53"
+            ]
+          },
+          {
+            "piece": "Front_L",
+            "chain": [
+              "A46",
+              "A5",
+              "A18",
+              "A22",
+              "A55"
+            ]
+          }
+        ]
+      },
+      "b": {
+        "piece": "Back",
+        "chain": [
+          "BackSide",
+          "DroppedSideBack",
+          "A14",
+          "A6",
+          "A19",
+          "A23",
+          "A56"
+        ]
+      }
+    },
+    {
+      "id": "front_dart_L",
+      "label": "left front dart at the CF: legs A26 -> A31 -> apex A34 and A32 -> A34 (6.0 / 5.5 cm as drafted: the 0.5 cm is eased)",
+      "kind": "dart",
+      "a": {
+        "piece": "Front_L",
+        "chain": [
+          "A26",
+          "A31",
+          "A34"
+        ]
+      },
+      "b": {
+        "piece": "Front_L",
+        "chain": [
+          "A32",
+          "A34"
+        ]
+      },
+      "ease": {
+        "mode": "gather",
+        "ratio": 1.1
+      }
+    },
+    {
+      "id": "back_dart_side_L",
+      "label": "left back dart nearer the side: A37 -> apex A41 to A38 -> A41",
+      "kind": "dart",
+      "a": {
+        "piece": "Back",
+        "chain": [
+          "A37",
+          "A41"
+        ]
+      },
+      "b": {
+        "piece": "Back",
+        "chain": [
+          "A38",
+          "A41"
+        ]
+      }
+    },
+    {
+      "id": "back_dart_cb_L",
+      "label": "left back dart nearer the CB: A39 -> apex A42 to A40 -> A42",
+      "kind": "dart",
+      "a": {
+        "piece": "Back",
+        "chain": [
+          "A39",
+          "A42"
+        ]
+      },
+      "b": {
+        "piece": "Back",
+        "chain": [
+          "A40",
+          "A42"
+        ]
+      }
+    },
+    {
+      "id": "pocket_facing_L",
+      "label": "left slant pocket: the bag front's facing edge A43 -> A53 onto the front's opening Pocket1 -> Pocket2 -> A46 (sewn, then turned to the inside)",
+      "kind": "fold",
+      "a": {
+        "piece": "PocketFront_L",
+        "chain": [
+          "A43",
+          "A53"
+        ]
+      },
+      "b": {
+        "piece": "Front_L",
+        "chain": [
+          "Pocket1",
+          "Pocket2",
+          "A46"
+        ]
+      }
+    },
+    {
+      "id": "pocket_bag_L",
+      "label": "left pocket bag: bag front and bag back round the bottom A53 -> A59 -> A51 (two layers sewn round their edge)",
+      "kind": "fold",
+      "a": {
+        "piece": "PocketFront_L",
+        "chain": [
+          "A53",
+          "A59",
+          "A51"
+        ]
+      },
+      "b": {
+        "piece": "PocketBack_L",
+        "chain": [
+          "A53",
+          "A59",
+          "A51"
+        ]
+      }
+    },
+    {
+      "id": "pocket_back_inner_L",
+      "label": "left pocket bag back's inner edge A51 -> Pocket1 stitched onto the bag front (it lies over it)",
+      "kind": "attach",
+      "a": {
+        "piece": "PocketBack_L",
+        "chain": [
+          "A51",
+          "Pocket1"
+        ]
+      },
+      "b": {
+        "onto": "PocketFront_L"
+      }
+    },
+    {
+      "id": "waistband_L",
+      "label": "left waistband lower edge CF -> CB onto the waist: front CF (A26 side of the dart), front A32 -> Pocket1, pocket back piece -> side, back side -> darts -> CB (darts closed first; the waist is eased into the band)",
+      "kind": "ease",
+      "allow_crossings": "the waist outline jogs back up at the CF corner (FrontCenter -> A26) and on the pocket back piece (A43 -> A52), and steps from the front (layer 0) to the pocket back piece (layer 2)",
+      "a": {
+        "piece": "WaistBand1",
+        "chain": [
+          "B11",
+          "B7",
+          "B",
+          "B2"
+        ]
+      },
+      "b": {
+        "parts": [
+          {
+            "piece": "Front_L",
+            "chain": [
+              "FrontCenter",
+              "A26"
+            ]
+          },
+          {
+            "piece": "Front_L",
+            "chain": [
+              "A32",
+              "WaistLIne",
+              "A33",
+              "Pocket1"
+            ]
+          },
+          {
+            "piece": "PocketBack_L",
+            "chain": [
+              "A43",
+              "A52",
+              "A54"
+            ]
+          },
+          {
+            "piece": "Back",
+            "chain": [
+              "BackSide",
+              "A37"
+            ]
+          },
+          {
+            "piece": "Back",
+            "chain": [
+              "A38",
+              "A39"
+            ]
+          },
+          {
+            "piece": "Back",
+            "chain": [
+              "A40",
+              "A29",
+              "BackCenter",
+              "BackCenterFitted"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "inseam_R",
+      "label": "right inseam: crotch point -> knee -> hem, front to back. The leg panels lie on the front and back of the thigh, so the two inseams are 42-44 cm apart across the inner leg (allow_far: the simulation closes it)",
+      "kind": "plain",
+      "allow_far": true,
+      "a": {
+        "piece": "Front_with_pocket",
+        "chain": [
+          "CrotchPointFront",
+          "A7",
+          "A20",
+          "A24",
+          "A57"
+        ]
+      },
+      "b": {
+        "piece": "Back_R",
+        "chain": [
+          "CrotchPointBack",
+          "A8",
+          "A21",
+          "A25",
+          "A58"
+        ]
+      }
+    },
+    {
+      "id": "outseam_R",
+      "label": "right outseam: waist -> hem; the front side is the pocket back piece A54 -> A53 (waist to below the pocket opening), then the front A46 -> hem",
+      "kind": "plain",
+      "allow_crossings": "side a steps from the pocket back piece (layer 2, ends at A53) to the front (layer 0, starts at A46): on the SMPL-X body that 6 cm step crosses one pair of sewing segments",
+      "a": {
+        "parts": [
+          {
+            "piece": "PocketBack",
+            "chain": [
+              "A54",
+              "A53"
+            ]
+          },
+          {
+            "piece": "Front_with_pocket",
+            "chain": [
+              "A46",
+              "A5",
+              "A18",
+              "A22",
+              "A55"
+            ]
+          }
+        ]
+      },
+      "b": {
+        "piece": "Back_R",
+        "chain": [
+          "BackSide",
+          "DroppedSideBack",
+          "A14",
+          "A6",
+          "A19",
+          "A23",
+          "A56"
+        ]
+      }
+    },
+    {
+      "id": "front_dart_R",
+      "label": "right front dart at the CF: legs A26 -> A31 -> apex A34 and A32 -> A34 (6.0 / 5.5 cm as drafted: the 0.5 cm is eased)",
+      "kind": "dart",
+      "a": {
+        "piece": "Front_with_pocket",
+        "chain": [
+          "A26",
+          "A31",
+          "A34"
+        ]
+      },
+      "b": {
+        "piece": "Front_with_pocket",
+        "chain": [
+          "A32",
+          "A34"
+        ]
+      },
+      "ease": {
+        "mode": "gather",
+        "ratio": 1.1
+      }
+    },
+    {
+      "id": "back_dart_side_R",
+      "label": "right back dart nearer the side: A37 -> apex A41 to A38 -> A41",
+      "kind": "dart",
+      "a": {
+        "piece": "Back_R",
+        "chain": [
+          "A37",
+          "A41"
+        ]
+      },
+      "b": {
+        "piece": "Back_R",
+        "chain": [
+          "A38",
+          "A41"
+        ]
+      }
+    },
+    {
+      "id": "back_dart_cb_R",
+      "label": "right back dart nearer the CB: A39 -> apex A42 to A40 -> A42",
+      "kind": "dart",
+      "a": {
+        "piece": "Back_R",
+        "chain": [
+          "A39",
+          "A42"
+        ]
+      },
+      "b": {
+        "piece": "Back_R",
+        "chain": [
+          "A40",
+          "A42"
+        ]
+      }
+    },
+    {
+      "id": "pocket_facing_R",
+      "label": "right slant pocket: the bag front's facing edge A43 -> A53 onto the front's opening Pocket1 -> Pocket2 -> A46 (sewn, then turned to the inside)",
+      "kind": "fold",
+      "a": {
+        "piece": "PocketFront",
+        "chain": [
+          "A43",
+          "A53"
+        ]
+      },
+      "b": {
+        "piece": "Front_with_pocket",
+        "chain": [
+          "Pocket1",
+          "Pocket2",
+          "A46"
+        ]
+      }
+    },
+    {
+      "id": "pocket_bag_R",
+      "label": "right pocket bag: bag front and bag back round the bottom A53 -> A59 -> A51 (two layers sewn round their edge)",
+      "kind": "fold",
+      "a": {
+        "piece": "PocketFront",
+        "chain": [
+          "A53",
+          "A59",
+          "A51"
+        ]
+      },
+      "b": {
+        "piece": "PocketBack",
+        "chain": [
+          "A53",
+          "A59",
+          "A51"
+        ]
+      }
+    },
+    {
+      "id": "pocket_back_inner_R",
+      "label": "right pocket bag back's inner edge A51 -> Pocket1 stitched onto the bag front (it lies over it)",
+      "kind": "attach",
+      "a": {
+        "piece": "PocketBack",
+        "chain": [
+          "A51",
+          "Pocket1"
+        ]
+      },
+      "b": {
+        "onto": "PocketFront"
+      }
+    },
+    {
+      "id": "waistband_R",
+      "label": "right waistband lower edge CF -> CB onto the waist: front CF (A26 side of the dart), front A32 -> Pocket1, pocket back piece -> side, back side -> darts -> CB (darts closed first; the waist is eased into the band)",
+      "kind": "ease",
+      "allow_crossings": "the waist outline jogs back up at the CF corner (FrontCenter -> A26) and on the pocket back piece (A43 -> A52), and steps from the front (layer 0) to the pocket back piece (layer 2)",
+      "a": {
+        "piece": "Waistband2",
+        "chain": [
+          "B9",
+          "B2",
+          "B",
+          "B7"
+        ],
+        "trim_start_m": 0.04
+      },
+      "b": {
+        "parts": [
+          {
+            "piece": "Front_with_pocket",
+            "chain": [
+              "FrontCenter",
+              "A26"
+            ]
+          },
+          {
+            "piece": "Front_with_pocket",
+            "chain": [
+              "A32",
+              "WaistLIne",
+              "A33",
+              "Pocket1"
+            ]
+          },
+          {
+            "piece": "PocketBack",
+            "chain": [
+              "A43",
+              "A52",
+              "A54"
+            ]
+          },
+          {
+            "piece": "Back_R",
+            "chain": [
+              "BackSide",
+              "A37"
+            ]
+          },
+          {
+            "piece": "Back_R",
+            "chain": [
+              "A38",
+              "A39"
+            ]
+          },
+          {
+            "piece": "Back_R",
+            "chain": [
+              "A40",
+              "A29",
+              "BackCenter",
+              "BackCenterFitted"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "centre_front",
+      "label": "centre front rise: CF top (FrontCenter, 1.7 cm above the waist line, inside the waistband) -> waist -> zip stop -> crotch point (the zip fly closed; sewn shut for the simulation)",
+      "kind": "join_mirror",
+      "a": {
+        "piece": "Front_with_pocket",
+        "chain": [
+          "FrontCenter",
+          "WaistLineFront",
+          "A9",
+          "ZipperLength",
+          "CrotchPointFront"
+        ]
+      },
+      "b": {
+        "piece": "Front_L",
+        "chain": [
+          "FrontCenter",
+          "WaistLineFront",
+          "A9",
+          "ZipperLength",
+          "CrotchPointFront"
+        ]
+      }
+    },
+    {
+      "id": "centre_back",
+      "label": "centre back rise: waist -> crotch point",
+      "kind": "join_mirror",
+      "a": {
+        "piece": "Back",
+        "chain": [
+          "BackCenterFitted",
+          "A12a1",
+          "CrotchPointBack"
+        ]
+      },
+      "b": {
+        "piece": "Back_R",
+        "chain": [
+          "BackCenterFitted",
+          "A12a1",
+          "CrotchPointBack"
+        ]
+      }
+    },
+    {
+      "id": "waistband_cb",
+      "label": "waistband centre back: the two band ends",
+      "kind": "plain",
+      "a": {
+        "piece": "WaistBand1",
+        "chain": [
+          "B2",
+          "B5"
+        ]
+      },
+      "b": {
+        "piece": "Waistband2",
+        "chain": [
+          "B7",
+          "B6"
+        ]
+      }
+    },
+    {
+      "id": "waistband_cf",
+      "label": "waistband centre front: the band ends (button closure; sewn shut for the simulation; the right band's 4 cm underlap is left free)",
+      "kind": "plain",
+      "a": {
+        "piece": "WaistBand1",
+        "chain": [
+          "B11",
+          "B10"
+        ]
+      },
+      "b": {
+        "piece": "Waistband2",
+        "chain": [
+          "B9",
+          "B8"
+        ]
+      }
+    },
+    {
+      "id": "fly_shield",
+      "label": "fly shield (Detail) long edge B -> B1 stitched onto the right front along the fly",
+      "kind": "attach",
+      "a": {
+        "piece": "Detail",
+        "chain": [
+          "B",
+          "B1"
+        ]
+      },
+      "b": {
+        "onto": "Front_with_pocket"
+      }
+    }
+  ],
+  "ignore_edges": [
+    {
+      "piece": "Front_L",
+      "chain": [
+        "A55",
+        "HemlineAddition",
+        "A57"
+      ],
+      "reason": "hem (finished)"
+    },
+    {
+      "piece": "Back",
+      "chain": [
+        "A56",
+        "A55",
+        "HemlineAddition",
+        "A57",
+        "A58"
+      ],
+      "reason": "hem (finished)"
+    },
+    {
+      "piece": "PocketFront_L",
+      "chain": [
+        "A32",
+        "WaistLIne",
+        "A33",
+        "Pocket1"
+      ],
+      "reason": "pocket bag top: lies under the front's waist edge and is caught in the waistband seam with it (layered)"
+    },
+    {
+      "piece": "PocketFront_L",
+      "chain": [
+        "A51",
+        "A32"
+      ],
+      "reason": "bag front's inner edge: free below the waist"
+    },
+    {
+      "piece": "WaistBand1",
+      "chain": [
+        "B10",
+        "B6",
+        "B4",
+        "B5"
+      ],
+      "reason": "waistband upper edge (folded / finished)"
+    },
+    {
+      "piece": "Front_with_pocket",
+      "chain": [
+        "A55",
+        "HemlineAddition",
+        "A57"
+      ],
+      "reason": "hem (finished)"
+    },
+    {
+      "piece": "Back_R",
+      "chain": [
+        "A56",
+        "A55",
+        "HemlineAddition",
+        "A57",
+        "A58"
+      ],
+      "reason": "hem (finished)"
+    },
+    {
+      "piece": "PocketFront",
+      "chain": [
+        "A32",
+        "WaistLIne",
+        "A33",
+        "Pocket1"
+      ],
+      "reason": "pocket bag top: lies under the front's waist edge and is caught in the waistband seam with it (layered)"
+    },
+    {
+      "piece": "PocketFront",
+      "chain": [
+        "A51",
+        "A32"
+      ],
+      "reason": "bag front's inner edge: free below the waist"
+    },
+    {
+      "piece": "Waistband2",
+      "chain": [
+        "B8",
+        "B5",
+        "B4",
+        "B6"
+      ],
+      "reason": "waistband upper edge (folded / finished)"
+    },
+    {
+      "piece": "Waistband2",
+      "chain": [
+        "B9",
+        "B2"
+      ],
+      "reason": "the first 4 cm from B9: underlap extension of the right band at the CF (lies under the left band's end)"
+    },
+    {
+      "piece": "Detail",
+      "chain": [
+        "B1",
+        "B3",
+        "B2",
+        "B5",
+        "B4",
+        "B"
+      ],
+      "reason": "fly shield: zip side, curved end and top (caught in the waistband)"
+    }
+  ],
+  "expect": {
+    "required_seams": [
+      "inseam_L",
+      "outseam_L",
+      "front_dart_L",
+      "back_dart_side_L",
+      "back_dart_cb_L",
+      "pocket_facing_L",
+      "pocket_bag_L",
+      "pocket_back_inner_L",
+      "waistband_L",
+      "inseam_R",
+      "outseam_R",
+      "front_dart_R",
+      "back_dart_side_R",
+      "back_dart_cb_R",
+      "pocket_facing_R",
+      "pocket_bag_R",
+      "pocket_back_inner_R",
+      "waistband_R",
+      "centre_front",
+      "centre_back",
+      "waistband_cb",
+      "waistband_cf",
+      "fly_shield"
+    ]
+  }
+}

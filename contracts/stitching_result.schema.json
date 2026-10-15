@@ -1,0 +1,599 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stitching_result.schema.json",
+  "title": "Stitching result: sewing lines with point-to-point correspondences on the placed pieces (input of the simulation phase)",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "garment",
+    "units",
+    "convention",
+    "inputs",
+    "defaults",
+    "seams",
+    "errors",
+    "overlaps",
+    "unstitched_edges",
+    "ignored_edges",
+    "zero_length_edges",
+    "pieces_untouched_hash",
+    "untouched",
+    "required_seams",
+    "summary"
+  ],
+  "$defs": {
+    "xyz": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "uv": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "polyline": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/xyz"
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": [
+        "piece",
+        "edge",
+        "from",
+        "to",
+        "length_cm"
+      ],
+      "properties": {
+        "piece": {
+          "type": "string"
+        },
+        "edge": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "length_cm": {
+          "type": "number"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "side": {
+      "type": "object",
+      "required": [
+        "piece",
+        "edge_ids",
+        "polyline_m",
+        "parts"
+      ],
+      "properties": {
+        "piece": {
+          "type": "string",
+          "description": "piece of the first part"
+        },
+        "edge_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "polyline_m": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/xyz"
+          },
+          "minItems": 1,
+          "description": "world sewing line (every knot of every part, in sewing order)"
+        },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "piece",
+              "chain",
+              "direction",
+              "edge_ids",
+              "length_cm",
+              "world_length_cm",
+              "polyline_m"
+            ],
+            "properties": {
+              "piece": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "every named point passed, in sewing order; empty for an attach host"
+              },
+              "direction": {
+                "enum": [
+                  "outline",
+                  "against_outline",
+                  "onto",
+                  "line"
+                ]
+              },
+              "edge_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "length_cm": {
+                "type": "number",
+                "description": "flat (true) length"
+              },
+              "world_length_cm": {
+                "type": "number"
+              },
+              "polyline_m": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/xyz"
+                },
+                "minItems": 1
+              },
+              "trim_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "length cut off the start / end of the chain as listed (m)"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "garment": {
+      "type": "string"
+    },
+    "units": {
+      "const": "m"
+    },
+    "convention": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "object",
+      "required": [
+        "stitching",
+        "stitching_sha256",
+        "assembly",
+        "assembly_sha256",
+        "run",
+        "alignment_result_sha256",
+        "synthetic"
+      ],
+      "properties": {
+        "stitching": {
+          "type": "string"
+        },
+        "stitching_sha256": {
+          "type": "string"
+        },
+        "assembly": {
+          "type": "string"
+        },
+        "assembly_sha256": {
+          "type": "string"
+        },
+        "run": {
+          "type": "string",
+          "description": "the assembler run folder whose result.json was stitched"
+        },
+        "alignment_result_sha256": {
+          "type": "string"
+        },
+        "synthetic": {
+          "type": "boolean"
+        }
+      }
+    },
+    "defaults": {
+      "type": "object"
+    },
+    "seams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "kind",
+          "required",
+          "allow_far",
+          "a",
+          "b",
+          "length_a_cm",
+          "length_b_cm",
+          "world_length_a_cm",
+          "world_length_b_cm",
+          "ratio",
+          "ease",
+          "samples",
+          "world_gap_m",
+          "orientation",
+          "warnings"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "plain",
+              "ease",
+              "gather",
+              "fold",
+              "join_mirror",
+              "dart",
+              "attach"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "allow_far": {
+            "type": "boolean"
+          },
+          "a": {
+            "$ref": "#/$defs/side"
+          },
+          "b": {
+            "$ref": "#/$defs/side"
+          },
+          "length_a_cm": {
+            "type": "number"
+          },
+          "length_b_cm": {
+            "type": "number"
+          },
+          "world_length_a_cm": {
+            "type": "number"
+          },
+          "world_length_b_cm": {
+            "type": "number"
+          },
+          "ratio": {
+            "type": "number",
+            "description": "length_a / length_b (flat)"
+          },
+          "ease": {
+            "type": "object",
+            "required": [
+              "mode",
+              "declared_ratio",
+              "tolerance_pct",
+              "applied_ratio",
+              "gathered_side",
+              "excess_cm"
+            ],
+            "properties": {
+              "mode": {
+                "enum": [
+                  "none",
+                  "distribute",
+                  "gather"
+                ]
+              },
+              "declared_ratio": {
+                "type": "number"
+              },
+              "tolerance_pct": {
+                "type": "number"
+              },
+              "applied_ratio": {
+                "type": "number",
+                "description": "long / short side length (>= 1)"
+              },
+              "gathered_side": {
+                "enum": [
+                  "a",
+                  "b",
+                  "none"
+                ],
+                "description": "the longer side, eased or gathered onto the other"
+              },
+              "excess_cm": {
+                "type": "number"
+              }
+            }
+          },
+          "samples": {
+            "type": "object",
+            "description": "N correspondences: pair i joins a_xyz_m[i] and b_xyz_m[i]; both at normalised arc length s[i] of their side",
+            "required": [
+              "count",
+              "s",
+              "a_xyz_m",
+              "b_xyz_m",
+              "a_uv_m",
+              "b_uv_m",
+              "a_part",
+              "b_part",
+              "a_arc_m",
+              "b_arc_m"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": 2
+              },
+              "s": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "a_xyz_m": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/xyz"
+                }
+              },
+              "b_xyz_m": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/xyz"
+                }
+              },
+              "a_uv_m": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/uv"
+                },
+                "description": "flat piece coordinates of the part's piece"
+              },
+              "b_uv_m": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/uv"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "null for attach seams (the host has no chain: use b_tri / b_bary)"
+              },
+              "a_part": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "index into a.parts"
+              },
+              "b_part": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "a_arc_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "description": "flat distance along that part's chain"
+              },
+              "b_arc_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "b_tri": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "attach: triangle of the host's wrapped_faces under each sample"
+              },
+              "b_bary": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "description": "attach: barycentric weights in that triangle"
+              }
+            }
+          },
+          "world_gap_m": {
+            "type": "object",
+            "required": [
+              "min",
+              "mean",
+              "max"
+            ],
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "mean": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              }
+            }
+          },
+          "orientation": {
+            "type": "object",
+            "required": [
+              "ok",
+              "crossing_count",
+              "reversed_crossing_count",
+              "hint"
+            ],
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "crossing_count": {
+                "type": "integer"
+              },
+              "reversed_crossing_count": {
+                "type": "integer"
+              },
+              "window": {
+                "type": "integer"
+              },
+              "mean_gap_cm": {
+                "type": "number"
+              },
+              "reversed_mean_gap_cm": {
+                "type": "number"
+              },
+              "hint": {
+                "type": "string"
+              },
+              "sewing_rule_ok": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "the two pieces lie on opposite sides of the seam (flat interior side = chain direction x outline winding); null for attach"
+              },
+              "interior": {
+                "type": "object",
+                "description": "+1 / -1 per part: the piece lies left / right of the chain walked in sewing order (flat, stored frame)"
+              },
+              "crossings_judged": {
+                "type": "boolean",
+                "description": "false when the seam declares allow_crossings: crossings are reported, not judged"
+              },
+              "allow_crossings": {
+                "type": "string"
+              }
+            }
+          },
+          "through_body": {
+            "type": "object",
+            "properties": {
+              "segments": {
+                "type": "integer"
+              },
+              "max_depth_m": {
+                "type": "number"
+              }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "seam",
+          "error"
+        ]
+      }
+    },
+    "overlaps": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "unstitched_edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "ignored_edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "zero_length_edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "pieces_untouched_hash": {
+      "type": "object",
+      "required": [
+        "pieces",
+        "avatar"
+      ],
+      "properties": {
+        "pieces": {
+          "type": "string"
+        },
+        "avatar": {
+          "type": "string"
+        }
+      }
+    },
+    "untouched": {
+      "type": "boolean"
+    },
+    "required_seams": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ease_modes": {
+      "type": "object"
+    },
+    "summary": {
+      "type": "object"
+    }
+  }
+}

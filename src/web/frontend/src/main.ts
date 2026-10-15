@@ -40,6 +40,7 @@ import type { Actions, CloneRequest, CopyRequest } from "./ui/actions";
 import { mountArrange } from "./ui/arrange";
 import { mountCloneDialog, mountCopyDialog } from "./ui/cloneDialog";
 import { mountAssemblyPanel } from "./ui/assemblyPanel";
+import { mountStitchPanel } from "./ui/stitchPanel";
 import { mountControls } from "./ui/controls";
 import { mountErrors } from "./ui/errors";
 import { mountExportDialogs } from "./ui/exportDialogs";
@@ -984,6 +985,15 @@ const inspector = mountInspector(inspectorHost, store, actions, getBundle);
 mountControls(must("right"), store, actions);
 mountErrors(must("view"), store, actions);
 mountAssemblyPanel(must("view"), store, actions);
+mountStitchPanel(must("view"), {
+  layout: () => {
+    const s = store.get();
+    if (!s.buildId) return null;
+    return { build: s.buildId, placements: [...s.placements.values()], derived_pieces: s.derived, arrange_options: s.arrangeOptions, rings: s.rings };
+  },
+  view: stitchView,
+  focus: (c, r) => kit.focus(c, r),
+});
 mountStatus(must("view"), store, actions);
 const openCloneDialog = mountCloneDialog(store, actions, inspector);
 const openCopyDialog = mountCopyDialog(store, actions);

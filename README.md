@@ -10,6 +10,7 @@ piece on the avatar at CLO3D-style arrangement points, and shows the result in a
 | `avatar_engine` | body measurements JSON to an avatar, bounding volumes and arrangement points | [src/avatar_engine/README.md](src/avatar_engine/README.md) |
 | `alignment_engine` | places pieces on arrangement points (offset, rotation, mirror, wrap), stitch and ring reports | [src/alignment_engine/README.md](src/alignment_engine/README.md) |
 | `web` | FastAPI backend and Vite + three.js frontend | [src/web/README.md](src/web/README.md) |
+| `stitcher` | stitching JSON + an assembly's alignment result to sewing lines with point-to-point correspondences (no simulation) | [docs/stitching.md](docs/stitching.md) |
 
 The three engines import nothing from each other or from `web`; they exchange files that follow the JSON Schemas in
 [contracts/](contracts/). `tests/test_architecture.py` enforces this. Design notes: [docs/](docs/).

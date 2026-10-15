@@ -169,3 +169,51 @@ export const startImageExport = (body: ImageExportBody): Promise<ExportJobStatus
 export const imageExportStatus = (id: string): Promise<ExportJobStatus> => request(`/api/export/images/${encodeURIComponent(id)}`);
 export const cancelImageExport = (id: string): Promise<ExportJobStatus> => request(`/api/export/images/${encodeURIComponent(id)}`, { method: "DELETE" });
 export const imageExportUrl = (id: string): string => `/api/export/images/${encodeURIComponent(id)}/download`;
+
+// -- stitching (stitcher on the layout on screen) --------------------------------------------------------------------
+
+export interface StitchSeam {
+  id: string;
+  label: string;
+  kind: string;
+  ease: "none" | "distribute" | "gather";
+  declared_ratio: number;
+  length_a_cm: number;
+  length_b_cm: number;
+  ratio: number;
+  gap_m: { min: number; mean: number; max: number };
+  crossings: number;
+  status: "pass" | "fail";
+  problems: string[];
+  /** Sewing lines on both pieces (world metres). */
+  a: number[][];
+  b: number[][];
+  /** A few correspondences [pointOnA, pointOnB]. */
+  pairs: number[][][];
+}
+
+export interface StitchAnswer {
+  pass: boolean;
+  summary: Record<string, number | boolean>;
+  seams: StitchSeam[];
+  errors: { seam: string; error: string }[];
+  unstitched_edges: { piece: string; edge: string; length_cm: number }[];
+  failures: string[];
+}
+
+/** The layout the stitcher sews (placements carry their `solved` poses: nothing moves on the server). */
+export interface StitchLayout {
+  build: string;
+  placements: Placement[];
+  derived_pieces: DerivedDef[];
+  arrange_options: ArrangeOptions;
+  rings: unknown[];
+}
+
+export const importStitching = (text: string): Promise<{ stitching: Record<string, unknown>; warnings: string[] }> =>
+  request("/api/stitching/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: text });
+export const runStitching = (body: StitchLayout & { stitching: unknown }): Promise<StitchAnswer> => request("/api/stitching/run", json("POST", body));
+export const stitchingResultText = async (body: StitchLayout & { stitching: unknown }): Promise<string> =>
+  (await requestRaw("/api/stitching/result", json("POST", body))).text();
+export const stitchingZip = async (body: StitchLayout & { stitching: unknown }): Promise<Blob> =>
+  (await requestRaw("/api/stitching/export", json("POST", body))).blob();

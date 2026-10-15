@@ -1,4 +1,5 @@
-"""``python -m assembler run <assembly.json> --out build/<garment>/iter_NN [--synthetic] [--fast] [--no-render]``."""
+"""``python -m assembler run <assembly.json> --out build/<garment>/iter_NN [--synthetic] [--fast] [--no-render]``;
+``python -m assembler stitch <assembly.json> --stitching <stitching.json> --out DIR [--synthetic] [--fast]``."""
 
 from __future__ import annotations
 
@@ -26,7 +27,16 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--synthetic", action="store_true", help="the synthetic test body instead of SMPL-X")
     c = sub.add_parser("check", help="validate an assembly file only")
     c.add_argument("assembly", type=Path)
+    st = sub.add_parser("stitch", help="run an assembly, then stitch it (stitcher run on that run's output)")
+    st.add_argument("assembly", type=Path)
+    st.add_argument("--stitching", type=Path, required=True)
+    st.add_argument("--out", type=Path, required=True)
+    st.add_argument("--synthetic", action="store_true", help="the synthetic test body instead of SMPL-X")
+    st.add_argument("--fast", action="store_true", help="primary run only, smaller stitch images")
+    st.add_argument("--no-render", action="store_true")
     a = ap.parse_args(argv)
+    if a.cmd == "stitch":
+        return stitch(a)
     from .run import AssemblyError, load_assembly, render_assembly, run
 
     try:
@@ -47,6 +57,24 @@ def main(argv: list[str] | None = None) -> int:
     print(json.dumps({"pass": s["pass"], "fails": fails, "global": s["global"], "seconds": s["seconds"]}))
     print(f"wrote {a.out}/verify.md, {a.out}/sheet.png")
     return 0 if s["pass"] else 1
+
+
+def stitch(a: argparse.Namespace) -> int:
+    """Assembly (``run``, no images) into ``<out>/assembly``, then ``stitcher run`` on it into ``<out>``."""
+    from stitcher.__main__ import main as stitcher_main
+
+    from .run import AssemblyError, run
+
+    try:
+        s = run(a.assembly, a.out / "assembly", synthetic=a.synthetic, fast=a.fast, render=False)
+    except AssemblyError as e:
+        print(f"assembly error: {e}", file=sys.stderr)
+        return 2
+    print(json.dumps({"assembly_pass": s["pass"], "seconds": s["seconds"]}))
+    args = ["run", "--stitching", str(a.stitching), "--assembly", str(a.assembly), "--run", str(a.out / "assembly")]
+    args += ["--out", str(a.out)] + (["--fast"] if a.fast else []) + (["--no-render"] if a.no_render else [])
+    code = stitcher_main(args)
+    return code if s["pass"] else max(code, 1)
 
 
 if __name__ == "__main__":

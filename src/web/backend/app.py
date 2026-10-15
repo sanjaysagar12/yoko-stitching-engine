@@ -21,6 +21,7 @@ from alignment_engine import AlignmentEngine
 from assembler import webio
 from assembler.run import AssemblyError
 
+from . import stitching
 from .builds import BuildManager
 from .config import AppConfig
 from .errors import ENGINE_ERRORS, error_body, to_error
@@ -325,6 +326,32 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
         if j.status != "done" or j.zip is None or not j.zip.is_file():
             raise JobError("export_not_ready", f"image export {jid} is {j.status}")
         return FileResponse(j.zip, media_type="application/zip", filename=f"{j.garment}_images.zip")
+
+    # -- stitching (stitcher on the layout on screen) ----------------------------------------------------------------
+    @app.post("/api/stitching/import")
+    async def stitching_import(request: Request) -> dict[str, Any]:
+        """Read a stitching file (the request body): schema and seam ids checked, every problem listed."""
+        return {"stitching": stitching.parse(await request.body()), "warnings": []}
+
+    @app.post("/api/stitching/run")
+    def stitching_run(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+        """Stitch the layout: ``{build, stitching, placements, derived_pieces, arrange_options?, rings?}`` -> per seam
+        the sewing lines, a few correspondences, ratio, ease and verdict, plus the summary and the failures."""
+        _, result, rows, _ = stitching.run(ready_build(body), body)
+        return stitching.answer(result, rows)
+
+    @app.post("/api/stitching/result")
+    def stitching_result(body: Annotated[dict[str, Any], Body()]) -> Response:
+        """The full ``stitching.result.json`` of the layout (same body as ``/api/stitching/run``)."""
+        folder, _, _, _ = stitching.run(ready_build(body), body)
+        return FileResponse(folder / "stitching.result.json", media_type="application/json")
+
+    @app.post("/api/stitching/export")
+    def stitching_export(body: Annotated[dict[str, Any], Body()]) -> Response:
+        """Zip of the stitching file, its result, the verification and every stitch image (rendered on the server)."""
+        zp = stitching.export_zip(ready_build(body), body)
+        name = str(body.get("stitching", {}).get("garment", "garment"))
+        return FileResponse(zp, media_type="application/zip", filename=f"{name}_stitching.zip")
 
     @app.get("/api/jobs/{name}/placements")
     def get_placements(name: str) -> dict[str, Any]:
