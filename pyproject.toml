@@ -36,6 +36,10 @@ plugins = ["pydantic.mypy"]
 module = ["mapbox_earcut", "jsonschema", "scipy", "scipy.*", "yaml", "shapely", "shapely.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["frontend", "frontend.*"]  # ZOZO's Contact Solver, only in its own Python (simulator/ppf_runner.py)
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 120
 src = ["src", "tests"]

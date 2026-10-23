@@ -16,7 +16,7 @@ SCHEMAS = sorted(p.name.removesuffix(".schema.json") for p in (ROOT / "contracts
 
 
 def test_every_schema_has_a_sample() -> None:
-    assert len(SCHEMAS) == 10  # + assembly (assembler), stitching and stitching_result (stitcher)
+    assert len(SCHEMAS) == 11  # + assembly (assembler), stitching and stitching_result (stitcher), simulation_result
     assert SCHEMAS == sorted(p.stem for p in SAMPLES.glob("*.json"))
 
 

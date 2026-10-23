@@ -183,3 +183,10 @@ aside h2:first-child { margin-top: 0; }
 .seam-row:hover, .seam-row.selected { background: #eef2ff; }
 .seam-row.fail { color: #b91c1c; }
 .seam-row .swatch { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: middle; }
+.sim-panel { position: absolute; right: 8px; bottom: 8px; z-index: 6; width: min(430px, 38%); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); max-height: 45%; overflow: auto; }
+.sim-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+.sim-row select { font: inherit; max-width: 210px; }
+.sim-row input[type="number"] { width: 64px; font: inherit; }
+.sim-row input[type="range"] { flex: 1; min-width: 120px; }
+.sim-row a.btn { text-decoration: none; color: inherit; }
+.sim-panel .meta.ok { color: #14532d; }

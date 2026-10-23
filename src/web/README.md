@@ -47,6 +47,12 @@ error. Provided: `male_shirt`, `aldrich_skirt` (the two skirt pieces, female bod
 | `POST /api/stitching/result` | same body: the full `stitching.result.json` (contracts/stitching_result.schema.json) |
 | `POST /api/stitching/export` | same body: `<garment>_stitching.zip` with the stitching file, `stitching.result.json`, `stitch_verify.md` and every stitch image (rendered on the server) |
 | `GET /api/export/{id}?format=obj\|glb` | avatar plus the job's saved placements (avatar only if none are saved) |
+| `GET /api/simulation/info` | the cloth solver (found or not), fabrics, mesh qualities, default options |
+| `POST /api/simulation/start` | the `/api/stitching/run` body plus `options: {fabric, quality, frames, sew_time?}`: stitches the layout (cached) and starts its simulation in the background (one at a time; the same layout and options give the same job). `solver_not_found` (503) without the solver |
+| `GET` / `DELETE /api/simulation/{id}` | status (`queued` / `running` / `done` / `failed` / `cancelled`, stage, frame, largest seam gap, `summary` when done) / cancel |
+| `GET /api/simulation/{id}/embedding` | per piece the simulation vertices and weights carrying every vertex of its placed mesh (base64) |
+| `GET /api/simulation/{id}/latest` / `frames` | the newest frame of the simulation mesh (live view) / every kept frame (animation), base64 float32 |
+| `GET /api/simulation/{id}/result`, `download?format=obj\|zip`, `images/{name}` | `simulation.result.json`; the draped garment + avatar OBJ or the zip with result, OBJ and images; one image |
 
 Builds run in a background thread pool and are cached in `outputs/<job>/<hash>/`, keyed by a hash of the three input
 files, the piece selection and the engine versions. The result lists the pieces (size in cm, area, named points), the

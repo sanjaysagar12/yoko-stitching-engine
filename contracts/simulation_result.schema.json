@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "simulation_result.schema.json",
+  "title": "Simulation result: a stitched garment sewn and draped on the avatar by the cloth solver (simulator)",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "garment",
+    "units",
+    "convention",
+    "inputs",
+    "solver",
+    "options",
+    "fabric",
+    "scene",
+    "run",
+    "closure",
+    "frames_kept",
+    "checks",
+    "pass",
+    "summary",
+    "files"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "garment": {"type": "string", "minLength": 1},
+    "units": {"const": "m"},
+    "convention": {"type": "string"},
+    "inputs": {
+      "type": "object",
+      "required": ["stitching_result", "stitching_result_sha256", "run", "alignment_result_sha256", "avatar", "synthetic"],
+      "properties": {
+        "stitching_result": {"type": "string"},
+        "stitching_result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "run": {"type": "string"},
+        "alignment_result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "avatar": {"type": "string"},
+        "synthetic": {"type": "boolean"}
+      }
+    },
+    "solver": {
+      "type": "object",
+      "required": ["available", "release"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "path": {"type": ["string", "null"]},
+        "release": {"type": ["string", "null"]},
+        "runner": {"type": "string"}
+      }
+    },
+    "options": {
+      "type": "object",
+      "required": ["fabric", "quality", "frames", "sew_time", "dt_after", "keep_every"],
+      "properties": {
+        "fabric": {"type": "string"},
+        "quality": {"enum": ["draft", "standard", "fine"]},
+        "frames": {"type": "integer", "minimum": 10, "maximum": 1200},
+        "sew_time": {"type": "number", "exclusiveMinimum": 0},
+        "dt_after": {"type": "number", "exclusiveMinimum": 0},
+        "keep_every": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "fabric": {
+      "type": "object",
+      "required": ["name", "label", "areal_density_g_m2", "bending_rigidity_n_m", "tensile_modulus_n_m", "poisson",
+                   "strain_limit", "friction", "interfaced_bend_factor", "solver"],
+      "properties": {
+        "areal_density_g_m2": {"type": "number", "exclusiveMinimum": 0},
+        "bending_rigidity_n_m": {"type": "number", "exclusiveMinimum": 0},
+        "tensile_modulus_n_m": {"type": "number", "exclusiveMinimum": 0},
+        "strain_limit": {"type": "number", "exclusiveMinimum": 0},
+        "solver": {"type": "object", "required": ["model", "density", "young-mod", "bend", "strain-limit", "friction"]}
+      }
+    },
+    "scene": {
+      "type": "object",
+      "required": ["pieces", "report"],
+      "properties": {
+        "pieces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "first", "count", "faces", "h_m", "interfaced", "opened", "display_vertices",
+                         "start_error_mm"],
+            "properties": {
+              "name": {"type": "string"},
+              "first": {"type": "integer", "minimum": 0},
+              "count": {"type": "integer", "minimum": 3},
+              "faces": {"type": "integer", "minimum": 1},
+              "h_m": {"type": "number", "exclusiveMinimum": 0},
+              "interfaced": {"type": "boolean"},
+              "opened": {"type": "integer", "minimum": 0},
+              "display_vertices": {"type": "integer", "minimum": 3},
+              "start_error_mm": {"type": "number", "minimum": 0}
+            }
+          }
+        },
+        "report": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": ["finished", "frames"],
+      "properties": {
+        "finished": {"type": "boolean"},
+        "cancelled": {"type": ["boolean", "null"]},
+        "frames": {"type": ["integer", "null"]},
+        "wall_s": {"type": ["number", "null"]},
+        "ms_per_frame": {"type": ["number", "null"]}
+      }
+    },
+    "closure": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["frame", "gap_max_m", "gap_mean_m"],
+        "properties": {
+          "frame": {"type": "integer", "minimum": 0},
+          "gap_max_m": {"type": "number", "minimum": 0},
+          "gap_mean_m": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "frames_kept": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "value", "hint"],
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"enum": ["pass", "warn", "fail", "info"]},
+          "hint": {"type": "string"},
+          "seam": {"type": "string"}
+        }
+      }
+    },
+    "pass": {"type": "boolean"},
+    "summary": {
+      "type": "object",
+      "required": ["pass", "finished", "frames", "seam_gap_max_cm", "seam_gap_mean_cm", "seams_open", "stretch_max_pct",
+                   "inside_body", "sim_vertices", "sim_triangles", "fails"],
+      "properties": {
+        "pass": {"type": "boolean"},
+        "fails": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "files": {
+      "type": "object",
+      "required": ["draped", "obj", "frames", "images"],
+      "properties": {
+        "images": {"type": "object", "additionalProperties": {"type": "string"}}
+      }
+    },
+    "log": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -27,6 +27,7 @@ from .config import AppConfig
 from .errors import ENGINE_ERRORS, error_body, to_error
 from .exports import ImageExports
 from .jobs import JobError, list_jobs, load_job, resolve_inputs
+from .simulation import Simulations
 
 _SAFE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
@@ -49,10 +50,12 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
         return loaded
 
     exporter = ImageExports(body_json)
+    sims = Simulations()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
+        sims.shutdown()
         exporter.shutdown()
         mgr.shutdown()
 
@@ -86,7 +89,10 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
 
     @app.exception_handler(JobError)
     async def job_error(_: Request, e: JobError) -> JSONResponse:
-        status = 404 if e.code in ("job_not_found", "build_not_found", "export_not_found") else 422
+        missing = ("job_not_found", "build_not_found", "export_not_found", "simulation_not_found")
+        status = 404 if e.code in missing else 422
+        if e.code == "solver_not_found":
+            status = 503
         extra = {"problems": e.problems} if e.problems else {}
         return JSONResponse(error_body(e.code, str(e), **extra), status_code=status)
 
@@ -352,6 +358,69 @@ def create_app(cfg: AppConfig | None = None) -> FastAPI:
         zp = stitching.export_zip(ready_build(body), body)
         name = str(body.get("stitching", {}).get("garment", "garment"))
         return FileResponse(zp, media_type="application/zip", filename=f"{name}_stitching.zip")
+
+    # -- simulation (stitched layout -> sewn and draped by the cloth solver) ---------------------------------------
+    @app.get("/api/simulation/info")
+    def simulation_info() -> dict[str, Any]:
+        """The cloth solver (found or not, and where) and the fabrics, mesh qualities and default options."""
+        return sims.info()
+
+    @app.post("/api/simulation/start")
+    def simulation_start(body: Annotated[dict[str, Any], Body()]) -> dict[str, Any]:
+        """Stitch the layout (same body as ``/api/stitching/run``, plus ``options: {fabric, quality, frames, ...}``)
+        and start its simulation in the background (or return the cached one): the job's status."""
+        return sims.start(ready_build(body), body).public()
+
+    def sim_job(sid: str) -> Any:
+        return sims.get(sid, mgr)
+
+    @app.get("/api/simulation/{sid}")
+    def simulation_status(sid: str) -> dict[str, Any]:
+        """``{status: queued | running | done | failed | cancelled, stage, frame, frames, gap_max_m, summary?}``."""
+        return sim_job(sid).public()  # type: ignore[no-any-return]
+
+    @app.delete("/api/simulation/{sid}")
+    def simulation_cancel(sid: str) -> dict[str, Any]:
+        return sims.cancel(sim_job(sid)).public()
+
+    @app.get("/api/simulation/{sid}/embedding")
+    def simulation_embedding(sid: str) -> dict[str, Any]:
+        """Per piece: the simulation vertices (``idx``) and weights (``w``) of every vertex of its placed mesh."""
+        return sims.embedding(sim_job(sid))
+
+    @app.get("/api/simulation/{sid}/latest")
+    def simulation_latest(sid: str) -> dict[str, Any]:
+        """The newest frame of the simulation mesh (base64 float32), for the live view."""
+        return sims.latest(sim_job(sid))
+
+    @app.get("/api/simulation/{sid}/frames")
+    def simulation_frames(sid: str) -> dict[str, Any]:
+        """Every kept frame of the simulation mesh (base64 float32, T x N x 3), for the animation."""
+        return sims.frames(sim_job(sid))
+
+    @app.get("/api/simulation/{sid}/result")
+    def simulation_result(sid: str) -> Response:
+        """``simulation.result.json`` (contracts/simulation_result.schema.json)."""
+        return FileResponse(sims.result_path(sim_job(sid)), media_type="application/json")
+
+    @app.get("/api/simulation/{sid}/download")
+    def simulation_download(sid: str, format: str = "obj") -> Response:  # noqa: A002 - query parameter name
+        """The draped garment and the avatar as OBJ (``format=obj``), or the zip of result, OBJ and images."""
+        job = sim_job(sid)
+        if format == "zip":
+            return FileResponse(sims.zip(job), media_type="application/zip", filename=f"{job.garment}_simulation.zip")
+        if format != "obj":
+            raise JobError("invalid_request", "format must be obj or zip")
+        sims.result_path(job)
+        obj = job.folder / "draped_m.obj"
+        return FileResponse(obj, media_type="text/plain", filename=f"{job.garment}_draped_m.obj")
+
+    @app.get("/api/simulation/{sid}/images/{name}")
+    def simulation_image(sid: str, name: str) -> Response:
+        job = sim_job(sid)
+        if not _SAFE.match(name) or not (job.folder / "images" / name).is_file():
+            raise JobError("file_not_found", f"no image {name!r}")
+        return FileResponse(job.folder / "images" / name, media_type="image/png")
 
     @app.get("/api/jobs/{name}/placements")
     def get_placements(name: str) -> dict[str, Any]:

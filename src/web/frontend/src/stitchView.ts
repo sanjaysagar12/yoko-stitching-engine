@@ -68,4 +68,10 @@ export class StitchView {
       this.seams.add(segments(s.pairs.flatMap(([a, b]) => [...(a ?? []), ...(b ?? [])]), colour, dim * 0.6));
     });
   }
+
+  /** Hide or show every stitch line (hidden while the simulated garment is shown). */
+  setVisible(on: boolean): void {
+    this.group.visible = on;
+    this.seams.visible = on;
+  }
 }

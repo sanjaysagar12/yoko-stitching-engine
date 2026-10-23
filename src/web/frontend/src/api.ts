@@ -217,3 +217,72 @@ export const stitchingResultText = async (body: StitchLayout & { stitching: unkn
   (await requestRaw("/api/stitching/result", json("POST", body))).text();
 export const stitchingZip = async (body: StitchLayout & { stitching: unknown }): Promise<Blob> =>
   (await requestRaw("/api/stitching/export", json("POST", body))).blob();
+
+// -- simulation (the stitched layout sewn and draped by the cloth solver) ---------------------------------------------
+
+export interface SimulationOptions {
+  fabric: string;
+  quality: string;
+  frames: number;
+  sew_time?: number;
+}
+
+export interface SimulationInfo {
+  solver: { available: boolean; path: string | null; release: string | null; message: string };
+  fabrics: { name: string; label: string; note: string }[];
+  qualities: { name: string; mesh_mm: number }[];
+  defaults: SimulationOptions & { sew_time: number; dt_after: number; keep_every: number };
+}
+
+export interface SimulationSummary {
+  pass: boolean;
+  finished: boolean;
+  frames: number;
+  wall_s: number | null;
+  seam_gap_max_cm: number;
+  seam_gap_mean_cm: number;
+  seams_open: number;
+  stretch_max_pct: number | null;
+  inside_body: number | null;
+  sim_vertices: number;
+  sim_triangles: number;
+  fails: string[];
+}
+
+export interface SimulationStatus {
+  id: string;
+  build: string;
+  garment: string;
+  status: "queued" | "running" | "done" | "failed" | "cancelled";
+  stage: string;
+  frame: number;
+  frames: number;
+  progress: number;
+  gap_max_m: number | null;
+  wall_s: number | null;
+  options: Partial<SimulationOptions>;
+  cached: boolean;
+  has_scene: boolean;
+  summary?: SimulationSummary;
+  error?: ApiError;
+}
+
+/** Per piece: the simulation vertices (`idx`, 3 per placed-mesh vertex) and their weights (`w`), base64. */
+export interface SimulationEmbedding {
+  sim_vertices: number;
+  idx_dtype: "uint16" | "uint32";
+  pieces: { name: string; count: number; idx: string; w: string }[];
+  start: string;
+}
+
+const sid = (id: string): string => `/api/simulation/${encodeURIComponent(id)}`;
+export const simulationInfo = (): Promise<SimulationInfo> => request("/api/simulation/info");
+export const startSimulation = (body: StitchLayout & { stitching: unknown; options: SimulationOptions }): Promise<SimulationStatus> =>
+  request("/api/simulation/start", json("POST", body));
+export const simulationStatus = (id: string): Promise<SimulationStatus> => request(sid(id));
+export const cancelSimulation = (id: string): Promise<SimulationStatus> => request(sid(id), { method: "DELETE" });
+export const simulationEmbedding = (id: string): Promise<SimulationEmbedding> => request(`${sid(id)}/embedding`);
+export const simulationLatest = (id: string): Promise<{ frame: number; x: string | null }> => request(`${sid(id)}/latest`);
+export const simulationFrames = (id: string): Promise<{ frames: number[]; vertices: number; x: string }> => request(`${sid(id)}/frames`);
+export const simulationDownloadUrl = (id: string, format: "obj" | "zip"): string => `${sid(id)}/download?format=${format}`;
+export const simulationImageUrl = (id: string, name: string): string => `${sid(id)}/images/${encodeURIComponent(name)}`;

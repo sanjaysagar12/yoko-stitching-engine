@@ -11,6 +11,7 @@ piece on the avatar at CLO3D-style arrangement points, and shows the result in a
 | `alignment_engine` | places pieces on arrangement points (offset, rotation, mirror, wrap), stitch and ring reports | [src/alignment_engine/README.md](src/alignment_engine/README.md) |
 | `web` | FastAPI backend and Vite + three.js frontend | [src/web/README.md](src/web/README.md) |
 | `stitcher` | stitching JSON + an assembly's alignment result to sewing lines with point-to-point correspondences (no simulation) | [docs/stitching.md](docs/stitching.md) |
+| `simulator` | stitching result to the garment sewn and draped on the avatar by ZOZO's Contact Solver (GPU); draped pieces, checks, images | [docs/simulation.md](docs/simulation.md) |
 
 The three engines import nothing from each other or from `web`; they exchange files that follow the JSON Schemas in
 [contracts/](contracts/). `tests/test_architecture.py` enforces this. Design notes: [docs/](docs/).
@@ -23,7 +24,8 @@ pose (a T-pose). Viewed from the front (camera on +z) the wearer's left is on th
 ## Quick start (Windows, PowerShell)
 
 Requirements: Python 3.10+, Node 20+, and SMPL-X model files in `models/smplx/` (`SMPLX_MALE.npz`, `SMPLX_FEMALE.npz`,
-`SMPLX_NEUTRAL.npz`; **never downloaded or committed**, see the licence note below).
+`SMPLX_NEUTRAL.npz`; **never downloaded or committed**, see the licence note below). For the simulation: an NVIDIA GPU
+and ZOZO's Contact Solver unzipped next to the repository or at `PPF_DIR` ([docs/simulation.md](docs/simulation.md)).
 
 ```powershell
 ./scripts/start.ps1            # installs, builds the frontend, starts http://127.0.0.1:8000
@@ -72,8 +74,10 @@ distance of a piece from the body (the standoff, the roll radius) is display spa
 separately (garment loop minus skin loop). The size the browser reports is the backend's measurement.
 
 What is not tested or guaranteed: that the avatar is *the person* (it is a statistical body fitted to 12
-measurements; other dimensions follow the model); seam allowance (ignored); fabric behaviour (no simulation, no draping:
-a piece rolled on one cylinder stands off the waist further than off the chest). The `body_slice` wrap, which follows
+measurements; other dimensions follow the model); seam allowance (ignored); fabric behaviour before the simulation (a
+piece rolled on one cylinder stands off the waist further than off the chest). The simulation (docs/simulation.md)
+starts every piece at its pattern shape where it was placed and checks that the draped fabric stretches no more than
+its strain limit against the pattern; its fabric values are typical figures, not measurements of a particular cloth. The `body_slice` wrap, which follows
 the torso sections and therefore changes sizes, is only available with `allow_distortion` and is never valid.
 
 ## Licence note: SMPL and SMPL-X

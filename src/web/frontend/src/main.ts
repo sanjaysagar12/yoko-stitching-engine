@@ -2,7 +2,7 @@
 // Half pieces: clone & mirror makes a linked derived piece; pairs are placed through /api/pair, never computed here.
 // Copies (clone, no mirror) are ordinary pieces: placed through /api/align like any other, never as a pair.
 import "./style.css";
-import { Box3, Vector2, Vector3 } from "three";
+import { Box3, Color, Vector2, Vector3 } from "three";
 import {
   align,
   arrange as arrangeApi,
@@ -31,6 +31,7 @@ import { Occlusion } from "./occlusion";
 import { PiecesView } from "./piecesView";
 import { PointsView } from "./pointsView";
 import { SceneKit } from "./scene";
+import { SimView } from "./simView";
 import { StitchView } from "./stitchView";
 import { defaultPlacement, Store } from "./state";
 import type { LayoutSnapshot } from "./state";
@@ -40,6 +41,7 @@ import type { Actions, CloneRequest, CopyRequest } from "./ui/actions";
 import { mountArrange } from "./ui/arrange";
 import { mountCloneDialog, mountCopyDialog } from "./ui/cloneDialog";
 import { mountAssemblyPanel } from "./ui/assemblyPanel";
+import { mountSimPanel } from "./ui/simPanel";
 import { mountStitchPanel } from "./ui/stitchPanel";
 import { mountControls } from "./ui/controls";
 import { mountErrors } from "./ui/errors";
@@ -88,7 +90,11 @@ const points = new PointsView(kit.scene, kit, must("overlay"));
 const pieces = new PiecesView(kit.scene);
 const occlusion = new Occlusion(kit);
 const stitchView = new StitchView(kit.scene);
-kit.onFrame((dt) => pieces.update(dt));
+const simView = new SimView(kit.scene);
+kit.onFrame((dt) => {
+  pieces.update(dt);
+  simView.update(dt);
+});
 
 let buildToken = 0;
 let alignSeq = 0;
@@ -985,7 +991,11 @@ const inspector = mountInspector(inspectorHost, store, actions, getBundle);
 mountControls(must("right"), store, actions);
 mountErrors(must("view"), store, actions);
 mountAssemblyPanel(must("view"), store, actions);
-mountStitchPanel(must("view"), {
+let simPanel: { refresh(): void; hide(): void } | null = null;
+store.subscribe((_, changed) => {
+  if (changed.includes("placements")) simPanel?.hide();
+});
+const stitchPanel = mountStitchPanel(must("view"), {
   layout: () => {
     const s = store.get();
     if (!s.buildId) return null;
@@ -993,6 +1003,20 @@ mountStitchPanel(must("view"), {
   },
   view: stitchView,
   focus: (c, r) => kit.focus(c, r),
+  onChange: () => simPanel?.refresh(),
+});
+simPanel = mountSimPanel(must("view"), {
+  stitched: () => stitchPanel.stitched(),
+  view: simView,
+  faces: (piece) => store.get().placed.get(piece)?.faceArray,
+  colour: (piece) => {
+    const m = pieces.root.getObjectByName(piece) as { material?: { color?: Color } } | undefined;
+    return m?.material?.color ?? null;
+  },
+  showDraped: (on) => {
+    pieces.root.visible = !on;
+    stitchView.setVisible(!on);
+  },
 });
 mountStatus(must("view"), store, actions);
 const openCloneDialog = mountCloneDialog(store, actions, inspector);

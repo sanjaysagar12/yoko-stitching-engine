@@ -12,6 +12,13 @@ export interface StitchPanelContext {
   layout(): StitchLayout | null;
   view: StitchView;
   focus(centre: Vector3, radius: number): void;
+  /** Called when the stitching file or the stitch result changes (the simulation panel follows it). */
+  onChange?(): void;
+}
+
+/** What the panel offers to the simulation: the request body of the layout with its stitching, once stitched. */
+export interface StitchPanelHandle {
+  stitched(): (StitchLayout & { stitching: unknown }) | null;
 }
 
 function save(blob: Blob, name: string): void {
@@ -28,7 +35,7 @@ const message = (e: unknown): string => {
   return err?.message ?? (e instanceof Error ? e.message : String(e));
 };
 
-export function mountStitchPanel(host: HTMLElement, ctx: StitchPanelContext): void {
+export function mountStitchPanel(host: HTMLElement, ctx: StitchPanelContext): StitchPanelHandle {
   const panel = h("div", { class: "stitch-panel", "data-testid": "stitch-panel" });
   host.append(panel);
   let doc: Record<string, unknown> | null = null;
@@ -59,6 +66,7 @@ export function mountStitchPanel(host: HTMLElement, ctx: StitchPanelContext): vo
     }
     busy = "";
     render();
+    ctx.onChange?.();
   };
   const load = (text: string): Promise<void> =>
     task("reading the stitching file...", async () => {
@@ -129,4 +137,5 @@ export function mountStitchPanel(host: HTMLElement, ctx: StitchPanelContext): vo
     );
   };
   render();
+  return { stitched: () => (answer ? body() : null) };
 }

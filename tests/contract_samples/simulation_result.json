@@ -1,0 +1,198 @@
+{
+ "schema_version": "1.0",
+ "garment": "male_shirt",
+ "units": "m",
+ "convention": "world: metres, y up, +z front, +x the wearer's left (the alignment result's frame); draped pieces vertex for vertex in their placed mesh's order (wrapped_vertices)",
+ "inputs": {
+  "stitching_result": "build/stitching/male_shirt-syn/stitching.result.json",
+  "stitching_result_sha256": "c416b16f144f96230db341f938f7e299448d925e61ea949e015039d0692cd40a",
+  "run": "build/_stitch_runs/male_shirt-syn-6e282c526ddabfee",
+  "alignment_result_sha256": "87cddd84a0e5f6761bb0145edb19a0eef0be98810babf49384576eb39ad97151",
+  "avatar": "build/_cache/avatar-synthetic-3c1e79c77c14005b",
+  "synthetic": true
+ },
+ "solver": {
+  "available": true,
+  "path": null,
+  "release": "2026-10-13-12-32",
+  "message": "",
+  "runner": "simulator/ppf_runner.py"
+ },
+ "options": {
+  "fabric": "cotton_shirting",
+  "quality": "standard",
+  "frames": 240,
+  "sew_time": 0.25,
+  "dt_after": 0.01,
+  "keep_every": 4
+ },
+ "fabric": {
+  "name": "cotton_shirting",
+  "label": "Cotton shirting (poplin, 115 g/m2)",
+  "areal_density_g_m2": 115.0,
+  "bending_rigidity_n_m": 5.88399e-06,
+  "tensile_modulus_n_m": 400.0,
+  "poisson": 0.3,
+  "strain_limit": 0.04,
+  "friction": 0.45,
+  "interfaced_bend_factor": 6.0,
+  "note": "plain-woven cotton poplin, the usual men's dress shirt cloth",
+  "solver": {
+   "model": "baraff-witkin",
+   "density": 0.115,
+   "young-mod": 3478.260869565217,
+   "poiss-rat": 0.3,
+   "bend": 3.997275815217391,
+   "strain-limit": 0.04,
+   "friction": 0.45
+  }
+ },
+ "scene": {
+  "pieces": [
+   {
+    "name": "FrontPanel",
+    "first": 0,
+    "count": 882,
+    "faces": 1645,
+    "h_m": 0.018,
+    "interfaced": false,
+    "opened": 0,
+    "display_vertices": 22908,
+    "start_error_mm": 0.002
+   },
+   {
+    "name": "Yoke",
+    "first": 882,
+    "count": 91,
+    "faces": 142,
+    "h_m": 0.018,
+    "interfaced": false,
+    "opened": 0,
+    "display_vertices": 2189,
+    "start_error_mm": 0.001
+   }
+  ],
+  "report": [
+   "[INFO] simulation mesh: 5930 vertices, 10537 triangles, 1910 stitch rows; start shape within 0.03 mm of the pattern (largest: FullSleeve_L)",
+   "[INFO] slits narrower than 4 mm opened to 4 mm in the simulation mesh: BackPanel (22), FullSleeve_L (18), BackPanel_L (22), FullSleeve (18)",
+   "[INFO] interfaced (stiffer in bending x6): Cuff_L, CollarBase, CollarTop, Cuff, CollarBase_L, CollarTop_L"
+  ]
+ },
+ "run": {
+  "finished": true,
+  "cancelled": false,
+  "frames": 240,
+  "wall_s": 785.6,
+  "ms_per_frame": 3234.5
+ },
+ "closure": [
+  {
+   "frame": 0,
+   "gap_max_m": 0.48883,
+   "gap_mean_m": 0.117608
+  },
+  {
+   "frame": 1,
+   "gap_max_m": 0.436663,
+   "gap_mean_m": 0.043666
+  },
+  {
+   "frame": 240,
+   "gap_max_m": 0.005527,
+   "gap_mean_m": 0.001147
+  }
+ ],
+ "frames_kept": [
+  0,
+  4,
+  8,
+  240
+ ],
+ "checks": [
+  {
+   "id": "solver.finished",
+   "status": "pass",
+   "value": true,
+   "hint": ""
+  },
+  {
+   "id": "result.finite",
+   "status": "pass",
+   "value": true,
+   "hint": ""
+  },
+  {
+   "id": "body.penetration",
+   "status": "pass",
+   "value": 0,
+   "hint": "vertices more than 2 mm inside the body (winding number); closest to the skin 0.3 mm, median 22.3 mm"
+  },
+  {
+   "id": "fabric.stretch",
+   "status": "pass",
+   "value": 3.29,
+   "hint": "edges vs the pattern: max +3.29 %, 99 % +1.54 %, median +0.02 % (strain limit 4 %)"
+  },
+  {
+   "id": "fabric.compression",
+   "status": "info",
+   "value": -89.7,
+   "hint": "shortest edge vs the pattern -89.7 %, 1 % -24.8 % (gathers and folds compress the cloth)"
+  },
+  {
+   "id": "garment.above_floor",
+   "status": "pass",
+   "value": 0.8056,
+   "hint": "lowest garment point (m)"
+  },
+  {
+   "id": "seam.closed",
+   "status": "pass",
+   "value": 0.12,
+   "hint": "",
+   "seam": "shoulder_L",
+   "start_gap_cm": 48.9
+  },
+  {
+   "id": "seam.closed",
+   "status": "pass",
+   "value": 0.1,
+   "hint": "",
+   "seam": "side_L",
+   "start_gap_cm": 7.7
+  }
+ ],
+ "pass": true,
+ "summary": {
+  "pass": true,
+  "finished": true,
+  "frames": 240,
+  "wall_s": 785.6,
+  "seam_gap_max_cm": 0.55,
+  "seam_gap_mean_cm": 0.115,
+  "seams_open": 0,
+  "stretch_max_pct": 3.29,
+  "inside_body": 0,
+  "sim_vertices": 5930,
+  "sim_triangles": 10537,
+  "fails": []
+ },
+ "files": {
+  "draped": "draped.npz",
+  "obj": "draped_m.obj",
+  "frames": "solver/frames.npz",
+  "images": {
+   "front": "images/sim_front.png",
+   "back": "images/sim_back.png",
+   "left": "images/sim_left.png",
+   "right": "images/sim_right.png",
+   "front_left": "images/sim_front_left.png",
+   "front_right": "images/sim_front_right.png",
+   "stretch_front": "images/sim_stretch_front.png",
+   "stretch_back": "images/sim_stretch_back.png",
+   "placed_front": "images/sim_placed_front.png",
+   "sheet": "images/sim_sheet.png"
+  }
+ },
+ "log": []
+}
